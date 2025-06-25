@@ -1,0 +1,195 @@
+{% extends 'admin/base_site.html' %}
+{% load i18n admin_urls static admin_list %}
+
+{% block title %}{% if cl.formset and cl.formset.errors %}{% translate "Error:" %} {% endif %}{{ block.super }}{% endblock %}
+{% block extrastyle %}
+    {{ block.super }}
+    {% if cl.formset or action_form %}
+        <script src="{% url 'admin:jsi18n' %}"></script>
+    {% endif %}
+    {{ media.css }}
+    {% if not actions_on_top and not actions_on_bottom %}
+        <style>
+            #changelist table thead th:first-child {
+                width: inherit
+            }
+        </style>
+    {% endif %}
+{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {{ media.js }}
+    <script src="{% static 'admin/js/filters.js' %}" defer></script>
+{% endblock %}
+
+{% if not is_popup %}
+    {% block breadcrumbs %}
+        <li class="breadcrumb-item">
+            <a href="{% url 'admin:app_list' app_label=cl.opts.app_label %}">{{ cl.opts.app_config.verbose_name }}</a>
+        </li>
+        <li class="breadcrumb-item active"> {{ cl.opts.verbose_name_plural|capfirst }} </li>
+    {% endblock %}
+{% endif %}
+
+{% block page_header %}
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <!-- Page pre-title -->
+            <h2 class="page-title">{{ title }}</h2>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+            {# [change_list_object_tolls.html] Right-aligned object tools area (e.g., 'Add' button) #}
+            {% block object-tools %}
+                <div class="col-auto ms-auto d-print-none">
+                    {% block object-tools-items %} {% change_list_object_tools %} {% endblock %}
+                </div>
+            {% endblock %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-header">
+            <div class="card-stamp">
+                <div class="card-stamp-icon bg-yellow">
+                    <svg width="24" height="24" viewBox="0 0 24 24"
+                         class="icon icon-tabler icons-tabler-outline icon-tabler-filters">
+                        <use href="{% static 'admin/svg/sprite.svg' %}#tabler-plant"></use>
+                    </svg>
+                </div>
+            </div>
+            <div class="row w-full align-items-center">
+                <div class="col-8">
+                    {# [search_form.html] Search and object tools #}
+                    {% block search %}{% search_form cl %}{% endblock %}
+                    {% block date_hierarchy %}{% if cl.date_hierarchy %}{% date_hierarchy cl %}{% endif %}{% endblock %}
+                </div>
+                {# Form errors alert #}
+                {% if cl.formset and cl.formset.errors %}
+                    <div class="alert alert-danger mt-2">
+                        <div class="alert-icon">
+                            <svg class="icon alert-icon">
+                                <use href="{% static 'admin/svg/sprite.svg' %}#tabler-alert-circle"></use>
+                            </svg>
+                        </div>
+                        {% blocktranslate count counter=cl.formset.total_error_count %}Please correct the error below.{% plural %}Please
+                            correct
+                            the errors below.{% endblocktranslate %}
+                        {{ cl.formset.non_form_errors }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-table">
+            <form id="changelist-form" method="post"{% if cl.formset and cl.formset.is_multipart %}
+                  enctype="multipart/form-data"{% endif %} novalidate>{% csrf_token %}
+                {# Hidden inputs of formset#}
+                {% if cl.formset %}
+                    <div>{{ cl.formset.management_form }}</div>
+                {% endif %}
+
+                {% block result_list %}
+                    {# [actions.html] Display action buttons above the result list if enabled #}
+                    {% if action_form and actions_on_top and cl.show_admin_actions %}
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            {% admin_actions %}
+                            {% if cl.has_filters %}
+                                <a class="btn btn-outline-primary" data-bs-toggle="offcanvas" href="#offcanvasEnd" role="button"
+                                   aria-controls="offcanvasEnd">{% translate 'Filter' %} </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    {# [change_list_results.html] Render the main result list table. #}
+                    {% result_list cl %}
+
+                    {# [actions.html] Display action buttons below the result list if enabled #}
+                    {% if action_form and actions_on_bottom and cl.show_admin_actions %}
+                        <div class="card-footer d-flex justify-content-between align-items-center">
+                            {% admin_actions %}
+                        </div>
+                    {% endif %}
+                {% endblock %}
+                {% block pagination %}{% pagination cl %}{% endblock %}
+            </form>
+        </div>
+    </div>
+
+    {% block filters %}
+        {% if cl.has_filters %}
+            <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasEnd" aria-labelledby="offcanvasEndLabel">
+                <div class="offcanvas-header">
+                    <h2 class="offcanvas-title" id="offcanvasEndLabel">{% translate 'Filter' %}</h2>
+                    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body">
+                    <div class="card">
+                        <div class="card-body">
+                            {% if cl.is_facets_optional or cl.has_active_filters %}
+                                <div id="changelist-filter-extra-actions">
+                                    {% if cl.is_facets_optional %}
+                                        {% if cl.add_facets %}
+                                            <a href="{{ cl.remove_facet_link }}" class="btn btn-sm btn-outline-info">
+                                                <svg width="24" height="24" class="icon me-2">
+                                                    <use href="{% static 'admin/svg/sprite.svg' %}#tabler-eye-closed"></use>
+                                                </svg>
+                                                {% translate "Hide counts" %}
+                                            </a>
+                                        {% else %}
+                                            <a href="{{ cl.add_facet_link }}" class="btn btn-sm btn-outline-info">
+                                                <svg width="24" height="24" class="icon me-2">
+                                                    <use href="{% static 'admin/svg/sprite.svg' %}#tabler-eye"></use>
+                                                </svg>
+                                                {% translate "Show counts" %}
+                                            </a>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if cl.has_active_filters %}
+                                        <a href="{{ cl.clear_all_filters_qs }}" class="btn btn-sm btn-outline-info">
+                                            <svg width="24" height="24" class="icon me-2">
+                                                <use href="{% static 'admin/svg/sprite.svg' %}#tabler-copy-x"></use>
+                                            </svg>
+                                            {% translate "Clear all filters" %}
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                            {% for spec in cl.filter_specs %}{% admin_list_filter cl spec %}{% endfor %}
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-primary" type="button" data-bs-dismiss="offcanvas">
+                            {% translate 'Close' %} {% translate 'Filter' %}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endblock %}
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        // Persist offcanvas open/close state across page reloads using localStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            const offcanvas = document.getElementById('offcanvasEnd');
+            if (!offcanvas) return;
+
+            const isOpen = localStorage.getItem('offcanvasEndOpen') === 'true';
+            if (isOpen) {
+                offcanvas.classList.add('show');
+            }
+
+            offcanvas.addEventListener('shown.bs.offcanvas', () => {
+                localStorage.setItem('offcanvasEndOpen', 'true');
+            });
+
+            offcanvas.addEventListener('hidden.bs.offcanvas', () => {
+                localStorage.setItem('offcanvasEndOpen', 'false');
+            });
+        });
+    </script>
+{% endblock %}

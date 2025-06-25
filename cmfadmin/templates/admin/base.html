@@ -1,0 +1,42 @@
+{% load i18n static %}
+
+<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}{% get_current_language_bidi as LANGUAGE_BIDI %}
+<html lang="{{ LANGUAGE_CODE|default:"en-us" }}" dir="{{ LANGUAGE_BIDI|yesno:'rtl,ltr,auto' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+    {% block blockbots %}
+        <meta name="robots" content="NONE,NOARCHIVE">
+    {% endblock %}
+    <!-- TODO 处理好图标 -->
+    <link rel="icon" href="{% static 'favicon.ico' %}">
+
+    <title>{% block title %}{% endblock %}</title>
+    <!-- BEGIN GLOBAL MANDATORY STYLES -->
+    {% if LANGUAGE_BIDI %}
+        <link rel="stylesheet" href="{% static "admin/css/tabler.rtl.min.css" %}">
+    {% else %}
+        <link rel="stylesheet" href="{% static "admin/css/tabler.min.css" %}"/>
+    {% endif %}
+    <!-- END GLOBAL MANDATORY STYLES -->
+
+    <!-- BEGIN CUSTOM FONT -->
+    <link rel="stylesheet" href="{% static "admin/fonts/inter/inter.css" %}">
+    <!-- END CUSTOM FONT -->
+
+    <!-- BEGIN GLOBAL THEME SCRIPT -->
+    <script src="{% static 'admin/js/tabler-theme.min.js' %}"></script>
+    <!-- END GLOBAL THEME SCRIPT -->
+    {% block extrahead %}{% endblock %}
+    {% block extrastyle %}{% endblock %}
+</head>
+<body{% if is_popup %} class="popup"{% endif %} data-admin-utc-offset="{% now 'Z' %}">
+{% block body %}{% endblock %}
+<script src="{% static 'admin/js/tabler.min.js' %}" defer></script>
+<script src="{% static 'admin/js/admin.js' %}" defer></script>
+<script src="{% static 'admin/js/sidebar.js' %}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

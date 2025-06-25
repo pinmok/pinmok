@@ -1,0 +1,21 @@
+{% extends "admin/change_form.html" %}
+{% load static i18n %}
+
+{% block field_sets %}
+    {% for fieldset in adminform %}
+        {% for line in fieldset %}
+            {% for field in line %}
+                <div class="mb-3 row{% if field.field.name %} field-{{ field.field.name }}{% endif %}">
+                    <label class="form-label" for="{{ field.field.id_for_label }}">{{ field.field.label }}</label>
+                    {% if field.field.name == 'name' %}
+                        <input type="text" class="form-control" name="{{ field.field.name }}" id="{{ field.field.id_for_label }}"
+                               value="{{ field.field.value|default_if_none:"" }}" autocomplete="group-name">
+                    {% else %}
+                        {{ field.field }}
+                        <small class="form-hint">{{ field.field.help_text }}</small>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% endfor %}
+    {% endfor %}
+{% endblock %}

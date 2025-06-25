@@ -1,0 +1,107 @@
+{% extends "admin/base_site.html" %}
+{% load i18n l10n admin_urls static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {{ media }}
+    <script src="{% static 'admin/js/cancel.js' %}" async></script>
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} delete-confirmation
+    delete-selected-confirmation{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+    </li>
+    <li class="breadcrumb-item">
+        <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+    </li>
+    <li class="breadcrumb-item active"> {% translate 'Delete multiple objects' %} </li>
+{% endblock %}
+
+{% block messages %} {% endblock %}
+
+{% block content %}
+    {% if perms_lacking %}
+        <div class="alert alert-warning" role="alert">
+            <div class="alert-icon">
+                <svg class="icon alert-icon">
+                    <use href="{% static 'admin/svg/sprite.svg' %}#tabler-alert-triangle"></use>
+                </svg>
+            </div>
+            {% blocktranslate %}Deleting the selected {{ objects_name }} would result in deleting related objects, but your account doesn't
+                have permission to delete the following types of objects:{% endblocktranslate %}
+        </div>
+        <ul>{{ perms_lacking|unordered_list }}</ul>
+    {% elif protected %}
+        <div class="alert alert-warning" role="alert">
+            <div class="alert-icon">
+                <svg class="icon alert-icon">
+                    <use href="{% static 'admin/svg/sprite.svg' %}#tabler-alert-triangle"></use>
+                </svg>
+            </div>
+            {% blocktranslate %}Deleting the selected {{ objects_name }} would require deleting the following protected related
+                objects:{% endblocktranslate %}
+        </div>
+        <ul>{{ protected|unordered_list }}</ul>
+    {% else %}
+        <div class="alert alert-warning" role="alert">
+            <div class="alert-icon">
+                <svg class="icon alert-icon">
+                    <use href="{% static 'admin/svg/sprite.svg' %}#tabler-alert-triangle"></use>
+                </svg>
+            </div>
+            {% blocktranslate %}Are you sure you want to delete the selected {{ objects_name }}? All of the following objects and
+                their related items will be deleted:{% endblocktranslate %}
+        </div>
+        <div class="row row-cards">
+            <div class="col-12 col-md-6">
+                {% include "admin/includes/object_delete_summary.html" %}
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="card">
+                    <div class="card-status-top bg-primary"></div>
+                    <div class="card-header">
+                        <h3 class="card-title">{% translate "Objects" %}</h3>
+                    </div>
+                    {% for deletable_object in deletable_objects %}
+                        <ul class="list-group" id="crazy-deletable-obj">{{ deletable_object|unordered_list }}</ul>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="container-tight py-4">
+            <div class="empty">
+                <div class="empty-action">
+                    <form method="post">{% csrf_token %}
+                        {% for obj in queryset %}
+                            <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk|unlocalize }}">
+                        {% endfor %}
+                        <input type="hidden" name="action" value="delete_selected">
+                        <input type="hidden" name="post" value="yes">
+                        <button type="submit" class="btn btn-outline-primary me-5">{% translate 'Yes, I’m sure' %}</button>
+                        <a href="#" class="btn btn-outline-secondary cancel-link">{% translate "No, take me back" %}</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const container = document.getElementById("crazy-deletable-obj");
+            if (container) {
+                container.querySelectorAll("ul").forEach(ul => {
+                    ul.classList.add("list-group");
+                });
+                container.querySelectorAll("li").forEach(li => {
+                    li.classList.add("list-group-item");
+                });
+            }
+        });
+    </script>
+{% endblock %}

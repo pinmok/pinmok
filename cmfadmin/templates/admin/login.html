@@ -1,0 +1,103 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{% if form.errors %}{% translate "Error:" %} {% endif %}{{ block.super }}{% endblock %}
+{% block sider_bar %}{% endblock %}
+{% block header %}{% endblock %}
+
+{% block body %}
+    <div class="page page-center">
+        <div class="container container-normal py-4">
+            <div class="row align-items-center g-4">
+                <div class="col-lg">
+                    <div class="container-tight">
+                        <div class="text-center mb-4">
+                            <!-- TODO 把内容改活 -->
+                            <!-- BEGIN NAVBAR LOGO -->
+                            <div aria-label="Tabler" class="navbar-brand navbar-brand-autodark">
+                                <svg class="navbar-brand-image me-2" width="32" height="32">
+                                    <use href="{% static 'admin/svg/sprite.svg' %}#crazy-logo"></use>
+                                </svg>
+                                {{ site_header }}
+                            </div>
+                            <!-- END NAVBAR LOGO -->
+                        </div>
+                        <div class="card card-md">
+                            {% if form.non_field_errors %}
+                                <div class="card-header">
+                                    {% for error in form.non_field_errors %}
+                                        <p class="alert alert-danger">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.errors and not form.non_field_errors %}
+                                <div class="card-header">
+                                    <p class="alert alert-danger">
+                                        {% blocktranslate count counter=form.errors.items|length %}
+                                            Please correct the error below.
+                                        {% plural %}
+                                            Please correct the errors below.
+                                        {% endblocktranslate %}
+                                    </p>
+                                </div>
+                            {% endif %}
+                            {% if user.is_authenticated %}
+                                <div class="card-header">
+                                    <p class="alert alert-danger">
+                                        {% blocktranslate trimmed %}
+                                            You are authenticated as {{ username }}, but are not authorized to
+                                            access this page. Would you like to login to a different account?
+                                        {% endblocktranslate %}
+                                    </p>
+                                </div>
+                            {% endif %}
+                            <div class="card-body">
+                                <form action="{{ app_path }}" method="post" autocomplete="off" novalidate>
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        {{ form.username.label_tag }} {{ form.username }}
+                                    </div>
+                                    <div class="mb-2">
+                                        {{ form.password.label_tag }} {{ form.password }}
+                                        <input type="hidden" name="next" value="{{ next }}">
+                                    </div>
+                                    {% url 'admin_password_reset' as password_reset_url %}
+                                    {% if password_reset_url %}
+                                        <div class="mb-3">
+                                            <a href="{{ password_reset_url }}" class="form-label text-end">
+                                                {% translate 'Forgotten your login credentials?' %}
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-footer">
+                                        <button type="submit" class="btn btn-primary w-100">{% translate 'Log in' %}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg d-none d-lg-block">
+                    <svg class="img d-block mx-auto" xmlns="http://www.w3.org/2000/svg" height="400" fill="none"
+                         viewBox="0 0 800 600">
+                        <use href="{% static 'admin/svg/boy_with_key.svg' %}#boy-with-key"></use>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        // Add Bootstrap style to form control
+        window.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('label').forEach(label => {
+                label.classList.add('form-label');
+            });
+            document.querySelectorAll('input').forEach(input => {
+                input.classList.add('form-control');
+            });
+        });
+    </script>
+{% endblock %}

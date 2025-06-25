@@ -1,0 +1,137 @@
+{% load i18n static %}
+
+<aside class="navbar navbar-vertical navbar-expand-lg">
+    <div class="container-fluid">
+        <!-- BEGIN NAVBAR TOGGLER -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu"
+                aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <!-- END NAVBAR TOGGLER -->
+        <!-- BEGIN NAVBAR LOGO -->
+        <div class="navbar-brand navbar-brand-autodark" style="font-size: 1rem">
+            <a href="{% url 'admin:index' %}" class="d-flex align-items-center text-decoration-none" aria-label="Tabler">
+                <!-- TODO: 修改后台LOGO为动态 -->
+                <svg width="28" height="28">
+                    <use href="{% static 'admin/svg/crazy_logo.svg' %}"></use>
+                </svg>
+                <span class="ms-2 text-body">{% block branding %}{% translate site_header %}{% endblock %}</span>
+            </a>
+        </div>
+        <!-- END NAVBAR LOGO -->
+
+        <div class="collapse navbar-collapse" id="sidebar-menu">
+            <!-- BEGIN ICON GROUP  -->
+            <div class="d-flex justify-content-center gap-3">
+                <!-- Jump to home -->
+                {% if site_url %}
+                    <a href="{{ site_url }}" title="{% translate 'View site' %}" class="text-primary" target="_blank"
+                       data-bs-toggle="tooltip" data-bs-placement="bottom">
+                        <svg class="icon">
+                            <use href="{% static 'admin/svg/sprite.svg' %}#tabler-home"></use>
+                        </svg>
+                    </a>
+                {% endif %}
+
+                <!-- Synchronize menu -->
+                {% if user.is_superuser %}
+                    <a href="{% url 'admin:index' %}" title="{% translate 'Synchronize menu' %}"
+                       class="text-warning" data-bs-toggle="tooltip" data-bs-placement="bottom">
+                        <svg class="icon">
+                            <use href="{% static 'admin/svg/sprite.svg' %}#tabler-menu"></use>
+                        </svg>
+                    </a>
+                {% endif %}
+            </div>
+            <!-- END ICON GROUP  -->
+
+            <!-- BEGIN NAVBAR MENU -->
+            <!-- TODO 考虑是否使用菜单搜索，因为Django带了。 -->
+            {% if admin_menu %}
+                <ul class="navbar-nav pt-lg-1" id="sidebar-menu">
+                    <!-- BEGIN MENU ITEM -->
+                    {% for menu in admin_menu %}
+                        <!-- First level -->
+                        <li class="nav-item{% if menu.children %} dropend direction-switch{% endif %}">
+                            <!-- Remove the arrow indicator when there is no submenu -->
+                            <a class="nav-link{% if menu.children %} dropdown-toggle{% endif %}"
+                               {% if not menu.children and menu.url %}href="{{ menu.url }}"{% endif %}
+                               {% if menu.children %}data-bs-toggle="dropdown"
+                               data-bs-auto-close="false" role="button" aria-expanded="false"{% endif %}>
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                {% if menu.icon %}
+                                    <svg class="icon">
+                                        <use href="{% static 'admin/svg/sprite.svg' %}#{{ menu.icon }}"></use>
+                                    </svg>
+                                {% endif %}
+                                </span>
+                                <span class="nav-link-title"> {{ menu.title }} </span>
+                            </a>
+                            {% if menu.children %}
+                                <!-- Second level -->
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-menu-columns">
+                                        <div class="dropdown-menu-column">
+                                            {% for child in menu.children %}
+                                                <!-- Since the format with submenus is completely different, So handle them separately. -->
+                                                {% if child.children %}
+                                                    <div class="dropend">
+                                                        <a class="dropdown-item dropdown-toggle"
+                                                           {% if child.url %}href="{{ child.url }}"{% endif %}
+                                                           data-bs-toggle="dropdown" data-bs-auto-close="false" role="button"
+                                                           aria-expanded="false">
+                                                            {% if child.icon %}
+                                                                <svg class="icon">
+                                                                    <use href="{% static 'admin/svg/sprite.svg' %}#{{ child.icon }}"></use>
+                                                                </svg>
+                                                            {% else %}
+                                                                <span class="w-1">&#8226;</span>
+                                                            {% endif %}
+                                                            {{ child.title }}
+                                                        </a>
+                                                        <!-- Third level -->
+                                                        <div class="dropdown-menu">
+                                                            {% for cc in child.children %}
+                                                                {% if cc.url %}
+                                                                    <a href="{{ cc.url }}" class="dropdown-item">{{ cc.title }}</a>
+                                                                {% else %}
+                                                                    <span class="dropdown-item disabled">{{ cc.title }}</span>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </div>
+                                                        <!-- end third level -->
+                                                    </div>
+                                                {% elif child.url %}
+                                                    <a href="{{ child.url }}" class="dropdown-item">
+                                                        {% if child.icon %}
+                                                            <svg class="icon">
+                                                                <use href="{% static 'admin/svg/sprite.svg' %}#{{ child.icon }}"></use>
+                                                            </svg>
+                                                        {% else %}
+                                                            <span class="w-1">&#8226;</span>
+                                                        {% endif %}
+                                                        {{ child.title }}
+                                                    </a>
+                                                {% else %}
+                                                    <span class="dropdown-item disabled">
+                                                        <span class="w-1">&#8226;</span>
+                                                        {{ child.title }}
+                                                    </span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- end second level -->
+                            {% endif %}
+                        </li>
+                        <!-- end first level -->
+                    {% endfor %}
+                    <!-- BEGIN MENU ITEM -->
+                </ul>
+            {% endif %}
+            <!-- END NAVBAR MENU -->
+        </div>
+    </div>
+</aside>
+

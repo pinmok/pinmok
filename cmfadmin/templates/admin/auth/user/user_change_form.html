@@ -1,0 +1,155 @@
+{% extends "admin/change_form.html" %}
+{% load static i18n %}
+
+{% block field_sets %}
+    <div class="card">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs nav-fill" data-bs-toggle="tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a href="#tabs-user" class="nav-link active" data-bs-toggle="tab" aria-selected="true" role="tab">
+                        <svg width="24" height="24" class="icon me-2 icon-2">
+                            <use href="{% static 'admin/svg/sprite.svg' %}#tabler-user"></use>
+                        </svg>
+                        {% translate 'Personal info' %}
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a href="#tabs-groups" class="nav-link" data-bs-toggle="tab" aria-selected="false" role="tab" tabindex="-1">
+                        <svg width="24" height="24" viewBox="0 0 24 24" class="icon me-2 icon-2">
+                            <use href="{% static 'admin/svg/sprite.svg' %}#tabler-users-group"></use>
+                        </svg>
+                        {% translate 'Groups' %}
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a href="#tabs-permission" class="nav-link" data-bs-toggle="tab" aria-selected="false" role="tab" tabindex="-1">
+                        <svg width="24" height="24" viewBox="0 0 24 24" class="icon me-2 icon-2">
+                            <use href="{% static 'admin/svg/sprite.svg' %}#tabler-shield"></use>
+                        </svg>
+                        {% translate 'Permissions' %}
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content">
+                <div class="tab-pane active show" id="tabs-user" role="tabpanel">
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label required" for="{{ cmf.username.name }}"> {{ cmf.username.label }} </label>
+                                <input type="text" name="{{ cmf.username.name }}" id="{{ cmf.username.name }}" class="form-control"
+                                       value="{{ cmf.username.value }}" required>
+                                <small class="form-hint">{{ cmf.username.help_text }}</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label"> {{ cmf.password.label }} </label>
+                                <span class="me-3">{{ cmf.password.value|truncatechars:32 }}</span>
+                                <a href="../password" class="btn btn-primary btn-sm">
+                                    {% if cmf.password.value %}
+                                        {% translate 'Reset password' %}
+                                    {% else %}
+                                        {% translate 'Set password' %}
+                                    {% endif %}
+                                </a>
+                                <small class="form-hint">{{ cmf.username.help_text }}</small>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <label class="form-label">{{ cmf.last_login.label }}</label>
+                                    <input type="hidden" name="{{ cmf.last_login.name }}_0" readonly
+                                           value="{{ original.last_login|date:'Y-m-d' }}">
+                                    <input type="hidden" name="{{ cmf.last_login.name }}_1" readonly
+                                           value="{{ original.last_login|date:'H:i:s' }}">
+                                    <h3>{{ cmf.last_login.value }}</h3>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">{{ cmf.date_joined.label }}</label>
+                                    <input type="hidden" name="{{ cmf.date_joined.name }}_0" readonly
+                                           value="{{ original.date_joined|date:'Y-m-d' }}">
+                                    <input type="hidden" name="{{ cmf.date_joined.name }}_1" readonly
+                                           value="{{ original.date_joined|date:'H:i:s' }}">
+                                    <h3>{{ cmf.date_joined.value }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label" for="{{ cmf.first_name.name }}"> {{ cmf.first_name.label }} </label>
+                                <input type="text" name="{{ cmf.first_name.name }}" id="{{ cmf.first_name.name }}" class="form-control"
+                                       value="{{ cmf.first_name.value }}">
+                                <small class="form-hint">{{ cmf.first_name.help_text }}</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="{{ cmf.last_name.name }}"> {{ cmf.last_name.label }} </label>
+                                <input type="text" name="{{ cmf.last_name.name }}" id="{{ cmf.last_name.name }}" class="form-control"
+                                       value="{{ cmf.last_name.value }}">
+                                <small class="form-hint">{{ cmf.last_name.help_text }}</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="{{ cmf.email.name }}"> {{ cmf.email.label }} </label>
+                                <input type="email" name="{{ cmf.email.name }}" id="{{ cmf.email.name }}" class="form-control"
+                                       value="{{ cmf.email.value }}">
+                                <small class="form-hint">{{ cmf.email.help_text }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="tabs-groups" role="tabpanel">
+                    <div class="row">
+                        <select name="groups" id="id_groups_to" class="selectfilter" multiple data-is-stacked="0"
+                                data-field-name="groups" aria-labelledby="id_groups_to_title">
+                            {% for g in cmf.groups.queryset %}
+                                <option value="{{ g.id }}" {% if g.id in cmf.groups.value %} selected {% endif %}>
+                                    {{ g.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <small class="form-hint">{{ cmf.groups.help_text }}</small>
+                </div>
+                <div class="tab-pane" id="tabs-permission" role="tabpanel">
+                    <div class="row mt-3">
+                        <div class="col-4">
+                            <label class="form-check">
+                                <input type="checkbox" name="{{ cmf.is_active.name }}" class="form-check-input"
+                                       {% if cmf.is_active.value %}checked{% endif %}>
+                                <span class="form-label">{{ cmf.is_active.label }}</span>
+                            </label>
+                            <small class="form-hint">{{ cmf.is_active.help_text }}</small>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-check">
+                                <input type="checkbox" name="{{ cmf.is_staff.name }}" class="form-check-input"
+                                       {% if cmf.is_staff.value %}checked{% endif %}>
+                                <span class="form-label">{{ cmf.is_staff.label }}</span>
+                            </label>
+                            <small class="form-hint">{{ cmf.is_staff.help_text }}</small>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-check">
+                                <input type="checkbox" name="{{ cmf.is_superuser.name }}" class="form-check-input"
+                                       {% if cmf.is_staff.value %}checked{% endif %}>
+                                <span class="form-label">{{ cmf.is_superuser.label }}</span>
+                            </label>
+                            <small class="form-hint">{{ cmf.is_superuser.help_text }}</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <select name="user_permissions" id="id_user_permissions" class="selectfilter" multiple
+                                data-field-name="user permissions" data-is-stacked="0"
+                                aria-describedby="id_user_permissions_helptext">
+                            {% for p in cmf.user_permissions.queryset %}
+                                <option value="{{ p.id }}" {% if p.id in cmf.user_permissions.value %} selected {% endif %}>
+                                    {{ p.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <small class="form-hint">{{ cmf.user_permissions.help_text }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

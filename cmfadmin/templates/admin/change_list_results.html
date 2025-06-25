@@ -1,0 +1,76 @@
+{% load i18n static %}
+{% if result_hidden_fields %}
+    <div class="hiddenfields">{# DIV for HTML validation #}
+        {% for item in result_hidden_fields %}{{ item }}{% endfor %}
+    </div>
+{% endif %}
+{% if results %}
+    <style>
+        .table-sort {
+            margin: 0;
+            padding: 0;
+        }
+
+        .sort-remove {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        thead th:hover .sort-remove {
+            opacity: 1;
+        }
+    </style>
+    <div id="advanced-table">
+        <div class="table-responsive">
+            <table id="result_list" class="table table-vcenter table-selectable">
+                <thead>
+                <tr>
+                    {% for header in result_headers %}
+                        <th scope="col"{{ header.class_attrib }}>
+                            <div class="d-flex justify-content-between{% if header.sortable %} table-sort{% if header.sort_priority > 0 %} {{ header.ascending|yesno:'asc,desc' }}{% endif %}{% endif %}">
+                                {% if header.sortable %}
+                                    <a href="{{ header.url_primary }}"
+                                       class="text-body text-decoration-none">{{ header.text|capfirst }}</a>
+                                {% else %}
+                                    <span>{{ header.text|capfirst }}</span>
+                                {% endif %}
+                                {% if header.sortable and header.sort_priority > 0 %}
+                                    <a class="sort-remove" href="{{ header.url_remove }}" title="{% translate "Remove from sorting" %}">
+                                        <svg width="14" height="14">
+                                            <use href="{% static 'admin/svg/sprite.svg' %}#tabler-filter-x"></use>
+                                        </svg>
+                                    </a>
+                                    {% if num_sorted_fields > 1 %}
+                                        <span title="{% blocktranslate with priority_number=header.sort_priority %}Sorting priority: {{ priority_number }}{% endblocktranslate %}">{{ header.sort_priority }}</span>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </th>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody class="table-tbody">
+                {% for result in results %}
+                    {% if result.form and result.form.non_field_errors %}
+                        <tr>
+                            <td colspan="{{ result|length }}">{{ result.form.non_field_errors }}</td>
+                        </tr>
+                    {% endif %}
+                    <tr>{% for item in result %}{{ item }}{% endfor %}</tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggle = document.getElementById('action-toggle');
+        if (toggle) {
+            toggle.classList.add('form-check-input', 'm-0', 'align-middle', 'table-selectable-check');
+        }
+        document.querySelectorAll('input.action-select').forEach(function (el) {
+            el.classList.add('form-check-input', 'm-0', 'align-middle', 'table-selectable-check');
+        });
+    });
+</script>

@@ -1,0 +1,42 @@
+{% load admin_list %}
+{% load static i18n %}
+<div class="card-footer">
+    <div>
+        {% if show_all_url %}<a href="{{ show_all_url }}" class="showall">{% translate 'Show all' %}</a>{% endif %}
+        {% if cl.formset and cl.result_count %}<input type="submit" name="_save" class="default" value="{% translate 'Save' %}">{% endif %}
+    </div>
+    <div class="row g-2 justify-content-center justify-content-between">
+        <div class="col-auto d-flex align-items-center">
+            <p class="m-0 text-secondary">
+                <strong>{{ cl.result_count }}</strong>
+                <span>{% if cl.result_count == 1 %}{{ cl.opts.verbose_name }}{% else %}{{ cl.opts.verbose_name_plural }}{% endif %}</span>
+            </p>
+        </div>
+        {% if pagination_required %}
+            <div class="col-auto">
+                <ul class="pagination m-0 ms-auto">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                            <!-- Download SVG icon from http://tabler.io/icons/icon/chevron-left -->
+                            <svg width="24" height="24" class="icon">
+                                <use href="{% static 'admin/svg/sprite.svg' %}#tabler-chevron-left"></use>
+                            </svg>
+                        </a>
+                    </li>
+                    {% for i in page_range %}
+                        <li class="page-item active">
+                            <a class="page-link" href="#">{% paginator_number cl i %}</a>
+                        </li>
+                    {% endfor %}
+                    <li class="page-item">
+                        <a class="page-link" href="#">
+                            <svg width="24" height="24" class="icon">
+                                <use href="{% static 'admin/svg/sprite.svg' %}#tabler-chevron-right"></use>
+                            </svg>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+</div>
