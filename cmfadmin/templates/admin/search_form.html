@@ -1,4 +1,4 @@
-{% load i18n static %}
+{% load i18n static icons %}
 {% if cl.search_fields %}
     <form id="changelist-search" method="get" role="search">
         {% if cl.search_help_text %}
@@ -9,11 +9,7 @@
                 <div class="input-group">
                     <input name="{{ search_var }}" value="{{ cl.query }}" id="searchbar" type="text" class="form-control"
                             {% if cl.search_help_text %} aria-describedby="searchbar_helptext"{% endif %}>
-                    <span class="input-icon-addon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="icon icon-2">
-                        <use href="{% static 'admin/svg/sprite.svg' %}#tabler-search"></use>
-                    </svg>
-                </span>
+                    <span class="input-icon-addon">{% sprite 'tabler-search' 'icon' %}</span>
                     <button type="submit" class="btn">{% translate 'Search' %}</button>
                 </div>
             </div>

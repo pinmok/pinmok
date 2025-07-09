@@ -10,8 +10,298 @@ Author:
 Created:
   2025-05-30
 """
+import json
+import os
+
+from django.conf import settings
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.staticfiles import finders
+from django.core.exceptions import SuspiciousFileOperation
+from django.http import JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 from django.views import View
 
+from cmfadmin.constants import CUSTOM_SPRITE_FILE
+from cmfadmin.enums import ConfigCategory, MenuSyncMode, TargetChoices
+from cmfadmin.forms import NavItemForm
+from cmfadmin.libs import SpriteManager
+from cmfadmin.libs.sprite import SpriteError
+from cmfadmin.menus import AdminMenuManager
+from cmfadmin.models import Config, Nav, NavItem
+from cmfadmin.service.navigation import NavService
+from cmfadmin.utils.helper import get_static_dir
 
-class SiteInfoView(View):
-    pass
+
+class ConfigView(View):
+    category = None
+    template_name = None
+    extra_context = None
+
+    @classmethod
+    def _load_category(cls, category):
+        configs = Config.objects.filter(category=category)
+        return {item.key: item.value for item in configs}
+
+    @classmethod
+    def _save_category(cls, category, data):
+        for key, value in data.items():
+            if key == 'csrfmiddlewaretoken':
+                continue
+            obj, created = Config.objects.get_or_create(category=category, key=key)
+            obj.value = value
+            obj.save()
+
+    def get(self, request):
+        config_data = self._load_category(self.category)
+        context = {
+            'config': config_data,
+        }
+        if self.extra_context:
+            context.update(self.extra_context)
+
+        return render(request, self.template_name, context)
+
+    def post(self, request):
+        data = request.POST.dict()
+        self._save_category(self.category, data)
+        return redirect(request.path)
+
+
+@staff_member_required
+def sync_menu(request):
+    result = AdminMenuManager.synchronize_menu(MenuSyncMode.SYNC_ALL, request.user)
+    return render(request, 'config/sync_menu.html', {'result': result})
+
+
+class SiteInfoView(ConfigView):
+    category = ConfigCategory.SITE
+    template_name = 'config/site_info.html'
+    extra_context = {
+        'title': ConfigCategory.SITE.label,
+    }
+
+
+class EmailConfigView(ConfigView):
+    category = ConfigCategory.EMAIL
+    template_name = 'config/email_settings.html'
+    extra_context = {
+        'title': ConfigCategory.EMAIL.label,
+    }
+
+
+def nav_items_edit(request, pk):
+    nav = Nav.objects.get(pk=pk)
+    nav_items = NavService.get_items(nav)
+
+    context = {
+        'title': ConfigCategory.NAV.label,
+        'nav': nav,
+        'nav_items': nav_items,
+    }
+    return render(request, 'config/navigation.html', context)
+
+
+class NavItemView(View):
+    template_name = 'config/navitem_form.html'
+
+    def get(self, request, *args, **kwargs):
+        nav_id = kwargs.get('nav_id')
+        nav_item_id = kwargs.get('nav_item_id', 0)
+
+        nav = get_object_or_404(Nav, id=nav_id)
+        nav_items = NavService.get_items(nav)
+
+        if nav_item_id:
+            nav_item = get_object_or_404(NavItem, id=nav_item_id, nav=nav)
+            action = _('Edit')
+        else:
+            nav_item = NavItem(nav=nav)
+            action = _('Add')
+
+        context = {
+            'title': f"{action} {_('Nav Item')}",
+            'nav_id': nav_id,
+            'nav_item_id': nav_item_id,
+            'nav_item': nav_item,
+            'nav_items': nav_items,
+            'target': TargetChoices
+        }
+
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        nav_id = kwargs['nav_id']
+        nav_item_id = kwargs.get('nav_item_id')
+
+        # Get related objects (404 if not found)
+        nav = get_object_or_404(Nav, id=nav_id)
+        nav_item = get_object_or_404(NavItem, id=nav_item_id, nav=nav) if nav_item_id else None
+
+        # Prepare POST data with enforced nav relationship
+        post_data = request.POST.copy()
+        post_data['nav'] = nav.id
+
+        # Initialize form with bound data
+        form = NavItemForm(post_data, nav_id=nav.id, instance=nav_item)
+        if form.is_valid():
+            form.save()
+            if 'add_another' in request.POST:
+                redirect_url = request.path
+            else:
+                redirect_url = reverse('admin:nav_items_edit', kwargs={'pk': nav_id})
+            return redirect(redirect_url)
+
+        return render(request, self.template_name, {
+            'nav': nav,
+            'nav_item': nav_item,
+            'nav_id': nav_id,
+            'nav_item_id': nav_item_id,
+            'form': form,
+            'target': TargetChoices
+        })
+
+    @staticmethod
+    def delete(request, *args, **kwargs):
+        """
+        Delete a NavItem if it has no children.
+        Returns 400 error if the node has child nodes to prevent accidental cascading deletes.
+        """
+        nav_item_id = kwargs.get('nav_item_id')
+        try:
+            nav_item = NavItem.objects.get(pk=nav_item_id)
+        except NavItem.DoesNotExist:
+            # Node not found, return 404 with translated error message
+            return JsonResponse({'error': _('Node does not exist.')}, status=404)
+
+        # Check if the node has children (replace 'children' with your related_name if different)
+        if nav_item.children.exists():
+            # Refuse deletion if children exist, with translated message
+            return JsonResponse({
+                'error': _('This node has child items and cannot be deleted. Please delete child items first.')
+            }, status=400)
+
+        # No children, safe to delete
+        nav_item.delete()
+        return JsonResponse({'message': _('Deleted successfully.')}, status=200)
+
+
+class SpriteManagerView(View):
+    template_name = 'config/sprite_manager.html'
+    add_template_name = 'config/sprite_add.html'
+
+    @staticmethod
+    def _get_custom_sprite_file():
+        """
+        Get validated custom sprite file path with security checks
+        """
+        custom_sprite_path = getattr(settings, 'CUSTOM_SPRITE_FILE', CUSTOM_SPRITE_FILE)
+
+        # Security check 1: Prevent path traversal
+        if '..' in os.path.normpath(custom_sprite_path).split(os.sep):
+            raise SuspiciousFileOperation("Relative paths are not allowed")
+        if os.path.isabs(custom_sprite_path):
+            raise SuspiciousFileOperation("Absolute paths are not allowed")
+
+        # Security check 2: Ensure final path is within static dir
+        static_dir = get_static_dir()
+        full_path = os.path.abspath(os.path.join(static_dir, custom_sprite_path))
+        if not os.path.commonpath([static_dir]) == os.path.commonpath([static_dir, full_path]):
+            raise SuspiciousFileOperation(
+                f"Invalid path traversal attempt: {full_path} not in {static_dir}"
+            )
+
+        return full_path
+
+    def get(self, request, *args, **kwargs):
+        action = request.GET.get('action')
+        symbol_id = request.GET.get('symbol_id')
+        if action == 'add':
+            return render(request, self.add_template_name, {'title': 'Add Sprite Icon'})
+        elif action == 'edit':
+            context = {
+                'title': 'Edit Sprite Icon',
+                'symbol_id': symbol_id,
+            }
+            return render(request, self.add_template_name, context)
+
+        # Find the path to the system sprite file
+        sprite_file = finders.find('admin/svg/sprite.svg')
+        # Get the custom sprite file path if it's configured
+        custom_sprite_file = self._get_custom_sprite_file()
+
+        icons, custom_icons = [], []
+
+        # Load the built-in system sprite file and retrieve its symbol list
+        try:
+            manager = SpriteManager(sprite_file)
+            icons = manager.list()
+        except SpriteError:
+            pass
+
+        # If a custom sprite file is configured and exists, load its symbols as well
+        if custom_sprite_file:
+            try:
+                custom_manager = SpriteManager(custom_sprite_file)
+                custom_icons = custom_manager.list()
+            except SpriteError:
+                pass
+
+        context = {
+            'title': 'Sprite Manager',
+            'icons': icons,
+            'custom_icons': custom_icons,
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        symbol_id = request.POST.get('symbol_id', '').strip()
+        svg_code = request.POST.get('svg_code', '').strip()
+
+        # Required fields validation
+        if not symbol_id or not svg_code:
+            context = {
+                'symbol_id': symbol_id,
+                'svg_code': svg_code,
+                'message': _('Symbol ID and SVG code are required.')
+            }
+            return render(request, self.add_template_name, context)
+
+        try:
+            manager = SpriteManager(self._get_custom_sprite_file())
+
+            # Add or update the icon in the sprite
+            if manager.has(symbol_id):
+                manager.update(symbol_id, svg_code)
+            else:
+                manager.add(symbol_id, svg_code)
+
+            # On success → redirect to the sprite manager page
+            return redirect(reverse('admin:icons_manage'))
+
+        except Exception as e:
+            # On error → stay on the current add page with error message
+            context = {
+                'symbol_id': symbol_id,
+                'svg_code': svg_code,
+                'message': _("Error: %(error)s") % {'error': e}
+            }
+            return render(request, self.add_template_name, context)
+
+    def delete(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        symbol_id = data.get('symbol_id', '')
+
+        if not symbol_id:
+            return JsonResponse({'error': _('Symbol ID is required.')}, status=400)
+
+        try:
+            manager = SpriteManager(self._get_custom_sprite_file())
+            if manager.has(symbol_id):
+                manager.remove(symbol_id)
+                return JsonResponse({'message': _('Deleted successfully.')}, status=200)
+            else:
+                return JsonResponse({'message': _('Symbol ID not found.')}, status=404)
+        except Exception as e:
+            return JsonResponse({'message': _('Error: %(error)s') % {'error': e}}, status=500)

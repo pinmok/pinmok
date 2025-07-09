@@ -10,11 +10,18 @@ Author:
 Created:
   2025-06-15
 """
-from .menus import AdminMenuManager
+from cmfadmin import site
+from cmfadmin.menus import AdminMenuManager
+from cmfadmin.service.breadcrumb import BreadCrumb
 
 
-def site_info(request):
-    admin_menu = AdminMenuManager.get_admin_menu(request)
+def admin_context(request):
+    menu_tree = AdminMenuManager.get_admin_menu(request)
+    breadcrumbs = BreadCrumb.get_admin_breadcrumb(request)
+
     return {
-        'admin_menu': admin_menu
+        'site_header': site.site_header,
+        'site_title': site.site_title,
+        'admin_menu': menu_tree,
+        'admin_breadcrumbs': breadcrumbs
     }

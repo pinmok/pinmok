@@ -1,0 +1,18 @@
+{% extends 'admin/base_site.html' %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item active">{{ title }}</li>
+{% endblock %}
+
+{% block page_header %}
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <!-- Page pre-title -->
+            <div class="page-pretitle">{{ title }}</div>
+            <h2 class="page-title">{% block page_title %}{% endblock %}</h2>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+            {% block page_right %}{% endblock %}
+        </div>
+    </div>
+{% endblock %}

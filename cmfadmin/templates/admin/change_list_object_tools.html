@@ -1,12 +1,10 @@
-{% load static i18n admin_urls %}
+{% load static i18n admin_urls icons %}
 
 {% block object-tools-items %}
     {% if has_add_permission %}
         {% url cl.opts|admin_urlname:'add' as add_url %}
         <a href="{% add_preserved_filters add_url is_popup to_field %}" class="btn btn-secondary">
-            <svg class="icon icon-sm">
-                <use href="{% static 'admin/svg/sprite.svg' %}#tabler-plus"></use>
-            </svg>
+            {% sprite 'tabler-plus' 'icon icon-sm' %}
             {% blocktranslate with cl.opts.verbose_name as name %}Add {{ name }}{% endblocktranslate %}
         </a>
     {% endif %}

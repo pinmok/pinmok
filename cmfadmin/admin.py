@@ -13,8 +13,12 @@ Created:
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import User, Group
+from django.urls import reverse
+from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
 
-from . import site, CMFModelAdmin
+from cmfadmin import site, CMFModelAdmin
+from cmfadmin.models import ExternalLink, Nav
 
 
 class CmfUserAdmin(CMFModelAdmin, UserAdmin):
@@ -67,6 +71,32 @@ class CmfUserAdmin(CMFModelAdmin, UserAdmin):
 
 class CmfGroupAdmin(CMFModelAdmin, GroupAdmin):
     add_form_template = "admin/auth/user/group_add.html"
+    change_form_template = "admin/auth/user/group_add.html"
+
+
+class ExternalLinksAdmin(CMFModelAdmin):
+    list_display = ('sort_order', 'title', 'url_link', 'status')
+    list_display_links = ('title',)
+    list_editable = ('sort_order',)
+
+    def url_link(self, obj):
+        """Display the URL as a link that opens in a new tab in the list view"""
+        if obj.url:
+            return format_html('<a href="{}" target="_blank">{}</a>', obj.url, obj.url)
+        return "-"
+
+    url_link.short_description = 'url'
+    url_link.admin_order_field = 'url'
+
+
+class NavAdmin(CMFModelAdmin):
+    list_display = ('title', 'slug', 'is_active', 'created_at', 'edit_nav')
+
+    def edit_nav(self, obj):
+        url = reverse('admin:nav_items_edit', args=[obj.pk])
+        return format_html('<a href="{}">{}</a>', url, _('Edit Menu'))
+
+    edit_nav.short_description = _('Action')
 
 
 # 取消默认 admin 注册
@@ -76,3 +106,5 @@ admin.site.unregister(Group)
 # 用你的自定义 admin 类注册
 site.register(User, CmfUserAdmin)
 site.register(Group, CmfGroupAdmin)
+site.register(ExternalLink, ExternalLinksAdmin)
+site.register(Nav, NavAdmin)

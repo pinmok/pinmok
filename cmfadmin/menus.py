@@ -15,19 +15,19 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.http import HttpRequest
 
-from . import constants
-from . import site
-from .enums import MenuPermissions
-from .service.menu import MenuSynchronizer, AdminMenu
+from cmfadmin import constants
+from cmfadmin import site
+from cmfadmin.enums import MenuPermissions, ConfigCategory
+from cmfadmin.service.menu import MenuSynchronizer, AdminMenu, MenuItem
 
 ADMIN_MENU = [
     {'title': 'Site Settings', 'icon': 'tabler-setting', 'sort_order': 0, 'children': [
-        {'title': 'Site Information', 'url': '', 'sort_order': 100},
-        {'title': 'Navigation Management', 'url': '', 'sort_order': 200},
-        {'title': 'External Links', 'url': '', 'sort_order': 300},
-        {'title': 'Template Management', 'url': '', 'sort_order': 400},
-        {'title': 'Email Settings', 'url': '', 'sort_order': 500},
-        {'title': 'System Settings', 'url': '', 'sort_order': 600},
+        {'title': ConfigCategory.SITE.label, 'url': '/admin/cmfadmin/site/', 'sort_order': 100},
+        # {'title': ConfigCategory.NAV.label, 'url': '/admin/cmfadmin/nav', 'sort_order': 200},
+        {'title': ConfigCategory.TEMPLATE.label, 'url': '/admin/cmfadmin/template', 'sort_order': 300},
+        {'title': ConfigCategory.EMAIL.label, 'url': '/admin/cmfadmin/email', 'sort_order': 400},
+        {'title': ConfigCategory.SYSTEM.label, 'url': '/admin/cmfadmin/system', 'sort_order': 500},
+        {'title': ConfigCategory.ICONS.label, 'url': '/admin/cmfadmin/icons', 'sort_order': 600},
     ]},
 ]
 
@@ -48,7 +48,7 @@ class AdminMenuManager:
         return [MenuPermissions.ALL_PERMISSIONS]
 
     @classmethod
-    def synchronize_menu(cls, app_label: str, user: User):
+    def synchronize_menu(cls, app_label: str, user: User) -> dict:
         """
         Synchronize backend menu data with the database.
 
@@ -63,15 +63,14 @@ class AdminMenuManager:
             PermissionError: If the user is not a superuser.
         """
 
-        # TODO 判断用户权限
         if not user.is_superuser:
             raise PermissionError('Only superusers are allowed to perform this action.')
 
-        MenuSynchronizer.synchronize_menu(app_label=app_label)
         cls._clear_admin_menu_cache()
+        return MenuSynchronizer.synchronize_menu(app_label=app_label)
 
     @classmethod
-    def get_admin_menu(cls, request: HttpRequest) -> list[dict]:
+    def get_admin_menu(cls, request: HttpRequest) -> list[MenuItem]:
         """
         Retrieve the final backend admin menu for the given user.
 
@@ -80,18 +79,14 @@ class AdminMenuManager:
         as a list of menu dictionaries suitable for template rendering.
 
         Args:
-            request(HttpRequest): The current HTTP request.:
+            request(HttpRequest): The current HTTP request.
 
         Returns:
             list[dict]: The final filtered admin menu for the user.
         """
 
         app_list = site.get_app_list(request)
-        menu_tree = cache.get_or_set(
-            constants.ADMIN_ALL_MENU,
-            lambda: AdminMenu.get_menu(app_list=app_list),
-            timeout=3600 * 24 * 7
-        )
+        menu_tree = AdminMenu.get_menu(app_list=app_list)
+
         permissions = cls._get_user_permissions(user=request.user)
-        filtered_menu = AdminMenu.filter_by_permissions(menu_tree=menu_tree, permissions=permissions)
-        return [item.to_dict() for item in filtered_menu]
+        return AdminMenu.filter_by_permissions(menu_tree=menu_tree, permissions=permissions)

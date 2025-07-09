@@ -1,5 +1,5 @@
 {% extends "admin/base.html" %}
-{% load i18n static %}
+{% load i18n static icons %}
 
 {% block title %}
     {% if subtitle %}{{ subtitle }} | {% endif %} {{ title }} | {{ site_title }}
@@ -29,16 +29,12 @@
                                 <a href="javascript:void(0);" class="nav-link px-0 hide-theme-dark" onclick="toggleTheme()"
                                    title="{% translate 'Toggle theme (current theme: light)' %}"
                                    data-bs-toggle="tooltip" data-bs-placement="bottom">
-                                    <svg class="icon icon-1">
-                                        <use href="{% static 'admin/svg/sprite.svg' %}#tabler-moon"></use>
-                                    </svg>
+                                    {% sprite 'tabler-moon' 'icon' %}
                                 </a>
                                 <a href="javascript:void(0);" class="nav-link px-0 hide-theme-light" onclick="toggleTheme()"
                                    title="{% translate 'Toggle theme (current theme: dark)' %}"
                                    data-bs-toggle="tooltip" data-bs-placement="bottom">
-                                    <svg class="icon icon-1">
-                                        <use href="{% static 'admin/svg/sprite.svg' %}#tabler-sun"></use>
-                                    </svg>
+                                    {% sprite 'tabler-sun' 'icon' %}
                                 </a>
                             </div>
                             <!-- END THEME MODE -->
@@ -47,9 +43,7 @@
                             <div class="nav-item dropdown d-none d-md-flex">
                                 <a href="#" class="nav-link px-0" data-bs-toggle="dropdown" tabindex="-1"
                                    aria-label="Show notifications" data-bs-auto-close="outside" aria-expanded="false">
-                                    <svg class="icon icon-1">
-                                        <use href="{% static 'admin/svg/sprite.svg' %}#tabler-bell"></use>
-                                    </svg>
+                                    {% sprite 'tabler-bell' 'icon' %}
                                     <span class="badge bg-red badge-blink"></span>
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-arrow dropdown-menu-end dropdown-menu-card">
@@ -71,9 +65,7 @@
                                                     </div>
                                                     <div class="col-auto">
                                                         <a href="#" class="list-group-item-actions">
-                                                            <svg class="icon text-muted icon-2">
-                                                                <use href="{% static 'admin/svg/sprite.svg' %}#tabler-star"></use>
-                                                            </svg>
+                                                            {% sprite 'tabler-star' 'icon text-muted' %}
                                                         </a>
                                                     </div>
                                                 </div>
@@ -89,9 +81,7 @@
                                                     </div>
                                                     <div class="col-auto">
                                                         <a href="#" class="list-group-item-actions show">
-                                                            <svg class="icon text-yellow icon-2">
-                                                                <use href="{% static 'admin/svg/sprite.svg' %}#tabler-star"></use>
-                                                            </svg>
+                                                            {% sprite 'tabler-star' 'icon text-muted' %}
                                                         </a>
                                                     </div>
                                                 </div>
@@ -107,9 +97,7 @@
                                                     </div>
                                                     <div class="col-auto">
                                                         <a href="#" class="list-group-item-actions">
-                                                            <svg class="icon text-muted icon-2">
-                                                                <use href="{% static 'admin/svg/sprite.svg' %}#tabler-star"></use>
-                                                            </svg>
+                                                            {% sprite 'tabler-star' 'icon text-muted' %}
                                                         </a>
                                                     </div>
                                                 </div>
@@ -127,9 +115,7 @@
                                                     </div>
                                                     <div class="col-auto">
                                                         <a href="#" class="list-group-item-actions">
-                                                            <svg class="icon text-muted icon-2">
-                                                                <use href="{% static 'admin/svg/sprite.svg' %}#tabler-star"></use>
-                                                            </svg>
+                                                            {% sprite 'tabler-star' 'icon text-muted' %}
                                                         </a>
                                                     </div>
                                                 </div>
@@ -187,6 +173,13 @@
                     </div>
                     <ol class="breadcrumb mb-0" id="crazy-breadcrumb">
                         <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate 'Home' %}</a></li>
+                        {% for bread in admin_breadcrumbs %}
+                            {% if bread.url %}
+                                <li class="breadcrumb-item"><a href="{{ bread.url }}">{{ bread.title }}</a></li>
+                            {% else %}
+                                <li class="breadcrumb-item link-blue">{{ bread.title }}</li>
+                            {% endif %}
+                        {% endfor %}
                         {% block breadcrumbs %}{% endblock %}
                     </ol>
                 </div>
@@ -229,10 +222,7 @@
                                 </li>
                                 <li class="list-inline-item">
                                     <a href="https://github.com/sponsors/codecalm" target="_blank" class="link-secondary" rel="noopener">
-                                        <svg class="icon text-pink icon-inline icon-4">
-                                            <use href="{% static 'admin/svg/sprite.svg' %}#tabler-heart"></use>
-                                        </svg>
-                                        Sponsor
+                                        {% sprite 'tabler-heart' 'icon text-pink icon-inline' %} Sponsor
                                     </a>
                                 </li>
                             </ul>

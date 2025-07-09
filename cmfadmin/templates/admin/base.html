@@ -26,15 +26,16 @@
     <link rel="stylesheet" href="{% static "admin/fonts/inter/inter.css" %}">
     <!-- END CUSTOM FONT -->
 
-    <!-- BEGIN GLOBAL THEME SCRIPT -->
-    <script src="{% static 'admin/js/tabler-theme.min.js' %}"></script>
-    <!-- END GLOBAL THEME SCRIPT -->
+    <link rel="stylesheet" href="{% static 'admin/css/cmfadmin.css' %}">
     {% block extrahead %}{% endblock %}
     {% block extrastyle %}{% endblock %}
 </head>
 <body{% if is_popup %} class="popup"{% endif %} data-admin-utc-offset="{% now 'Z' %}">
 {% block body %}{% endblock %}
 <script src="{% static 'admin/js/tabler.min.js' %}" defer></script>
+<!-- BEGIN GLOBAL THEME SCRIPT -->
+<script src="{% static 'admin/js/tabler-theme.min.js' %}"></script>
+<!-- END GLOBAL THEME SCRIPT -->
 <script src="{% static 'admin/js/admin.js' %}" defer></script>
 <script src="{% static 'admin/js/sidebar.js' %}" defer></script>
 {% block scripts %}{% endblock %}

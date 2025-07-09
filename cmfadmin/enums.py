@@ -13,7 +13,6 @@ Created:
 from enum import StrEnum
 
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 
 
 # Menu sync modes
@@ -34,21 +33,31 @@ class MenuSource(StrEnum):
 
 # Config model enum
 class ConfigCategory(models.TextChoices):
-    SITE = 'site', _('Site Information')
-    SEO = 'seo', _('SEO Settings')
-    CDN = 'cdn', _('CDN Settings')
+    SITE = 'site', 'Site Information'
+    EMAIL = 'email', 'Email Settings'
+    LINKS = 'links', 'External Links'
+    NAV = 'nav', 'Navigation Management'
+    TEMPLATE = 'template', 'Template Management'
+    SYSTEM = 'system', 'System Settings'
+    ICONS = 'icons', 'Icons Management'
 
 
 # Config model enum
 class ConfigType(models.TextChoices):
-    TEXT = 'text', _('Text')
-    TEXTAREA = 'textarea', _('Textarea')
-    IMAGE = 'image', _('Image')
-    SWITCH = 'switch', _('Switch')
-    SELECT = 'select', _('Select')
-    RADIO = 'radio', _('Radio')
-    CHECKBOX = 'checkbox', _('Checkbox')
-    RICHTEXT = 'richtext', _('Rich Text')
-    PASSWORD = 'password', _('Password')
-    NUMBER = 'number', _('Number')
-    FILE = 'file', _('File')
+    TEXT = 'text'
+    TEXTAREA = 'textarea'
+    IMAGE = 'image'
+    SWITCH = 'switch'
+    SELECT = 'select'
+    RADIO = 'radio'
+    CHECKBOX = 'checkbox'
+    RICHTEXT = 'richtext'
+    PASSWORD = 'password'
+    NUMBER = 'number'
+    FILE = 'file'
+
+
+# Navigation type
+class TargetChoices(models.TextChoices):
+    SELF = '_self', 'Self Window'
+    BLANK = '_blank', 'Blank Window'

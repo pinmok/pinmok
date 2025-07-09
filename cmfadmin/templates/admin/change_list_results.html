@@ -1,4 +1,4 @@
-{% load i18n static %}
+{% load i18n static icons %}
 {% if result_hidden_fields %}
     <div class="hiddenfields">{# DIV for HTML validation #}
         {% for item in result_hidden_fields %}{{ item }}{% endfor %}
@@ -36,9 +36,7 @@
                                 {% endif %}
                                 {% if header.sortable and header.sort_priority > 0 %}
                                     <a class="sort-remove" href="{{ header.url_remove }}" title="{% translate "Remove from sorting" %}">
-                                        <svg width="14" height="14">
-                                            <use href="{% static 'admin/svg/sprite.svg' %}#tabler-filter-x"></use>
-                                        </svg>
+                                        {% sprite 'tabler-filter-x' '' 14 %}
                                     </a>
                                     {% if num_sorted_fields > 1 %}
                                         <span title="{% blocktranslate with priority_number=header.sort_priority %}Sorting priority: {{ priority_number }}{% endblocktranslate %}">{{ header.sort_priority }}</span>
@@ -56,7 +54,9 @@
                             <td colspan="{{ result|length }}">{{ result.form.non_field_errors }}</td>
                         </tr>
                     {% endif %}
-                    <tr>{% for item in result %}{{ item }}{% endfor %}</tr>
+                    <tr>
+                        {% for item in result %} {{ item }} {% endfor %}
+                    </tr>
                 {% endfor %}
                 </tbody>
             </table>
@@ -72,5 +72,12 @@
         document.querySelectorAll('input.action-select').forEach(function (el) {
             el.classList.add('form-check-input', 'm-0', 'align-middle', 'table-selectable-check');
         });
+        document.querySelectorAll('input[name^="form-"]').forEach(input => {
+            input.classList.add('form-control');
+        });
+        const saveButton = document.querySelector('input[name="_save"]');
+        if (saveButton) {
+            saveButton.classList.add('btn', 'btn-primary', 'mb-3');
+        }
     });
 </script>

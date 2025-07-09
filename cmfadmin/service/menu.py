@@ -18,12 +18,13 @@ from uuid import uuid4
 from django.apps import apps
 from django.conf import settings
 from django.db import transaction
+from django.templatetags.static import static
 
-from .. import constants
-from ..enums import MenuSyncMode, MenuSource
-from ..libs import TreeNode
-from ..models import Menu
-from ..utils.helper import get_model_fields, get_valid_app_labels
+from cmfadmin import constants
+from cmfadmin.enums import MenuSyncMode, MenuSource
+from cmfadmin.libs import TreeNode
+from cmfadmin.models import Menu
+from cmfadmin.utils.helper import get_model_fields, get_valid_app_labels
 
 
 @dataclass(kw_only=True)
@@ -79,7 +80,29 @@ class MenuItem(TreeNode["MenuItem"]):
         Raises:
             ValueError: If both `include` and `exclude` are provided.
         """
-        return super().to_dict(include=include, exclude=exclude, depth=depth)
+        data = super().to_dict(include=include, exclude=exclude, depth=depth)
+        data['sprite_path'] = self.sprite_path
+        return data
+
+    @property
+    def sprite_path(self) -> str:
+        """
+        Return the sprite file path for the current menu item's icon.
+
+        Rules:
+            - If the icon name starts with "tabler-", it uses the built-in system sprite.
+            - Otherwise, it uses the user-defined custom sprite file.
+
+        The custom sprite file path can be configured via the `CMF_CUSTOM_SPRITE`
+        setting in Django settings. If not defined, it defaults to 'svg/custom_sprite.svg'.
+
+        Returns:
+            str: URL path to the corresponding sprite file.
+        """
+        if self.icon and self.icon.startswith("tabler-"):
+            return static('admin/svg/sprite.svg')
+        else:
+            return static(getattr(settings, 'CMF_CUSTOM_SPRITE', 'svg/custom_sprite.svg'))
 
 
 class AdminMenuImportError(Exception):
@@ -291,7 +314,7 @@ class MenuSynchronizer:
         return menu_items
 
     @classmethod
-    def _insert_items(cls, menu_items: list[MenuItem], parent_db_id: int | None) -> None:
+    def _insert_items(cls, menu_items: list[MenuItem], parent_db_id: int | None) -> int:
         """
         Batch insert menu items (optimized recursive version).
 
@@ -304,12 +327,13 @@ class MenuSynchronizer:
             menu_items (list[MenuItem]): Flat list of all menu items to insert.
             parent_db_id (int | None): Database ID of parent node, None for root level.
         """
+        created_count = 0
         current_level = [
             item for item in menu_items
             if item.parent_id == parent_db_id
         ]
         if not current_level:
-            return
+            return 0
 
         model_fields = get_model_fields(Menu)
         to_create = []
@@ -333,6 +357,7 @@ class MenuSynchronizer:
             created_items = list(Menu.objects.filter(
                 menu_key__in=[item.menu_key for item in to_create]
             ))
+        created_count += len(created_items)
 
         id_mapping = {
             src.id: db.id
@@ -346,10 +371,12 @@ class MenuSynchronizer:
                     child.parent_id = id_mapping[src.id]
 
         for item in current_level:
-            cls._insert_items(menu_items=menu_items, parent_db_id=item.db_id)
+            created_count += cls._insert_items(menu_items=menu_items, parent_db_id=item.db_id)
+
+        return created_count
 
     @classmethod
-    def _commit_menus_to_db(cls, menu_items: list[MenuItem], app_label: str) -> bool:
+    def _commit_menus_to_db(cls, menu_items: list[MenuItem], app_label: str) -> int:
         """
         Persist a flat list of MenuItem instances to the database, respecting hierarchy.
 
@@ -365,8 +392,7 @@ class MenuSynchronizer:
             bool: True if menus were persisted, False if input is empty.
         """
         if not menu_items:
-            return False
-
+            return 0
         with transaction.atomic():
             if app_label == MenuSyncMode.SYNC_ALL:
                 # Clear existing menu records before insertion
@@ -375,9 +401,9 @@ class MenuSynchronizer:
                 Menu.objects.filter(app_label=app_label).delete()
 
             # Start inserting from root nodes (parent_db_id=None)
-            cls._insert_items(menu_items=menu_items, parent_db_id=None)
+            insert_count = cls._insert_items(menu_items=menu_items, parent_db_id=None)
 
-        return True
+        return insert_count
 
     @classmethod
     def synchronize_menu(cls, app_label: str):
@@ -388,14 +414,43 @@ class MenuSynchronizer:
         if app_label != MenuSyncMode.SYNC_ALL and app_label not in cls.valid_app_labels:
             raise AdminMenuImportError(f"Invalid app_label '{app_label}', must be one of installed apps.")
 
-        # Collects and parses menus from apps.
-        sync_menus = cls._get_sync_menus_all() if app_label == MenuSyncMode.SYNC_ALL else cls._get_sync_menus(app_label=app_label)
+        if app_label == MenuSyncMode.SYNC_ALL:
+            total_created = 0
+            inserted_menus = []
+            # Get all menus from all apps
+            all_menus = cls._get_sync_menus_all()
 
-        # Sanitizes parent-child relationships.
-        clear_menus = cls._sanitize_menu(menu_items=sync_menus)
+            # Extract distinct app_labels from all_menus
+            for label in {m.app_label for m in all_menus}:
+                # Filter menus belonging to the current app_label
+                menus_for_label = [m for m in all_menus if m.app_label == label]
+                # Sanitize parent-child relationships within this app's menus
+                clear_menus = cls._sanitize_menu(menu_items=menus_for_label)
+                # Persist the sanitized menus to DB and accumulate inserted count
+                created = cls._commit_menus_to_db(menu_items=clear_menus, app_label=label)
+                # Return the total number of inserted menus across all apps
+                total_created += created
+                inserted_menus.extend([
+                    {'app_label': label, 'title': m.title, 'url': m.url}
+                    for m in clear_menus
+                ])
 
-        # Persists the final menu structure to the database.
-        cls._commit_menus_to_db(menu_items=clear_menus, app_label=app_label)
+            return {'total_created': total_created, 'menus': inserted_menus}
+        else:
+            # Get menus for the specific app
+            sync_menus = cls._get_sync_menus(app_label=app_label)
+            # Sanitize parent-child relationships within this app's menus
+            clear_menus = cls._sanitize_menu(menu_items=sync_menus)
+
+            created = cls._commit_menus_to_db(menu_items=clear_menus, app_label=app_label)
+
+            return {
+                'total_created': created,
+                'menus': [
+                    {'app_label': app_label, 'title': m.title, 'url': m.url}
+                    for m in clear_menus
+                ]
+            }
 
 
 class AdminMenu:

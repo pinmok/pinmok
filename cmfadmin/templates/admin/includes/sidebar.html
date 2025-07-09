@@ -1,4 +1,4 @@
-{% load i18n static %}
+{% load i18n static icons %}
 
 <aside class="navbar navbar-vertical navbar-expand-lg">
     <div class="container-fluid">
@@ -15,7 +15,11 @@
                 <svg width="28" height="28">
                     <use href="{% static 'admin/svg/crazy_logo.svg' %}"></use>
                 </svg>
-                <span class="ms-2 text-body">{% block branding %}{% translate site_header %}{% endblock %}</span>
+                <span class="ms-2 text-body">
+                    {% block branding %}
+                        {{ site_header }}
+                    {% endblock %}
+                </span>
             </a>
         </div>
         <!-- END NAVBAR LOGO -->
@@ -24,20 +28,15 @@
             <!-- BEGIN ICON GROUP  -->
             <div class="d-flex justify-content-center gap-3">
                 <!-- Jump to home -->
-                {% if site_url %}
-                    <a href="{{ site_url }}" title="{% translate 'View site' %}" class="text-primary" target="_blank"
-                       data-bs-toggle="tooltip" data-bs-placement="bottom">
-                        <svg class="icon">
-                            <use href="{% static 'admin/svg/sprite.svg' %}#tabler-home"></use>
-                        </svg>
-                    </a>
-                {% endif %}
+                <a href="{{ site_url }}" title="{% translate 'View site' %}" class="text-primary" target="_blank"
+                   data-bs-toggle="tooltip" data-bs-placement="bottom">
+                    {% sprite 'tabler-home' 'icon' %}
+                </a>
 
                 <!-- Synchronize menu -->
                 {% if user.is_superuser %}
-                    <a href="{% url 'admin:index' %}" title="{% translate 'Synchronize menu' %}"
-                       class="text-warning" data-bs-toggle="tooltip" data-bs-placement="bottom">
-                        <svg class="icon">
+                    <a class="text-danger cursor-pointer" data-bs-toggle="modal" data-bs-target="#sync_menu_alert">
+                        <svg class="icon" title="{% translate 'Synchronize menu' %}" data-bs-toggle="tooltip" data-bs-placement="bottom">
                             <use href="{% static 'admin/svg/sprite.svg' %}#tabler-menu"></use>
                         </svg>
                     </a>
@@ -46,7 +45,7 @@
             <!-- END ICON GROUP  -->
 
             <!-- BEGIN NAVBAR MENU -->
-            <!-- TODO 考虑是否使用菜单搜索，因为Django带了。 -->
+            <!-- TODO 考虑是否使用菜单搜索功能，因为Django带了。 -->
             {% if admin_menu %}
                 <ul class="navbar-nav pt-lg-1" id="sidebar-menu">
                     <!-- BEGIN MENU ITEM -->
@@ -61,11 +60,11 @@
                                 <span class="nav-link-icon d-md-none d-lg-inline-block">
                                 {% if menu.icon %}
                                     <svg class="icon">
-                                        <use href="{% static 'admin/svg/sprite.svg' %}#{{ menu.icon }}"></use>
+                                        <use href="{{ menu.sprite_path }}#{{ menu.icon }}"></use>
                                     </svg>
                                 {% endif %}
                                 </span>
-                                <span class="nav-link-title"> {{ menu.title }} </span>
+                                <span class="nav-link-title"> {% translate menu.title %} </span>
                             </a>
                             {% if menu.children %}
                                 <!-- Second level -->
@@ -82,20 +81,21 @@
                                                            aria-expanded="false">
                                                             {% if child.icon %}
                                                                 <svg class="icon">
-                                                                    <use href="{% static 'admin/svg/sprite.svg' %}#{{ child.icon }}"></use>
+                                                                    <use href="{{ child.sprite_path }}#{{ child.icon }}"></use>
                                                                 </svg>
                                                             {% else %}
                                                                 <span class="w-1">&#8226;</span>
                                                             {% endif %}
-                                                            {{ child.title }}
+                                                            {% translate child.title %}
                                                         </a>
                                                         <!-- Third level -->
                                                         <div class="dropdown-menu">
                                                             {% for cc in child.children %}
                                                                 {% if cc.url %}
-                                                                    <a href="{{ cc.url }}" class="dropdown-item">{{ cc.title }}</a>
+                                                                    <a href="{{ cc.url }}"
+                                                                       class="dropdown-item">{% translate cc.title %}</a>
                                                                 {% else %}
-                                                                    <span class="dropdown-item disabled">{{ cc.title }}</span>
+                                                                    <span class="dropdown-item disabled">{% translate cc.title %}</span>
                                                                 {% endif %}
                                                             {% endfor %}
                                                         </div>
@@ -105,17 +105,17 @@
                                                     <a href="{{ child.url }}" class="dropdown-item">
                                                         {% if child.icon %}
                                                             <svg class="icon">
-                                                                <use href="{% static 'admin/svg/sprite.svg' %}#{{ child.icon }}"></use>
+                                                                <use href="{{ child.sprite_path }}#{{ child.icon }}"></use>
                                                             </svg>
                                                         {% else %}
                                                             <span class="w-1">&#8226;</span>
                                                         {% endif %}
-                                                        {{ child.title }}
+                                                        {% translate child.title %}
                                                     </a>
                                                 {% else %}
                                                     <span class="dropdown-item disabled">
                                                         <span class="w-1">&#8226;</span>
-                                                        {{ child.title }}
+                                                        {% translate child.title %}
                                                     </span>
                                                 {% endif %}
                                             {% endfor %}
@@ -135,3 +135,35 @@
     </div>
 </aside>
 
+{# Synchronize Warning #}
+<div class="modal modal-blur fade rounded bg-surface-backdrop py-6 w-100 h-100" id="sync_menu_alert"
+     tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-status bg-danger"></div>
+            <div class="modal-body text-center py-4">
+                {% sprite 'tabler-alert-triangle' 'icon mb-2 text-danger icon-lg' %}
+                <h3 class="text-uppercase">{% translate 'Warning!' %}</h3>
+                <div class="text-secondary text-start">
+                    {% blocktranslate %}
+                        Synchronizing the menu will reload the menu configuration and reset all menu items. This action cannot be undone!
+                        Please proceed with caution if you have made any adjustments to the menus!
+                    {% endblocktranslate %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="w-100">
+                    <div class="row">
+                        <div class="col">
+                            <button class="btn w-100" data-bs-dismiss="modal"> {% translate 'Cancel' %} </button>
+                        </div>
+                        <div class="col">
+                            <a href="{% url 'admin:sync_menu' %}" class="btn btn-danger w-100">{% translate 'Confirm' %}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

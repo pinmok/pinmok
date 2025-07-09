@@ -1,0 +1,108 @@
+{% extends 'config/config_base.html' %}
+{% load i18n static icons %}
+
+{% block extrahead %}
+    <script src="{% url 'admin:jsi18n' %}"></script>
+{% endblock %}
+
+{% block page_title %}{% translate 'Edit' %} {{ nav.title }} ({{ nav.slug }}){% endblock %}
+
+{% block page_right %}
+    <a href="{% url 'admin:navitem' nav.pk 0 %}" class="btn btn-secondary">
+        {% sprite 'tabler-plus' %} {% translate 'Add' %} {% translate 'Nav Item' %}
+    </a>
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-vcenter table-sm">
+                <thead>
+                <tr>
+                    <th style="width: 2rem;">ID</th>
+                    <th style="width: 8rem;">{% translate 'Sort order' %}</th>
+                    <th>{% translate 'Name' %}</th>
+                    <th style="width: 8rem">{% translate 'Action' %}</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for item in nav_items %}
+                    <tr>
+                        <td{% if forloop.last %} class="border-bottom-0"{% endif %}>{{ item.id }}</td>
+                        <td{% if forloop.last %} class="border-bottom-0"{% endif %}>{{ item.sort_order }}</td>
+                        <td{% if forloop.last %} class="border-bottom-0"{% endif %}>{{ item.title|safe }}</td>
+                        <td{% if forloop.last %} class="border-bottom-0"{% endif %}>
+                            <a href="{% url 'admin:navitem' nav.pk item.id %}" class="mx-3">{% translate 'Edit' %}</a>
+                            <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#delete-alert"
+                               onclick="setDeleteId({{ item.id }})">{% translate 'Delete' %}</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal modal-blur fade rounded" id="delete-alert" role="dialog">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-status bg-warning"></div>
+                <div class="modal-body text-center py-4">
+                    {% sprite 'tabler-question-mark' 'icon mb-2 text-warning icon-lg' %}
+                    <h3>{% translate 'Are you sure?' %}</h3>
+                    <div class="text-secondary">
+                        Do you really want to remove this nav item? What you've done cannot be undone.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="w-100">
+                        <div class="row">
+                            <div class="col">
+                                <a class="btn w-100" data-bs-dismiss="modal">{% translate 'Cancel' %}</a>
+                            </div>
+                            <div class="col">
+                                <a class="btn btn-warning w-100" id="confirmDeleteButton" data-bs-dismiss="modal" onclick="confirmDelete()">
+                                    {% translate 'Confirm' %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        function setDeleteId(id) {
+            const confirmButton = document.getElementById('confirmDeleteButton');
+            confirmButton.setAttribute('data-id', id);
+        }
+
+        function confirmDelete() {
+            const confirmButton = document.getElementById('confirmDeleteButton');
+            const navItemId = confirmButton.getAttribute('data-id');
+            const url = `/admin/cmfadmin/nav/navitem/{{ nav.pk }}/${navItemId}/`;
+
+            fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            }).then(response => {
+                return response.json().then(data => {
+                    if (!response.ok) {
+                        alert(gettext('Error: ') + data.error);
+                    } else {
+                        alert(gettext(data.message));
+                        location.reload();
+                    }
+                });
+            }).catch(error => {
+                alert(gettext('Request error.') + error);
+            });
+        }
+    </script>
+{% endblock %}

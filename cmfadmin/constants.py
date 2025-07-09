@@ -29,3 +29,8 @@ AUTH = 'tabler-user-shield'
 
 # Custom EmailBackend for overriding email sending configuration
 CMF_EMAIL_BACKEND = 'cmfadmin.backends.EmailBackend'
+
+DEFAULT_SORT_ORDER = 10000
+
+# custom sprite.svg file path
+CUSTOM_SPRITE_FILE = 'svg/custom_sprite.svg'

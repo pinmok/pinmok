@@ -3,10 +3,10 @@
 """
 __init__.py module
 
+Description:
+  
 Author:
   惠达浪 <crazys@126.com>
 Created:
-  2025-05-30
+  2025-07-02
 """
-from cmfadmin.options import CMFModelAdmin
-from cmfadmin.sites import site

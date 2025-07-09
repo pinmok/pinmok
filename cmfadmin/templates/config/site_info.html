@@ -1,0 +1,163 @@
+{% extends 'config/config_base.html' %}
+{% load i18n static %}
+
+{% block page_title %}{% translate 'Site Information Settings' %}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <form action="{% url 'admin:site_config' %}" method="post" enctype="multipart/form-data">{% csrf_token %}
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <a href="#site-info" class="nav-link active" data-bs-toggle="tab" aria-selected="true" role="tab">
+                            {% translate 'Site Information' %}</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a href="#seo" class="nav-link" data-bs-toggle="tab" aria-selected="false" tabindex="-1"
+                           role="tab">{% translate 'SEO Settings' %}</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a href="#contact" class="nav-link" data-bs-toggle="tab" aria-selected="false" tabindex="-1"
+                           role="tab">{% translate 'Contact Information' %}</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content">
+                    <div class="tab-pane active show" id="site-info" role="tabpanel">
+                        <div class="mb-3 row">
+                            <label class="col-2 col-form-label required" for="site-name">{% translate 'Site name' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <input type="text" class="form-control" name="site_name" id="site-name"
+                                       value="{{ config.site_name|default:'' }}" placeholder="{% translate 'CrazyCMF' %}" required>
+                                <small class="form-hint">{% translate 'Site name will appear next to the logo in the top-left corner.' %}</small>
+                            </div>
+                        </div>
+                        <div class="mb-3 row">
+                            <label class="col-2 col-form-label" for="site-slogan">{% translate 'Site slogan' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <input type="text" class="form-control" name="site_slogan" id="site-slogan"
+                                       value="{{ config.site_slogan|default:'' }}">
+                                <small class="form-hint">{% translate 'A short tagline can be displayed near the site logo or page title.' %}</small>
+                            </div>
+                        </div>
+                        <div class="row mb-3 align-items-center">
+                            <label class="col-2 col-form-label" for="site-logo">{% translate 'Site logo' %}</label>
+                            <!-- TODO 图片上传及预览 -->
+                            <div class="col-auto">
+                                <img src="{% static 'admin/svg/crazy_logo.svg' %}" class="logo-img" alt="{% translate 'Site logo' %}">
+                            </div>
+                            <div class="col-auto">
+                                <input type="file" name="site_logo" id="site-logo" class="form-control" value="" accept="image/*">
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-ghost-danger btn-3">{% translate 'Delete logo' %}</button>
+                            </div>
+                        </div>
+                        <div class="mb-3 row">
+                            <label class="col-2 col-form-label" for="icp">{% translate 'ICP filing number' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <input type="text" class="form-control" name="icp" id="icp" value="{{ config.icp|default:'' }}">
+                                <small class="form-hint">{% translate "Leave this field blank if you don't have the number." %}</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <label class="col-2 col-form-label" for="pns">{% translate 'PNS filing number' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <input type="text" class="form-control" name="pns" id="pns" value="{{ config.pns|default:'' }}">
+                                <small class="form-hint">
+                                    {% translate "Certificate of Public Network Security Filing, leave blank if not applicable." %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="seo" role="tabpanel">
+                        <div class="row mb-3">
+                            <label class="col-2 col-form-label" for="seo-title">{% translate 'SEO title' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <input type="text" class="form-control" name="seo_title" id="seo-title" maxlength="60"
+                                       value="{{ config.seo_title|default:'' }}">
+                                <small class="form-hint">{% translate "Title of SEO, maximum of 60 characters." %}</small>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="col-2 col-form-label" for="seo-key">{% translate 'Meta keywords' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <input type="text" class="form-control" name="meta_keywords" id="seo-key"
+                                       value="{{ config.meta_keywords|default:'' }}">
+                                <small class="form-hint">{% translate "Comma-separated keywords, recommended within 5-10 words." %}</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <label class="col-2 col-form-label" for="seo-desc">{% translate 'Meta description' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <input type="text" class="form-control" name="seo_description" id="seo-desc" maxlength="160"
+                                       value="{{ config.seo_description|default:'' }}">
+                                <small class="form-hint">{% translate "Meta description, maximum of 160 characters." %}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="contact" role="tabpanel">
+                        <div class="row mb-3">
+                            <label class="col-2 col-form-label" for="phone">{% translate 'Service phone' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <input type="text" class="form-control" name="service_phone" id="phone"
+                                       value="{{ config.service_phone|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="col-2 col-form-label" for="s-email">{% translate 'Service email' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <input type="email" class="form-control" name="service_email" id="s-email"
+                                       value="{{ config.service_email|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="col-2 col-form-label" for="addr">{% translate 'Contact address' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <input type="text" class="form-control" name="contact_address" id="addr"
+                                       value="{{ config.contact_address|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="row mb-3 align-items-center">
+                            <label class="col-2 col-form-label" for="wechat">{% translate 'WeChat QRCode' %}</label>
+                            <!-- TODO 图片上传及预览 -->
+                            <div class="col-auto">
+                                <img src="{% static 'admin/svg/crazy_logo.svg' %}" class="logo-img" alt="{% translate 'WeChat QRCode' %}">
+                            </div>
+                            <div class="col-auto">
+                                <input type="file" name="wechat_qrcode" id="wechat" class="form-control" value="" accept="image/*">
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-ghost-danger btn-3">{% translate 'Delete QRCode' %}</button>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="col-2 col-form-label" for="facebook">{% translate 'Facebook link' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <input type="text" class="form-control" name="facebook_link" id="facebook"
+                                       value="{{ config.facebook_link|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="col-2 col-form-label" for="x">{% translate 'X link' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <input type="text" class="form-control" name="x_link" id="x" value="{{ config.x_ling|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <label class="col-2 col-form-label" for="linkedin">{% translate 'LinkedIn link' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <input type="text" class="form-control" name="linkedin_link" id="linkedin"
+                                       value="{{ config.linkedin_link|default:'' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary">{% translate 'Save' %}</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

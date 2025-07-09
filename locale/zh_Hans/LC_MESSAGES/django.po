@@ -25,3 +25,21 @@ msgstr "DjangoCMF后台管理"
 #: .\templates\admin\base_site.html:73
 msgid "Based on Tabler"
 msgstr "基于 Tabler 制作"
+
+msgid "SEO title"
+msgstr "SEO 标题"
+
+msgid "Meta keywords"
+msgstr "Meta 关键词"
+
+msgid "Meta description"
+msgstr "Meta 描述"
+
+msgid "SEO title, maximum of 60 characters."
+msgstr "SEO 标题，最多 60 个字符。"
+
+msgid "Comma-separated keywords, recommended within 5-10 words."
+msgstr "英文逗号分隔关键词，建议 5-10 个。"
+
+msgid "Meta description, maximum of 160 characters."
+msgstr "Meta 描述，最多 160 个字符。"

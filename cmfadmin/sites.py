@@ -6,14 +6,13 @@ admin module
 Description:
   Core admin site definition.
 
-  core_site is the primary admin site of DjangoCMF, replacing Django's default admin.site.
+  core_site is the primary admin site of CrazyCMF, replacing Django's default admin.site.
   It centralizes the registration of core system models, plugins, and pluggable apps.
 Author:
   惠达浪 <crazys@126.com>
 Created:
   2025-06-07
 """
-from django.conf import settings
 from django.contrib import admin
 from django.contrib.admin import AdminSite
 from django.contrib.admin.sites import DefaultAdminSite
@@ -22,9 +21,9 @@ from django.urls import path
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy
 
-from . import urls
-from .options import CMFModelAdmin
-from .utils.helper import get_system_info, get_disk_info
+import djangocmf
+from cmfadmin.options import CMFModelAdmin
+from cmfadmin.utils.helper import get_system_info, get_disk_info
 
 
 class CMFAdminSite(AdminSite):
@@ -37,9 +36,9 @@ class CMFAdminSite(AdminSite):
     construction, permission checks, and integrates additional CMS-specific
     functionalities.
     """
-    site_title = settings.CMF_NAME
-    site_header = format_lazy('{} {}', settings.CMF_NAME, gettext_lazy('Administration'))
-    index_title = format_lazy('{} {}', settings.CMF_NAME, gettext_lazy('Site administration'))
+    site_title = djangocmf.name
+    site_header = format_lazy('{} {}', djangocmf.name, gettext_lazy('Administration'))
+    index_title = format_lazy('{} {}', djangocmf.name, gettext_lazy('Site administration'))
 
     index_template = "admin/index.html"
 
@@ -62,14 +61,25 @@ class CMFAdminSite(AdminSite):
 
     def get_urls(self):
         """
-        Appends custom admin views to the default admin URL patterns
+        Override the default get_urls method to inject custom admin-only URLs.
+
+        This method adds extra admin views defined in 'cmfadmin_urls' to the admin site.
+        Each view is wrapped with self.admin_view() to apply admin-specific permissions,
+        CSRF protection, and exception handling.
         """
+        from cmfadmin import urls
+
         custom_urls = []
+
+        # Load custom admin views from cmfadmin_urls (a list of (route, view, name) tuples)
         for route, view, name in getattr(urls, 'cmfadmin_urls', []):
-            # 确保末尾有 /
+            # Ensure the route ends with a trailing slash for consistency
             if not route.endswith('/'):
                 route = f'{route}/'
+
+            # Wrap each view with admin_view() to enforce admin permissions and context
             custom_urls.append(path(route, self.admin_view(view), name=name))
+
         return custom_urls + super().get_urls()
 
     def index(self, request, extra_context=None):

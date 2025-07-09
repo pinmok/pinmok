@@ -1,5 +1,5 @@
 {% extends 'admin/base_site.html' %}
-{% load i18n static %}
+{% load i18n static icons %}
 
 {% block page_header %}
     <div class="row g-2 align-items-center">
@@ -109,39 +109,42 @@
                         <span>{% translate 'My actions' %}</span>
                     </div>
                     {% load log %}
-                    {% get_admin_log 10 as admin_log for_user user %}
+                    {% get_admin_log 5 as admin_log for_user user %}
                     {% if not admin_log %}
                         <p>{% translate 'None available' %}</p>
                     {% else %}
-                        <ul class="steps steps-vertical">
+                        <div class="divide-y">
                             {% for entry in admin_log %}
-                                <li class="step-item">
-                                    <div class="h4 m-0 {% if entry.is_addition %}text-success{% endif %}{% if entry.is_change %}text-primary{% endif %}{% if entry.is_deletion %}text-danger{% endif %}">
-                                        {% if entry.is_addition %}
-                                            {% translate 'Added:' %}
-                                        {% elif entry.is_change %}
-                                            {% translate 'Changed:' %}
-                                        {% elif entry.is_deletion %}
-                                            {% translate 'Deleted:' %}
+                                <div class="row">
+                                    <div class="text-truncate {% if entry.is_addition %}text-success{% endif %}{% if entry.is_change %}text-primary{% endif %}{% if entry.is_deletion %}text-danger{% endif %}">
+                                        <strong>
+                                            {% if entry.is_addition %}
+                                                {% sprite 'tabler-square-add' 'icon' %} {% translate 'Added:' %}
+                                            {% elif entry.is_change %}
+                                                {% sprite 'tabler-edit' 'icon' %} {% translate 'Changed:' %}
+                                            {% elif entry.is_deletion %}
+                                                {% sprite 'tabler-delete' 'icon' %} {% translate 'Deleted:' %}
+                                            {% endif %}
+                                        </strong>
+                                        <small>
+                                            {% if entry.content_type %}
+                                                {% filter capfirst %}{{ entry.content_type.name }}{% endfilter %}
+                                            {% else %}
+                                                {% translate 'Unknown content' %}
+                                            {% endif %}
+                                        </small>
+                                        {% if entry.is_deletion or not entry.get_admin_url %}
+                                            &lt;{{ entry.object_repr }}&gt;
+                                        {% else %}
+                                            &lt;<a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>&gt;
                                         {% endif %}
                                     </div>
                                     <div class="text-secondary">
-                                        {% if entry.is_deletion or not entry.get_admin_url %}
-                                            {{ entry.object_repr }}
-                                        {% else %}
-                                            <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
-                                        {% endif %}
-                                        <br>
-                                        {% if entry.content_type %}
-                                            <span class="fs-6 text-muted">{% filter capfirst %}
-                                                {{ entry.content_type.name }}{% endfilter %}</span>
-                                        {% else %}
-                                            <span class="fs-6 text-muted">{% translate 'Unknown content' %}</span>
-                                        {% endif %}
+                                        <span class="fs-6 text-muted">{{ entry.action_time }}</span>
                                     </div>
-                                </li>
+                                </div>
                             {% endfor %}
-                        </ul>
+                        </div>
                     {% endif %}
                 </div>
             </div>

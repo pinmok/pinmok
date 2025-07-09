@@ -39,7 +39,6 @@ if (localStorage.getItem("theme") === "dark") {
     document.documentElement.setAttribute("data-bs-theme", "dark");
 }
 
-// 点击按钮时切换主题
 function toggleTheme() {
     const html = document.documentElement;
     if (html.getAttribute("data-bs-theme") === "dark") {
@@ -49,4 +48,19 @@ function toggleTheme() {
         html.setAttribute("data-bs-theme", "dark");
         localStorage.setItem("theme", "dark");
     }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }

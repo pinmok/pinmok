@@ -1,5 +1,5 @@
 {% extends "admin/change_form.html" %}
-{% load static i18n %}
+{% load static i18n icons %}
 
 {% block field_sets %}
     <div class="card">
@@ -7,26 +7,17 @@
             <ul class="nav nav-tabs card-header-tabs nav-fill" data-bs-toggle="tabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <a href="#tabs-user" class="nav-link active" data-bs-toggle="tab" aria-selected="true" role="tab">
-                        <svg width="24" height="24" class="icon me-2 icon-2">
-                            <use href="{% static 'admin/svg/sprite.svg' %}#tabler-user"></use>
-                        </svg>
-                        {% translate 'Personal info' %}
+                        {% sprite 'tabler-user' 'icon me-2' %} {% translate 'Personal info' %}
                     </a>
                 </li>
                 <li class="nav-item" role="presentation">
                     <a href="#tabs-groups" class="nav-link" data-bs-toggle="tab" aria-selected="false" role="tab" tabindex="-1">
-                        <svg width="24" height="24" viewBox="0 0 24 24" class="icon me-2 icon-2">
-                            <use href="{% static 'admin/svg/sprite.svg' %}#tabler-users-group"></use>
-                        </svg>
-                        {% translate 'Groups' %}
+                        {% sprite 'tabler-users-group' 'icon me-2' %} {% translate 'Groups' %}
                     </a>
                 </li>
                 <li class="nav-item" role="presentation">
                     <a href="#tabs-permission" class="nav-link" data-bs-toggle="tab" aria-selected="false" role="tab" tabindex="-1">
-                        <svg width="24" height="24" viewBox="0 0 24 24" class="icon me-2 icon-2">
-                            <use href="{% static 'admin/svg/sprite.svg' %}#tabler-shield"></use>
-                        </svg>
-                        {% translate 'Permissions' %}
+                        {% sprite 'tabler-shield' 'icon me-2' %} {% translate 'Permissions' %}
                     </a>
                 </li>
             </ul>

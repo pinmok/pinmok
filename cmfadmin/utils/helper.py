@@ -10,6 +10,7 @@ Author:
 Created:
   2025-06-06
 """
+import os
 import platform
 import shutil
 from typing import Type
@@ -20,7 +21,8 @@ from django.conf import settings
 from django.db import connection, utils, models
 from django.db.models import Model
 
-from .tools import int_to_bytes
+import djangocmf
+from cmfadmin.utils.tools import int_to_bytes
 
 
 def get_system_info() -> dict[str, str]:
@@ -49,8 +51,8 @@ def get_system_info() -> dict[str, str]:
         'django_version': get_version(),
         'db_vendor': db_vendor,
         'db_version': db_version,
-        'cmf_name': settings.CMF_NAME,
-        'cmf_version': settings.CMF_VERSION,
+        'cmf_name': djangocmf.name,
+        'cmf_version': djangocmf.version,
     }
     return system_info
 
@@ -175,3 +177,15 @@ def get_valid_app_labels(exclude_prefixes: str | None = None) -> set[str]:
         if not any(app.name.startswith(prefix) for prefix in exclude_prefixes)
     }
     return valid_labels
+
+
+def get_static_dir() -> str:
+    """
+    Get normalized static directory path with guaranteed trailing separator
+    """
+    base_path = (
+        settings.STATIC_ROOT
+        if hasattr(settings, 'STATIC_ROOT') and settings.STATIC_ROOT
+        else os.path.join(settings.BASE_DIR, 'static')
+    )
+    return os.path.abspath(os.path.join(os.path.normpath(base_path), ''))

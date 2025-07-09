@@ -4,16 +4,11 @@
 __init__.py module
 
 Description:
-  
+  Core shared libraries and foundational components.
 Author:
   惠达浪 <crazys@126.com>
 Created:
   2025-06-11
 """
-from .sprite import SpriteManager
-from .tree import TreeNode
-
-__all__ = [
-    'SpriteManager',
-    'TreeNode'
-]
+from cmfadmin.libs.sprite import SpriteManager
+from cmfadmin.libs.tree import TreeNode

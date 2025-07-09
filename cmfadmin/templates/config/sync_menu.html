@@ -1,0 +1,54 @@
+{% extends 'admin/base_site.html' %}
+{% load i18n %}
+{% block title %}{% translate 'Synchronize Menu' %}{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item active">{% translate 'Synchronize Menu' %}</li>
+{% endblock %}
+
+{% block page_header %}
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <!-- Page pre-title -->
+            <div class="page-pretitle">{% translate 'Synchronize Menu' %}</div>
+            <h2 class="page-title">
+                {% if result.total_created > 0 %}
+                    <span class="text-success">
+                        {% blocktranslate with count=result.total_created %}
+                            Successfully synchronized <strong>{{ count }}</strong> menu items.
+                        {% endblocktranslate %}
+                    </span>
+                {% else %}
+                    <span class="text-danger">{% translate 'Synchronise menu failed.' %}</span>
+                {% endif %}
+            </h2>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+            <a href="{% url 'admin:index' %}" class="btn btn-primary">{% translate 'Back to Home' %}</a>
+        </div>
+    </div>
+{% endblock %}
+{% block content %}
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-vcenter card-table">
+                <thead>
+                <tr>
+                    <th>{% translate 'App label' %}</th>
+                    <th>{% translate 'Menu title' %}</th>
+                    <th>URL</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for item in result.menus %}
+                    <tr>
+                        <td>{{ item.app_label }}</td>
+                        <td>{{ item.title }}</td>
+                        <td>{{ item.url }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

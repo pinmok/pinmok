@@ -1,5 +1,5 @@
 {% extends "admin/base.html" %}
-{% load i18n static %}
+{% load i18n static icons %}
 
 {% block title %}{% if form.errors %}{% translate "Error:" %} {% endif %}{{ block.super }}{% endblock %}
 {% block sider_bar %}{% endblock %}
@@ -15,10 +15,7 @@
                             <!-- TODO 把内容改活 -->
                             <!-- BEGIN NAVBAR LOGO -->
                             <div aria-label="Tabler" class="navbar-brand navbar-brand-autodark">
-                                <svg class="navbar-brand-image me-2" width="32" height="32">
-                                    <use href="{% static 'admin/svg/sprite.svg' %}#crazy-logo"></use>
-                                </svg>
-                                {{ site_header }}
+                                {% sprite 'crazy-logo' 'navbar-brand-image me-2' 32 %} {{ site_header }}
                             </div>
                             <!-- END NAVBAR LOGO -->
                         </div>

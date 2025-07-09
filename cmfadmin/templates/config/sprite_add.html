@@ -1,0 +1,34 @@
+{% extends 'config/config_base.html' %}
+{% load i18n icons %}
+
+{% block page_title %}{% translate 'Add SVG icon to sprite' %}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        {% if message %}
+            <div class="card-header">
+                <div class="alert alert-danger" role="alert">
+                    <div class="alert-icon">{% sprite 'tabler-alert-circle' 'icon alert-icon' %}</div>
+                    {{ message }}
+                </div>
+            </div>
+        {% endif %}
+        <div class="card-body">
+            <form action="{% url 'admin:icons_manage' %}" method="post">{% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label required" for="symbol_id">{% translate 'Symbol Name' %}</label>
+                    <input type="text" class="form-control" id="symbol_id" name="symbol_id" value="{{ symbol_id }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label required" for="svg_code">{% translate 'SVG Code' %}</label>
+                    <textarea class="form-control" name="svg_code" id="svg_code" rows="6"
+                              placeholder="{% translate 'Paste SVG code here...' %}" required>{{ svg_code }}</textarea>
+                    <small class="form-hint">
+                        {% translate 'Paste your SVG code into the textarea.' %}
+                    </small>
+                </div>
+                <button type="submit" class="btn btn-primary">{% translate 'Submit' %}</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

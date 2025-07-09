@@ -1,5 +1,5 @@
 {% extends "admin/base_site.html" %}
-{% load i18n l10n admin_urls static %}
+{% load i18n l10n admin_urls static icons %}
 
 {% block extrahead %}
     {{ block.super }}
@@ -25,33 +25,21 @@
 {% block content %}
     {% if perms_lacking %}
         <div class="alert alert-warning" role="alert">
-            <div class="alert-icon">
-                <svg class="icon alert-icon">
-                    <use href="{% static 'admin/svg/sprite.svg' %}#tabler-alert-triangle"></use>
-                </svg>
-            </div>
+            <div class="alert-icon">{% sprite 'tabler-alert-triangle' 'icon alert-icon' %}</div>
             {% blocktranslate %}Deleting the selected {{ objects_name }} would result in deleting related objects, but your account doesn't
                 have permission to delete the following types of objects:{% endblocktranslate %}
         </div>
         <ul>{{ perms_lacking|unordered_list }}</ul>
     {% elif protected %}
         <div class="alert alert-warning" role="alert">
-            <div class="alert-icon">
-                <svg class="icon alert-icon">
-                    <use href="{% static 'admin/svg/sprite.svg' %}#tabler-alert-triangle"></use>
-                </svg>
-            </div>
+            <div class="alert-icon">{% sprite 'tabler-alert-triangle' 'icon alert-icon' %}</div>
             {% blocktranslate %}Deleting the selected {{ objects_name }} would require deleting the following protected related
                 objects:{% endblocktranslate %}
         </div>
         <ul>{{ protected|unordered_list }}</ul>
     {% else %}
         <div class="alert alert-warning" role="alert">
-            <div class="alert-icon">
-                <svg class="icon alert-icon">
-                    <use href="{% static 'admin/svg/sprite.svg' %}#tabler-alert-triangle"></use>
-                </svg>
-            </div>
+            <div class="alert-icon">{% sprite 'tabler-alert-triangle' 'icon alert-icon' %}</div>
             {% blocktranslate %}Are you sure you want to delete the selected {{ objects_name }}? All of the following objects and
                 their related items will be deleted:{% endblocktranslate %}
         </div>
