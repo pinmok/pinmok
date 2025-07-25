@@ -24,14 +24,14 @@ class NavItemForm(forms.ModelForm):
         nav_id = kwargs.pop('nav_id', None)  # 从kwargs中提取nav_id
         super().__init__(*args, **kwargs)
 
-        # 限制parent只能选择同一导航下的项目
+        # Limit the parent field to only select items under the same navigation
         if nav_id:
             self.fields['parent'].queryset = NavItem.objects.filter(nav_id=nav_id)
 
-        # 编辑时排除自身作为父项
+        # Exclude the current item from the list of possible parents when editing
         if self.instance and self.instance.pk:
             self.fields['parent'].queryset = self.fields['parent'].queryset.exclude(pk=self.instance.pk)
 
-        # 允许parent为空（表示顶级菜单）
+        # Allow parent to be null to represent a top-level menu item
         self.fields['parent'].required = False
         self.fields['parent'].widget.attrs['data-allow-null'] = 'true'

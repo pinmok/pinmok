@@ -12,15 +12,17 @@ Created:
 """
 import json
 import os
+from json import JSONDecodeError
 
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.staticfiles import finders
-from django.core.exceptions import SuspiciousFileOperation
+from django.core.exceptions import SuspiciousFileOperation, ValidationError
+from django.core.validators import validate_email
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _
 from django.views import View
 
 from cmfadmin.constants import CUSTOM_SPRITE_FILE
@@ -29,9 +31,12 @@ from cmfadmin.forms import NavItemForm
 from cmfadmin.libs import SpriteManager
 from cmfadmin.libs.sprite import SpriteError
 from cmfadmin.menus import AdminMenuManager
-from cmfadmin.models import Config, Nav, NavItem
+from cmfadmin.models import Nav, NavItem
+from cmfadmin.service.config import ConfigService
+from cmfadmin.service.email import EmailService
 from cmfadmin.service.navigation import NavService
-from cmfadmin.utils.helper import get_static_dir
+from cmfadmin.service.upload import UploadPathRule
+from cmfadmin.utils.helper import get_static_dir, api_response
 
 
 class ConfigView(View):
@@ -39,22 +44,8 @@ class ConfigView(View):
     template_name = None
     extra_context = None
 
-    @classmethod
-    def _load_category(cls, category):
-        configs = Config.objects.filter(category=category)
-        return {item.key: item.value for item in configs}
-
-    @classmethod
-    def _save_category(cls, category, data):
-        for key, value in data.items():
-            if key == 'csrfmiddlewaretoken':
-                continue
-            obj, created = Config.objects.get_or_create(category=category, key=key)
-            obj.value = value
-            obj.save()
-
     def get(self, request):
-        config_data = self._load_category(self.category)
+        config_data = ConfigService.get_by_category(self.category)
         context = {
             'config': config_data,
         }
@@ -65,7 +56,7 @@ class ConfigView(View):
 
     def post(self, request):
         data = request.POST.dict()
-        self._save_category(self.category, data)
+        ConfigService.set_by_category(self.category, data)
         return redirect(request.path)
 
 
@@ -83,6 +74,23 @@ class SiteInfoView(ConfigView):
     }
 
 
+class SystemSettingView(ConfigView):
+    category = ConfigCategory.SYSTEM
+    template_name = 'config/system_setting.html'
+    extra_context = {
+        'title': ConfigCategory.SYSTEM.label,
+    }
+
+
+class UploadSettingView(ConfigView):
+    category = ConfigCategory.UPLOAD
+    template_name = 'config/upload_setting.html'
+    extra_context = {
+        'title': ConfigCategory.UPLOAD.label,
+        'path_rule': list(UploadPathRule),
+    }
+
+
 class EmailConfigView(ConfigView):
     category = ConfigCategory.EMAIL
     template_name = 'config/email_settings.html'
@@ -90,17 +98,108 @@ class EmailConfigView(ConfigView):
         'title': ConfigCategory.EMAIL.label,
     }
 
+    def get(self, request):
+        config_base = ConfigService.get_by_category(self.category)
+        config_template = ConfigService.get_by_category(ConfigCategory.EMAIL_TEMPLATE)
 
-def nav_items_edit(request, pk):
-    nav = Nav.objects.get(pk=pk)
-    nav_items = NavService.get_items(nav)
+        context = {
+            'config_base': config_base,
+            'config_template': config_template,
+        }
+        context.update(self.extra_context)
 
-    context = {
-        'title': ConfigCategory.NAV.label,
-        'nav': nav,
-        'nav_items': nav_items,
-    }
-    return render(request, 'config/navigation.html', context)
+        return render(request, self.template_name, context)
+
+    def post(self, request):
+        data = request.POST.copy()
+        action = data.get('action', '')
+        data.pop('action')
+        match action:
+            case 'reset':
+                self._handle_reset()
+            case 'email_base':
+                self._handle_email_base(data)
+            case 'email_template':
+                self._handle_email_template(request.POST)
+            case 'test':
+                return self._handle_test(data)
+            case 'test_template':
+                return self._handle_test_template(data)
+            case _:
+                self.extra_context.update({'Error': _('Invalid action.')})
+
+        return redirect(request.path)
+
+    def _handle_reset(self):
+        ConfigService.delete(category=self.category)
+
+    def _handle_email_base(self, data):
+        for key in ['email_use_ssl', 'email_use_tls']:
+            data.setdefault(key, 'off')
+
+        timeout = data.get('email_timeout')
+        if timeout:
+            data['email_timeout'] = timeout
+        else:
+            data.pop('email_timeout', None)
+
+        ConfigService.set_by_category(self.category, data)
+
+    @staticmethod
+    def _handle_email_template(data):
+        ConfigService.set_by_category(ConfigCategory.EMAIL_TEMPLATE, data)
+
+    @staticmethod
+    def _handle_test(data):
+        to = data.get('test_receiver', '').strip()
+        subject = data.get('test_subject', '').strip()
+        content = data.get('test_content', '')
+
+        if not to:
+            return api_response(1, gettext('Recipient address is required.'))
+
+        try:
+            validate_email(to)
+        except ValidationError:
+            return api_response(1, gettext('Invalid email address'))
+
+        try:
+            email = EmailService()
+            res = email.send(to, subject, content)
+            if res > 0:
+                return api_response(0, gettext('Successfully sent email.'), {'has_send': res})
+            else:
+                return api_response(1, gettext('Failed to send email.'))
+        except Exception as e:
+            return api_response(1, gettext('Error while sending email: ') + str(e))
+
+    @staticmethod
+    def _handle_test_template(data):
+        to = data.get('test_receiver', '').strip()
+        raw_vars = data.get('test_variables', '').strip()
+
+        if not to:
+            return api_response(1, gettext('Recipient address is required.'))
+
+        try:
+            validate_email(to)
+        except ValidationError:
+            return api_response(1, gettext('Invalid email address'))
+
+        try:
+            variables = json.loads(raw_vars) if raw_vars else {}
+        except JSONDecodeError:
+            return api_response(1, gettext('Invalid JSON format for variables.'))
+
+        try:
+            email = EmailService()
+            res = email.send_with_template(to, variables)
+            if res > 0:
+                return api_response(0, gettext('Successfully sent email.'), {'has_send': res})
+            else:
+                return api_response(1, gettext('Failed to send email.'))
+        except Exception as e:
+            return api_response(1, gettext('Error while sending email: ') + str(e))
 
 
 class NavItemView(View):
@@ -305,3 +404,15 @@ class SpriteManagerView(View):
                 return JsonResponse({'message': _('Symbol ID not found.')}, status=404)
         except Exception as e:
             return JsonResponse({'message': _('Error: %(error)s') % {'error': e}}, status=500)
+
+
+def nav_items_edit(request, pk):
+    nav = Nav.objects.get(pk=pk)
+    nav_items = NavService.get_items(nav)
+
+    context = {
+        'title': ConfigCategory.NAV.label,
+        'nav': nav,
+        'nav_items': nav_items,
+    }
+    return render(request, 'config/navigation.html', context)

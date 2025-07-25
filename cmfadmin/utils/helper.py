@@ -20,6 +20,7 @@ from django.apps import apps
 from django.conf import settings
 from django.db import connection, utils, models
 from django.db.models import Model
+from django.http import JsonResponse
 
 import djangocmf
 from cmfadmin.utils.tools import int_to_bytes
@@ -189,3 +190,18 @@ def get_static_dir() -> str:
         else os.path.join(settings.BASE_DIR, 'static')
     )
     return os.path.abspath(os.path.join(os.path.normpath(base_path), ''))
+
+
+def api_response(code: int = 0, message: str = 'Success', data: dict | None = None, status: int = 200) -> JsonResponse:
+    """
+    Auto decide whether it's a success or error response based on code.
+    code == 0 means success, otherwise it's an error.
+    """
+    if data is None:
+        data = {}
+
+    return JsonResponse({
+        'code': code,
+        'message': message,
+        'data': data
+    }, status=status)

@@ -35,15 +35,17 @@ class MenuSource(StrEnum):
 class ConfigCategory(models.TextChoices):
     SITE = 'site', 'Site Information'
     EMAIL = 'email', 'Email Settings'
+    EMAIL_TEMPLATE = 'email_template', 'Email Template'
     LINKS = 'links', 'External Links'
     NAV = 'nav', 'Navigation Management'
     TEMPLATE = 'template', 'Template Management'
     SYSTEM = 'system', 'System Settings'
+    UPLOAD = 'upload', 'Upload Settings'
     ICONS = 'icons', 'Icons Management'
 
 
 # Config model enum
-class ConfigType(models.TextChoices):
+class InputType(models.TextChoices):
     TEXT = 'text'
     TEXTAREA = 'textarea'
     IMAGE = 'image'

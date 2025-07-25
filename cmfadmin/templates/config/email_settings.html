@@ -1,87 +1,118 @@
 {% extends 'config/config_base.html' %}
-{% load i18n %}
+{% load i18n static icons %}
 
 {% block page_title %}{% translate 'Email configuration Settings' %}{% endblock %}
 
 {% block content %}
     <div class="card">
-        <form action="{% url 'admin:email_config' %}" method="post" enctype="multipart/form-data">{% csrf_token %}
-            <div class="card-header">
-                <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <a href="#base_setting" class="nav-link active" data-bs-toggle="tab" aria-selected="true" role="tab">
-                            {% translate 'Base settings' %}</a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a href="#template" class="nav-link" data-bs-toggle="tab" aria-selected="false" tabindex="-1"
-                           role="tab">{% translate 'Email templates' %}</a>
-                    </li>
-                </ul>
-            </div>
-            <div class="card-body">
-                <div class="tab-content">
-                    <div class="tab-pane active show" id="base_setting" role="tabpanel">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a href="#base_setting" class="nav-link active" data-bs-toggle="tab" aria-selected="true" role="tab">
+                        {% translate 'Base Settings' %}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a href="#template" class="nav-link" data-bs-toggle="tab" aria-selected="false" tabindex="-1"
+                       role="tab">{% translate 'Email Template' %}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a href="#test" class="nav-link" data-bs-toggle="tab" aria-selected="false" tabindex="-1"
+                       role="tab">{% translate 'Test Email Sending' %}</a>
+                </li>
+            </ul>
+        </div>
+        <div class="tab-content">
+            <div class="tab-pane active show" id="base_setting" role="tabpanel">
+                <form action="{% url 'admin:email_config' %}" method="post">{% csrf_token %}
+                    <div class="card-body">
                         <div class="mb-3 row">
-                            <label class="col-2 col-form-label required" for="e-addr">{% translate 'From email address' %}</label>
+                            <label class="col-2 col-form-label" for="e-addr">{% translate 'From email address' %}</label>
                             <div class="col-lg-6 col-md-8 col-sm-10">
-                                <input type="text" class="form-control" name="default_from_email" id="e-addr"
-                                       value="{{ config.default_from_email|default:'' }}" required>
+                                <input type="email" class="form-control" name="default_from_email" id="e-addr"
+                                       value="{{ config_base.default_from_email|default:'' }}">
                                 <small class="form-hint">{% translate 'The email address used as the sender for outgoing emails.' %}</small>
                             </div>
                         </div>
                         <div class="mb-3 row">
-                            <label class="col-2 col-form-label required" for="host">{% translate 'SMTP host' %}</label>
+                            <label class="col-2 col-form-label" for="host">{% translate 'SMTP host' %}</label>
                             <div class="col-lg-6 col-md-8 col-sm-10">
                                 <input type="text" class="form-control" name="email_host" id="host"
-                                       value="{{ config.email_host|default:'' }}" required>
+                                       value="{{ config_base.email_host|default:'' }}">
                                 <small class="form-hint">{% translate 'The address of your email server (SMTP).' %}</small>
                             </div>
                         </div>
                         <div class="mb-3 row">
-                            <label class="col-2 col-form-label required" for="port">{% translate 'SMTP port' %}</label>
+                            <label class="col-2 col-form-label" for="port">{% translate 'SMTP port' %}</label>
                             <div class="col-lg-6 col-md-8 col-sm-10">
                                 <input type="text" class="form-control" name="email_port" id="port"
-                                       value="{{ config.email_port|default:'' }}" required>
+                                       value="{{ config_base.email_port|default:465 }}">
                                 <small class="form-hint">{% translate 'Common ports: 587 (recommended), 465 (126/163/QQ Mail), 25, 2525.' %}</small>
                             </div>
                         </div>
                         <div class="mb-3 row">
-                            <label class="col-2 col-form-label required" for="host-user">{% translate 'SMTP username' %}</label>
+                            <label class="col-2 col-form-label" for="host-user">{% translate 'SMTP username' %}</label>
                             <div class="col-lg-6 col-md-8 col-sm-10">
                                 <input type="text" class="form-control" name="email_host_user" id="host-user"
-                                       value="{{ config.email_host_user|default:'' }}" required>
+                                       value="{{ config_base.email_host_user|default:'' }}">
                                 <small class="form-hint">{% translate 'The username for authenticating with your email server.' %}</small>
                             </div>
                         </div>
                         <div class="mb-3 row">
-                            <label class="col-2 col-form-label required" for="host-pws">{% translate 'SMTP password' %}</label>
+                            <label class="col-2 col-form-label" for="host-pws">{% translate 'SMTP password' %}</label>
                             <div class="col-lg-6 col-md-8 col-sm-10">
                                 <input type="password" class="form-control" name="email_host_password" id="host-pws"
-                                       value="{{ config.email_host_password|default:'' }}" required>
+                                       value="{{ config_base.email_host_password }}">
                                 <small class="form-hint">{% translate 'The password for authenticating with your email server.' %}</small>
                             </div>
                         </div>
-                        <div class="row">
+                        <div class="mb-3 row">
+                            <label class="col-2 col-form-label" for="timeout">{% translate 'Timeout' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <select class="form-select" name="email_timeout" id="timeout">
+                                    <option value="">{% translate 'None' %}</option>
+                                    <option value="30" {% if config_base.email_timeout == '30' %}selected{% endif %}>
+                                        30 {% translate 'Seconds' %}</option>
+                                    <option value="60" {% if config_base.email_timeout == '60' %}selected{% endif %}>
+                                        60 {% translate 'Seconds' %}</option>
+                                </select>
+                                <small class="form-hint">{% translate 'The password for authenticating with your email server.' %}</small>
+                            </div>
+                        </div>
+                        <div class="mb-3 row">
                             <div class="col-3">
                                 <label class="form-check form-switch form-switch-3">
-                                    <input class="form-check-input" type="checkbox" name="email_use_ssl">
+                                    <input class="form-check-input" type="checkbox" name="email_use_ssl"
+                                           {% if config_base.email_use_ssl == 'on' %}checked{% endif %}>
                                     <span class="form-label">{% translate 'Use SSL' %}</span>
                                 </label>
                             </div>
                             <div class="col-3">
                                 <label class="form-check form-switch form-switch-3">
-                                    <input class="form-check-input" type="checkbox" name="email_use_tls">
+                                    <input class="form-check-input" type="checkbox" name="email_use_tls"
+                                           {% if config_base.email_use_tls == 'on' %}checked{% endif %}>
                                     <span class="form-label">{% translate 'Use TLS' %}</span>
                                 </label>
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane" id="template" role="tabpanel">
+                    <div class="card-footer d-flex">
+                        <button type="submit" name="action" value="email_base" class="btn btn-primary">
+                            {% translate 'Save' %}
+                        </button>
+                        <button type="submit" class="btn btn-warning ms-auto" name="action" value="reset">
+                            {% translate 'Reset' %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="tab-pane" id="template" role="tabpanel">
+                <form action="{% url 'admin:email_config' %}" method="post">{% csrf_token %}
+                    <div class="card-body">
                         <div class="mb-3 row">
                             <label class="col-2 col-form-label" for="t-name">{% translate 'From name' %}</label>
                             <div class="col-lg-6 col-md-8 col-sm-10">
                                 <input type="text" class="form-control" name="template_from_name" id="t-name"
-                                       value="{{ config.template_from_name|default:'' }}">
+                                       value="{{ config_template.template_from_name|default:'' }}">
                                 <small class="form-hint">{% translate "The name displayed as the sender in the recipient's inbox." %}</small>
                             </div>
                         </div>
@@ -89,35 +120,152 @@
                             <label class="col-2 col-form-label" for="t-subject">{% translate 'Subject' %}</label>
                             <div class="col-lg-6 col-md-8 col-sm-10">
                                 <input type="text" class="form-control" name="template_subject" id="t-subject"
-                                       value="{{ config.template_subject|default:'' }}">
+                                       value="{{ config_template.template_subject|default:'' }}">
                                 <small class="form-hint">{% translate "The subject line of the email." %}</small>
                             </div>
                         </div>
                         <div class="mb-3 row">
                             <label class="col-2 col-form-label" for="t-content">{% translate 'Content' %}</label>
                             <div class="col-lg-6 col-md-8 col-sm-10">
-                                <!-- TODO 考虑改成富文本编辑器 -->
-                                <textarea type="text" class="form-control" name="template_content" id="t-content" rows="5">
-                                    {{ config.template_content|default:'' }}
-                                </textarea>
-                                <small class="form-hint">{% translate "The main content of the email, HTML formatting is supported." %}</small>
+                                <textarea name="template_content" id="t-content">{{ config_template.template_content }}</textarea>
+                                <small class="form-hint">{% translate "The email body content fully supports HTML formatting and layout. " %}</small>
                             </div>
                         </div>
                         <div class="row">
                             <label class="col-2 col-form-label" for="t-var">{% translate 'Available variables' %}</label>
                             <div class="col-lg-6 col-md-8 col-sm-10">
-                                <!-- TODO 设计好变量使用规则 -->
                                 <input type="text" class="form-control" name="template_variables" id="t-var"
-                                       value="{{ config.template_variables|default:'' }}">
+                                       value="{{ config_template.template_variables|default:'' }}">
                                 <small class="form-hint">{% translate "List of available variables you can use within this template." %}</small>
                             </div>
                         </div>
                     </div>
-                </div>
+                    <div class="card-footer d-flex">
+                        <button type="submit" name="action" value="email_template" class="btn btn-primary">
+                            {% translate 'Save' %}
+                        </button>
+                    </div>
+                </form>
             </div>
-            <div class="card-footer">
-                <button type="submit" class="btn btn-primary">{% translate 'Save' %}</button>
+            <div class="tab-pane" id="test" role="tabpanel">
+                <form action="{% url 'admin:email_config' %}" method="post" id="test_form">{% csrf_token %}
+                    <div class="card-body">
+                        <div class="mb-3 row">
+                            <label class="col-2 col-form-label required" for="test_receiver">{% translate 'Recipient email' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <input type="text" class="form-control" name="test_receiver" id="test_receiver" required>
+                                <small class="form-hint">{% translate 'The email address used to receive test messages.' %}</small>
+                            </div>
+                        </div>
+                        <div class="mb-3 row">
+                            <label class="col-2 col-form-label" for="test_subject">{% translate 'Subject' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <input type="text" class="form-control" name="test_subject" id="test_subject">
+                                <small class="form-hint">{% translate 'Subject of email.' %}</small>
+                            </div>
+                        </div>
+                        <div class="mb-3 row">
+                            <label class="col-2 col-form-label" for="test_content">{% translate 'Content' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <textarea class="form-control" name="test_content" id="test_content" rows="5"></textarea>
+                                <small class="form-hint">
+                                    {% translate 'Applicable to plain email testing only.' %}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="mb-3 row">
+                            <label class="col-2 col-form-label" for="test_variables">{% translate 'Variables' %}</label>
+                            <div class="col-lg-6 col-md-8 col-sm-10">
+                                <textarea class="form-control" name="test_variables" id="test_variables" rows="5"></textarea>
+                                <small class="form-hint">
+                                    {% translate 'Define template variables in JSON format, e.g. {"username": "Tom", "code": "123456"}.' %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary" name="action" value="test">
+                            <div class="spinner-border text-light icon d-none" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            {% translate 'Test Email' %}
+                        </button>
+                        <button class="btn btn-success" name="action" value="test_template">
+                            <div class="spinner-border text-light icon d-none" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            {% translate 'Test Template' %}
+                        </button>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
     </div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'libs/hugerte/hugerte.min.js' %}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let options = {
+                selector: "#t-content",
+                height: 300,
+                menubar: false,
+                statusbar: false,
+                license_key: "gpl",
+                plugins: [
+                    "advlist",
+                    "autolink",
+                    "lists",
+                    "link",
+                    "image",
+                    "charmap",
+                    "preview",
+                    "anchor",
+                    "searchreplace",
+                    "visualblocks",
+                    "code",
+                    "fullscreen",
+                    "insertdatetime",
+                    "media",
+                    "table",
+                    "code",
+                    "help",
+                    "wordcount",
+                ],
+                toolbar:
+                    "fullscreen code | undo redo | formatselect fontsizeselect | " +
+                    "bold italic backcolor | alignleft aligncenter " +
+                    "alignright alignjustify | bullist numlist outdent indent | " +
+                    "removeformat",
+                content_style:
+                    "body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; -webkit-font-smoothing: antialiased; }",
+            };
+            if (localStorage.getItem("tablerTheme") === "dark") {
+                options.skin = "oxide-dark";
+                options.content_css = "dark";
+            }
+            hugeRTE.init(options);
+
+
+            const form = document.getElementById('test_form');
+            if (!form) return;
+
+            const buttons = form.querySelectorAll('button[name="action"]');
+
+            buttons.forEach(button => {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+
+                    const formData = new FormData(form);
+                    formData.append('action', this.value); // overwrite action with current button
+                    ajaxRequest({
+                        url: form.getAttribute('action'),
+                        data: formData
+                    }, this);
+                });
+            });
+        });
+    </script>
 {% endblock %}

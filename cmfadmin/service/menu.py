@@ -490,7 +490,7 @@ class AdminMenu:
                 id=app.get('app_label'),
                 title='Authentication and Authorization' if app_label == 'auth' else app.get('name', ''),
                 url=app.get('app_url'),
-                icon=constants.AUTH,
+                icon=constants.AUTH_ICON,
                 app_label=app_label,
                 source=MenuSource.APP_LIST,
                 sort_order=1

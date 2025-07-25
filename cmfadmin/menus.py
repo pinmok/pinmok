@@ -23,11 +23,10 @@ from cmfadmin.service.menu import MenuSynchronizer, AdminMenu, MenuItem
 ADMIN_MENU = [
     {'title': 'Site Settings', 'icon': 'tabler-setting', 'sort_order': 0, 'children': [
         {'title': ConfigCategory.SITE.label, 'url': '/admin/cmfadmin/site/', 'sort_order': 100},
-        # {'title': ConfigCategory.NAV.label, 'url': '/admin/cmfadmin/nav', 'sort_order': 200},
-        {'title': ConfigCategory.TEMPLATE.label, 'url': '/admin/cmfadmin/template', 'sort_order': 300},
-        {'title': ConfigCategory.EMAIL.label, 'url': '/admin/cmfadmin/email', 'sort_order': 400},
-        {'title': ConfigCategory.SYSTEM.label, 'url': '/admin/cmfadmin/system', 'sort_order': 500},
-        {'title': ConfigCategory.ICONS.label, 'url': '/admin/cmfadmin/icons', 'sort_order': 600},
+        {'title': ConfigCategory.EMAIL.label, 'url': '/admin/cmfadmin/email', 'sort_order': 200},
+        {'title': ConfigCategory.SYSTEM.label, 'url': '/admin/cmfadmin/system', 'sort_order': 300},
+        {'title': ConfigCategory.ICONS.label, 'url': '/admin/cmfadmin/icons', 'sort_order': 400},
+        {'title': ConfigCategory.UPLOAD.label, 'url': '/admin/cmfadmin/upload', 'sort_order': 500},
     ]},
 ]
 

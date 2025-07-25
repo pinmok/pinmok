@@ -25,7 +25,7 @@ SITE_INFO = 'site_info'
 SYS_INFO = 'sys_info'
 
 # Auth menu icon constant
-AUTH = 'tabler-user-shield'
+AUTH_ICON = 'tabler-user-shield'
 
 # Custom EmailBackend for overriding email sending configuration
 CMF_EMAIL_BACKEND = 'cmfadmin.backends.EmailBackend'

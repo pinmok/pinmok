@@ -18,6 +18,8 @@ from cmfadmin.views import (
     nav_items_edit,
     NavItemView,
     SpriteManagerView,
+    SystemSettingView,
+    UploadSettingView,
 )
 
 cmfadmin_urls = [
@@ -27,4 +29,6 @@ cmfadmin_urls = [
     ('cmfadmin/icons/', SpriteManagerView.as_view(), 'icons_manage'),
     ('cmfadmin/nav/<int:pk>/', nav_items_edit, 'nav_items_edit'),
     ('cmfadmin/nav/navitem/<int:nav_id>/<int:nav_item_id>/', NavItemView.as_view(), 'navitem'),
+    ('cmfadmin/system', SystemSettingView.as_view(), 'system'),
+    ('cmfadmin/upload', UploadSettingView.as_view(), 'upload'),
 ]

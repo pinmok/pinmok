@@ -19,6 +19,6 @@ from django.urls import path
 from cmfadmin import site
 
 urlpatterns = [
-    # Use the custom admin site defined in 'core' instead of the default admin.site
+    # Use the CrazyCMF admin site instead of the default admin.site
     path('admin/', site.urls),
 ]

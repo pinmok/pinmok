@@ -64,3 +64,104 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+function ajaxRequest({
+                         url,
+                         method = 'POST',
+                         data = {},
+                         headers = {},
+                         responseType = 'json',
+                         onSuccess = null,
+                         onError = null,
+                         contentType = 'auto'
+                     }, btn) {
+    let spinner = null
+    if (btn) {
+        spinner = btn.querySelector('.spinner-border');
+        btn.disabled = true;
+        if (spinner) {
+            spinner.classList.remove('d-none');
+        }
+    }
+
+    method = method.toUpperCase();
+
+    let body = null;
+    const finalHeaders = {
+        'X-CSRFToken': getCookie('csrftoken'),
+        ...headers
+    };
+
+    if (method === 'GET') {
+        const queryString = new URLSearchParams(data).toString();
+        if (queryString) {
+            url += (url.includes('?') ? '&' : '?') + queryString;
+        }
+    } else {
+        if (contentType === 'json' || (contentType === 'auto' && typeof data === 'object' && !(data instanceof FormData))) {
+            finalHeaders['Content-Type'] = 'application/json';
+            body = JSON.stringify(data);
+        } else if (contentType === 'form' || (contentType === 'auto' && data instanceof FormData)) {
+            body = data;
+        } else {
+            body = data;
+        }
+    }
+
+
+    fetch(url, {
+        method,
+        headers: finalHeaders,
+        body,
+        credentials: 'same-origin'
+    })
+        .then(res => res[responseType]())
+        .then(res => {
+            if (btn) {
+                btn.disabled = false;
+            }
+            if (spinner) {
+                spinner.classList.add('d-none');
+            }
+
+            const ok = res.code === 0;
+            showToast(res.message || (ok ? gettext('Success') : gettext('Error')), ok);
+
+            if (ok && typeof onSuccess === 'function') {
+                onSuccess(res);
+            } else if (!ok && typeof onError === 'function') {
+                onError(res);
+            }
+        })
+        .catch(err => {
+            if (btn) {
+                btn.disabled = false;
+            }
+            if (spinner) {
+                spinner.classList.add('d-none');
+            }
+
+            showToast(gettext('Network error or server exception.'), false);
+            if (typeof onError === 'function') {
+                onError({code: -1, message: err.message});
+            }
+        });
+}
+
+// Show toast with header and body
+function showToast(message, isSuccess = true) {
+    const toastEl = document.getElementById('global-toast');
+    const toastHeader = document.getElementById('global-toast-header');
+    const toastBody = document.getElementById('global-toast-body');
+
+    toastHeader.textContent = isSuccess ? gettext('Success') : gettext('Failed');
+    toastBody.textContent = message || (isSuccess ? gettext('Success') : gettext('An error occurred'));
+
+    const toast = new bootstrap.Toast(toastEl, {delay: 3000});
+
+    const toastHeaderContainer = toastEl.querySelector('.toast-header');
+    toastHeaderContainer.classList.remove('bg-success', 'bg-danger');
+    toastHeaderContainer.classList.add(isSuccess ? 'bg-success' : 'bg-danger');
+
+    toast.show();
+}

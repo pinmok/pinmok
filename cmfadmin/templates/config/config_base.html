@@ -1,5 +1,9 @@
 {% extends 'admin/base_site.html' %}
 
+{% block extrahead %}
+    <script src="{% url 'admin:jsi18n' %}"></script>
+{% endblock %}
+
 {% block breadcrumbs %}
     <li class="breadcrumb-item active">{{ title }}</li>
 {% endblock %}

@@ -13,8 +13,11 @@ Created:
 from dataclasses import dataclass
 from typing import Any
 
-from django.conf import settings
+from django.core.cache import cache
 from django.core.mail.backends.smtp import EmailBackend as SMTPBackend
+
+from cmfadmin.enums import ConfigCategory
+from cmfadmin.models import Config
 
 
 @dataclass
@@ -59,12 +62,50 @@ class EmailConfig:
 
     @classmethod
     def get(cls) -> dict[str, Any]:
-        # TODO 处理逻辑
-        config_obj = cls(
-            host='smtp.gmail.com',
-            port=587,
-        )
-        return config_obj.to_dict()
+        """
+        Fetch email config from database.
+        Return empty dict if not configured or incomplete.
+        """
+        cache_key = "email_backend_config"
+        cached_config = cache.get(cache_key)
+        if cached_config is not None:
+            return cached_config
+
+        try:
+            email_configs_from_db = Config.objects.filter(category=ConfigCategory.EMAIL).values('key', 'value')
+            if not email_configs_from_db.exists():
+                return {}
+
+            data = {r['key']: r['value'] for r in email_configs_from_db}
+            if not data.get('email_host'):
+                return {}
+
+            # Validate port if present
+            port = None
+            if data.get('email_port'):
+                try:
+                    port = int(data.get('email_port'))
+                    if not (0 < port <= 65535):
+                        return {}
+                except ValueError:
+                    return {}
+            config_obj = cls(
+                host=data.get('email_host'),
+                port=port,
+                username=data.get('email_host_user'),
+                password=data.get('email_host_password'),
+                use_tls=data.get('email_use_tls') == 'on',
+                use_ssl=data.get('email_use_ssl') == 'on',
+                timeout=int(data.get('email_timeout')) if data.get('email_timeout') else None,
+            )
+            if config_obj.use_tls and config_obj.use_ssl:
+                return {}
+
+            config_dict = config_obj.to_dict()
+            cache.set(cache_key, config_dict, timeout=3600)
+            return config_dict
+        except Exception as e:
+            return {}
 
     def to_dict(self) -> dict[str, Any]:
         return self.__dict__
@@ -77,6 +118,7 @@ class EmailBackend(SMTPBackend):
     """
 
     def __init__(self, *args, **kwargs):
-        if not getattr(settings, 'EMAIL_HOST', None):
-            kwargs.update(EmailConfig.get())
+        backend_config = EmailConfig.get()
+        if backend_config:
+            kwargs.update(backend_config)
         super().__init__(*args, **kwargs)

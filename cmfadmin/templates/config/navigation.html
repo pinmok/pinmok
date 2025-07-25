@@ -1,10 +1,6 @@
 {% extends 'config/config_base.html' %}
 {% load i18n static icons %}
 
-{% block extrahead %}
-    <script src="{% url 'admin:jsi18n' %}"></script>
-{% endblock %}
-
 {% block page_title %}{% translate 'Edit' %} {{ nav.title }} ({{ nav.slug }}){% endblock %}
 
 {% block page_right %}

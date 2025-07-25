@@ -99,11 +99,11 @@ class NavAdmin(CMFModelAdmin):
     edit_nav.short_description = _('Action')
 
 
-# 取消默认 admin 注册
+# Unregister the default model registration in Django Admin
 admin.site.unregister(User)
 admin.site.unregister(Group)
 
-# 用你的自定义 admin 类注册
+# Register the model using the CrazyCMF admin class
 site.register(User, CmfUserAdmin)
 site.register(Group, CmfGroupAdmin)
 site.register(ExternalLink, ExternalLinksAdmin)
