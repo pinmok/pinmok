@@ -10,6 +10,8 @@ Author:
 Created:
   2025-06-16
 """
+from cmfadmin.enums import MimeType, FileType
+
 # Variable name menus should be defined under in menus.py files
 ADMIN_MENU_VAR_NAME = "ADMIN_MENU"
 
@@ -34,3 +36,41 @@ DEFAULT_SORT_ORDER = 10000
 
 # custom sprite.svg file path
 CUSTOM_SPRITE_FILE = 'svg/custom_sprite.svg'
+
+UPLOAD_FILE_CONFIG = {
+    FileType.IMAGE.value: {
+        'size_key': 'upload_image_size',
+        'type_key': 'upload_image_type',
+        'default_size': 5,
+        'default_type': [MimeType.JPEG.value, MimeType.PNG.value, MimeType.GIF.value],
+        'mimes': [MimeType.JPEG, MimeType.PNG, MimeType.GIF, MimeType.WEBP, MimeType.BMP, MimeType.SVG, MimeType.AVIF]
+    },
+    FileType.AUDIO.value: {
+        'size_key': 'upload_audio_size',
+        'type_key': 'upload_audio_type',
+        'default_size': 10,
+        'default_type': [MimeType.MP3.value, MimeType.WAV.value],
+        'mimes': [MimeType.MP3, MimeType.WAV, MimeType.OGG, MimeType.FLAC, MimeType.AAC, MimeType.OPUS]
+    },
+    FileType.VIDEO.value: {
+        'size_key': 'upload_video_size',
+        'type_key': 'upload_video_type',
+        'default_size': 20,
+        'default_type': [MimeType.MP4.value, MimeType.AVI.value],
+        'mimes': [MimeType.MP4, MimeType.WEBM, MimeType.AVI, MimeType.MOV, MimeType.MKV, MimeType.OGV]
+    },
+    FileType.DOCUMENT.value: {
+        'size_key': 'upload_document_size',
+        'type_key': 'upload_document_type',
+        'default_size': 10,
+        'default_type': [MimeType.PDF.value, MimeType.DOCX.value, MimeType.XLSX.value, MimeType.TXT.value],
+        'mimes': [MimeType.PDF, MimeType.DOC, MimeType.DOCX, MimeType.XLS, MimeType.XLSX, MimeType.PPT, MimeType.PPTX, MimeType.TXT]
+    },
+    FileType.ARCHIVE.value: {
+        'size_key': 'upload_archive_size',
+        'type_key': 'upload_archive_type',
+        'default_size': 10,
+        'default_type': [MimeType.ZIP.value, MimeType.RAR.value],
+        'mimes': [MimeType.ZIP, MimeType.RAR, MimeType.SEVEN_Z, MimeType.TAR, MimeType.GZIP]
+    }
+}

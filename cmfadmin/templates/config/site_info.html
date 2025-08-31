@@ -1,5 +1,5 @@
 {% extends 'config/config_base.html' %}
-{% load i18n static %}
+{% load i18n static media %}
 
 {% block page_title %}{% translate 'Site Information Settings' %}{% endblock %}
 
@@ -42,16 +42,20 @@
                             </div>
                         </div>
                         <div class="row mb-3 align-items-center">
-                            <label class="col-2 col-form-label" for="site-logo">{% translate 'Site logo' %}</label>
-                            <!-- TODO 图片上传及预览 -->
+                            <label class="col-2 col-form-label">{% translate 'Site logo' %}</label>
                             <div class="col-auto">
-                                <img src="{% static 'admin/svg/crazy_logo.svg' %}" class="logo-img" alt="{% translate 'Site logo' %}">
+                                <img src="{% if config.site_logo %}{% media_url config.site_logo %}{% else %}
+                                {% static 'admin/svg/photo.svg' %}{% endif %}"
+                                     class="logo-img" id="img-logo" alt="{% translate 'Site logo' %}">
                             </div>
                             <div class="col-auto">
-                                <input type="file" name="site_logo" id="site-logo" class="form-control" value="" accept="image/*">
-                            </div>
-                            <div class="col-auto">
-                                <button type="button" class="btn btn-ghost-danger btn-3">{% translate 'Delete logo' %}</button>
+                                <input type="hidden" name="site_logo" id="site-logo" accept="image/*" value="{{ config.site_logo }}">
+                                <button type="button" class="btn btn-outline-primary cropper-trigger"
+                                        data-input="#site-logo"
+                                        data-preview="#img-logo"
+                                        data-upload-url="{% url 'admin:upload_file' %}">
+                                    {% translate 'Upload' %}
+                                </button>
                             </div>
                         </div>
                         <div class="mb-3 row">
@@ -102,7 +106,7 @@
                             <label class="col-2 col-form-label" for="phone">{% translate 'Service phone' %}</label>
                             <div class="col-lg-6 col-md-8 col-sm-10">
                                 <input type="text" class="form-control" name="service_phone" id="phone"
-                                       value="{{ config.service_phone|default:'' }}">
+                                       value="{{ config.service_phone }}" autocomplete="tel">
                             </div>
                         </div>
                         <div class="row mb-3">
@@ -120,16 +124,28 @@
                             </div>
                         </div>
                         <div class="row mb-3 align-items-center">
-                            <label class="col-2 col-form-label" for="wechat">{% translate 'WeChat QRCode' %}</label>
-                            <!-- TODO 图片上传及预览 -->
+                            <label class="col-2 col-form-label">{% translate 'WeChat QRCode' %}</label>
                             <div class="col-auto">
-                                <img src="{% static 'admin/svg/crazy_logo.svg' %}" class="logo-img" alt="{% translate 'WeChat QRCode' %}">
+                                <img src="{% if config.wechat_qrcode %}{% media_url config.wechat_qrcode %}{% else %}
+                                {% static 'admin/svg/photo.svg' %}{% endif %}"
+                                     class="logo-img" id="qrcode" alt="{% translate 'WeChat QRCode' %}">
                             </div>
                             <div class="col-auto">
-                                <input type="file" name="wechat_qrcode" id="wechat" class="form-control" value="" accept="image/*">
+                                <input type="hidden" name="wechat_qrcode" id="wechat" accept="image/*" value="{{ config.wechat_qrcode }}">
+                                <button type="button" class="btn btn-outline-primary cropper-trigger"
+                                        data-input="#wechat"
+                                        data-preview="#qrcode"
+                                        data-upload-url="{% url 'admin:upload_file' %}">
+                                    {% translate 'Upload' %}
+                                </button>
                             </div>
                             <div class="col-auto">
-                                <button type="button" class="btn btn-ghost-danger btn-3">{% translate 'Delete QRCode' %}</button>
+                                <button type="button" class="btn btn-ghost-danger delete-file-btn"
+                                        data-input="#wechat"
+                                        data-preview="#qrcode"
+                                        data-path="{{ config.wechat_qrcode }}">
+                                    {% translate 'Delete QRCode' %}
+                                </button>
                             </div>
                         </div>
                         <div class="row mb-3">
@@ -160,4 +176,6 @@
             </div>
         </form>
     </div>
+    {% include 'component/cropper.html' %}
 {% endblock %}
+

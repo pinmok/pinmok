@@ -192,7 +192,7 @@ def get_static_dir() -> str:
     return os.path.abspath(os.path.join(os.path.normpath(base_path), ''))
 
 
-def api_response(code: int = 0, message: str = 'Success', data: dict | None = None, status: int = 200) -> JsonResponse:
+def api_response(err_code: int = 0, message='Success', data: dict | None = None, status: int = 200) -> JsonResponse:
     """
     Auto decide whether it's a success or error response based on code.
     code == 0 means success, otherwise it's an error.
@@ -201,7 +201,7 @@ def api_response(code: int = 0, message: str = 'Success', data: dict | None = No
         data = {}
 
     return JsonResponse({
-        'code': code,
+        'code': err_code,
         'message': message,
         'data': data
     }, status=status)

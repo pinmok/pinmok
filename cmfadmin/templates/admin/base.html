@@ -44,6 +44,12 @@
         </div>
     </div>
 {% endblock %}
+<script>
+    window.APP_URLS = {
+        uploadFile: "{% url 'admin:upload_file' %}"
+    }
+    window.DEFAULT_IMG = "{% static 'admin/svg/photo.svg' %}"
+</script>
 <script src="{% static 'admin/js/bootstrap.bundle.min.js' %}"></script>
 <script src="{% static 'admin/js/tabler.min.js' %}" defer></script>
 <!-- BEGIN GLOBAL THEME SCRIPT -->

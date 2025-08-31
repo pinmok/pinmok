@@ -8,110 +8,106 @@ Description:
 Author:
   惠达浪 <crazys@126.com>
 Created:
-  2025-07-22
+  2025-07-26
 """
-import hashlib
-import os
-from dataclasses import dataclass
-from datetime import datetime
-from enum import StrEnum
 
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
-from django.utils.translation import gettext_lazy as _
+
+from cmfadmin.constants import UPLOAD_FILE_CONFIG
+from cmfadmin.enums import FileType
+from cmfadmin.libs.upload import Upload, UploadResult
+from cmfadmin.models import UploadFile
+from cmfadmin.service.config import ConfigService
+from cmfadmin.utils.tools import int_to_bytes
 
 
-class UploadPathRule(StrEnum):
-    MONTH = 'month'
-    DATE = 'date'
-    COUNT = 'count'
-    CUSTOM = 'custom'
-
-    @property
-    def label(self) -> str:
-        return {
-            self.DATE: 'By Date: YYYY/MM/DD — For frequent uploads',
-            self.MONTH: 'By Month: YYYY/MM — For blogs or infrequent uploads',
-            self.COUNT: 'By Count: 1000 files/folder — For large datasets',
-            self.CUSTOM: 'Custom: Reserved for advanced rules',
-        }[self]
-
-
-@dataclass
-class UploadResult:
-    path: str  # Relative path, e.g., '2025/07/22/file.png'
-    filename: str  # Final saved filename
-    size: int  # File size in bytes
-    mime_type: str  # MIME type of the file
-    original_name: str  # Original uploaded filename
-    hash: str | None = None  # Optional: hash for deduplication or reference
-
-
-class UploadValidator:
-    def __init__(self, max_size: int | None = None, allowed_types: list[str] | None = None):
-        self.allowed_types = allowed_types or []
-        self.max_size = max_size or 5 * 1024 * 1024  # default 10MB
-
-    def validate(self, file_obj: UploadedFile) -> None:
-        if file_obj.size > self.max_size:
-            raise ValueError(_('File size exceeds limit'))
-
-        if self.allowed_types and file_obj.content_type not in self.allowed_types:
-            raise ValueError(_('File type not allowed'))
-
-
-# Core upload service
 class UploadService:
-    def __init__(self, base_dir: str, validator: UploadValidator | None = None):
-        self.base_dir = base_dir.rstrip('/')
-        self.validator = validator or UploadValidator()
+    def __init__(self, use_unique_name: bool = True):
+        self.use_unique_name = use_unique_name
 
     @staticmethod
-    def _calculate_hash(file_path: str) -> str:
-        sha256 = hashlib.sha256()
-        with open(file_path, 'rb') as f:
-            for chunk in iter(lambda: f.read(4096), b''):
-                sha256.update(chunk)
-        return sha256.hexdigest()
+    def _get_config(file_type: FileType) -> dict:
+        """
+        Get resolved config for a file type, including allowed allowed_mimes, size and mimes.
+        Priority: ConfigService -> Default config.
+        """
+        cfg = UPLOAD_FILE_CONFIG[file_type.value]
 
-    def _generate_path(self, filename: str, rule: UploadPathRule, custom_path: str | None = None) -> str:
-        today = datetime.today()
-        match rule:
-            case UploadPathRule.DATE:
-                subdir = today.strftime('%Y/%m/%d')
-            case UploadPathRule.MONTH:
-                subdir = today.strftime('%Y/%m')
-            case UploadPathRule.COUNT:
-                subdir = self.count_based_dir()
-            case UploadPathRule.CUSTOM:
-                if not custom_path:
-                    raise ValueError('Custom path rule requires a path')
-                subdir = custom_path.strip('/')
-            case _:
-                raise ValueError('Invalid upload rule')
-        return os.path.join(subdir, filename)
+        # Allowed MIME types (from user config or default)
+        allowed_mimes = ConfigService.get(cfg['type_key'], default=cfg['default_type'])
+        if isinstance(allowed_mimes, str):
+            allowed_mimes = [e.strip().lower() for e in allowed_mimes.split(',') if e.strip()]
+        else:
+            allowed_mimes = [e.strip().lower() for e in allowed_mimes if e.strip()]
 
-    def save(self, file_obj: UploadedFile, rule: UploadPathRule, custom_path: str | None = None) -> UploadResult:
-        self.validator.validate(file_obj)
-        rel_path = self._generate_path(file_obj.name, rule, custom_path)
-        full_path = os.path.join(self.base_dir, rel_path)
+        # Max size
+        max_size_mb = int(ConfigService.get(cfg['size_key'], default=cfg['default_size']))
+        max_size = max_size_mb * 1024 * 1024
 
-        os.makedirs(os.path.dirname(full_path), exist_ok=True)
-
-        with open(full_path, 'wb+') as destination:
-            for chunk in file_obj.chunks():
-                destination.write(chunk)
-
-        return UploadResult(
-            path=rel_path,
-            filename=os.path.basename(full_path),
-            size=file_obj.size,
-            mime_type=file_obj.content_type,
-            original_name=file_obj.name,
-            hash=self._calculate_hash(full_path)
-        )
+        return {
+            "allowed_mimes": allowed_mimes,
+            "max_size": max_size,
+        }
 
     @staticmethod
-    def count_based_dir() -> str:
-        # You can replace this logic with actual folder scanning if needed
-        # For now, just return a placeholder folder like 'bucket_001'
-        return 'bucket_001'
+    def _validate_mime(mime: str, allowed_mimes: list[str]) -> None:
+        if mime not in allowed_mimes:
+            raise ValidationError(f"MIME type {mime} is not allowed.")
+
+    @staticmethod
+    def _validate_size(size: int, max_size: int) -> None:
+        if size > max_size:
+            raise ValidationError(f"File size exceeds limit ({int_to_bytes(max_size)}).")
+
+    def _validate(self, file: UploadedFile, file_type: FileType) -> bool:
+        """
+        Validate file extension, MIME type and size based on config.
+        """
+        cfg = self._get_config(file_type)
+        mime = file.content_type.lower()
+        size = file.size
+
+        self._validate_mime(mime, cfg["allowed_mimes"])
+        self._validate_size(size, cfg["max_size"])
+        return True
+
+    def save(self, file: UploadedFile, file_type: FileType, user=None) -> UploadResult:
+        """
+        Validate and save the file using the Upload utility.
+        Returns an UploadResult object with path, url, hash, etc.
+        """
+        self._validate(file, file_type)
+
+        file.seek(0)
+        file_hash = Upload.calculate_hash(file)
+        existing = UploadFile.objects.filter(hash=file_hash).first()
+        if existing:
+            return existing.to_result()
+
+        file.seek(0)
+        uploader = Upload(use_unique_name=self.use_unique_name)
+        file_info = uploader.save(file, file_hash)
+
+        # Save file info to DB
+        UploadFile.create_from_result(file_info, user)
+
+        return file_info
+
+    @staticmethod
+    def delete(file_path: str) -> bool:
+        """
+        Delete uploaded file (both file and DB record) by file path.
+        Returns True if deleted, False if not found.
+        """
+        try:
+            file = UploadFile.objects.get(path=file_path)
+        except UploadFile.DoesNotExist:
+            return False
+
+        # Delete DB record
+        deleted_count, _ = file.delete()
+        if deleted_count:
+            Upload.delete(file_path)
+            return True
+        return False

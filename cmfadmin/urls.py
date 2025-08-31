@@ -20,6 +20,7 @@ from cmfadmin.views import (
     SpriteManagerView,
     SystemSettingView,
     UploadSettingView,
+    UploadFileView,
 )
 
 cmfadmin_urls = [
@@ -31,4 +32,5 @@ cmfadmin_urls = [
     ('cmfadmin/nav/navitem/<int:nav_id>/<int:nav_item_id>/', NavItemView.as_view(), 'navitem'),
     ('cmfadmin/system', SystemSettingView.as_view(), 'system'),
     ('cmfadmin/upload', UploadSettingView.as_view(), 'upload'),
+    ('cmfadmin/upload_file', UploadFileView.as_view(), 'upload_file'),  # File upload URL, used by AJAX
 ]

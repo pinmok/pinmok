@@ -4,118 +4,64 @@
 
 {% block content %}
     <div class="card">
-        <div class="card-header">
-            <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <a href="#upload" class="nav-link active" data-bs-toggle="tab" aria-selected="true" role="tab">
-                        {% translate 'Upload Setting' %}</a>
-                </li>
-            </ul>
-        </div>
-        <div class="tab-content">
-            <div class="tab-pane fade show active" id="upload" role="tabpanel">
-                <form method="POST" enctype="multipart/form-data">{% csrf_token %}
-                    <div class="card-body">
-                        <div class="mb-3 row">
-                            <label class="col-2 col-form-label text-end" for="max-file">{% translate 'Max files per upload' %}</label>
-                            <div class="col-lg-6 col-md-7 col-sm-9">
-                                <input type="number" class="form-control w-50" name="upload_max_files" id="max-file"
-                                       value="{{ config.upload_max_files | default:10 }}">
+        <form method="POST" enctype="multipart/form-data">{% csrf_token %}
+            {{ form.as_p }}
+            <div class="card-body">
+                <div class="mb-3 row">
+                    <label class="col-2 col-form-label text-end" for="max-file">{% translate 'Max files per upload' %}</label>
+                    <div class="col-lg-6 col-md-7 col-sm-9">
+                        <input type="number" class="form-control w-50" name="upload_max_files" id="max-file"
+                               value="{{ config.upload_max_files | default:10 }}">
+                    </div>
+                    <small class="form-hint offset-2">
+                        {% translate 'Maximum number of files a user can upload at once during multi-file upload. Default is 10.' %}
+                    </small>
+                </div>
+                {% for key, ft in upload_file_config.items %}
+                    <div class="mb-3 row">
+                        <label class="col-2 col-form-label text-end" for="{{ ft.size_key }}">
+                            {% blocktranslate with file_type_name=key %}
+                                Max {{ key }} file size
+                            {% endblocktranslate %}
+                        </label>
+                        <div class="col-md-2 col-sm-9">
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="{{ ft.size_key }}" id="{{ ft.size_key }}"
+                                       value="{{ ft.size_value }}">
+                                <span class="input-group-text"><b>MB</b></span>
                             </div>
-                            <small class="form-hint offset-2">
-                                {% translate 'Maximum number of files a user can upload at once during multi-file upload. Default is 10.' %}
-                            </small>
                         </div>
-                        <div class="mb-3 row">
-                            <label class="col-2 col-form-label text-end" for="max-img-size">{% translate 'Max image file size' %}</label>
-                            <div class="col-md-2 col-sm-9">
-                                <div class="input-group">
-                                    <input type="number" class="form-control" name="upload_image_size" id="max-img-size"
-                                           value="{{ config.upload_image_size | default:5 }}">
-                                    <span class="input-group-text"><b>MB</b></span>
-                                </div>
-                            </div>
-                            <label class="col-2 col-form-label text-end" for="img-type">{% translate 'Allowed file type' %}</label>
-                            <div class="col-md-5 col-sm-9">
-                                <input type="text" class="form-control" name="upload_image_type" id="img-type"
-                                       value="{{ config.upload_image_type | default:'jpg, png, ico, svg' }}">
-                            </div>
-                            <small class="form-hint offset-2">
-                                {% translate 'Maximum allowed size for image uploads and file type(e.g. JPG, PNG, SVG).' %}
-                            </small>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="col-2 col-form-label text-end" for="max-audio-size">{% translate 'Max audio file size' %}</label>
-                            <div class="col-md-2 col-sm-9">
-                                <div class="input-group">
-                                    <input type="number" class="form-control" name="upload_audio_size" id="max-audio-size"
-                                           value="{{ config.upload_audio_size | default:10 }}">
-                                    <span class="input-group-text"><b>MB</b></span>
-                                </div>
-                            </div>
-                            <label class="col-2 col-form-label text-end" for="audio-type">{% translate 'Allowed file type' %}</label>
-                            <div class="col-md-5 col-sm-9">
-                                <input type="text" class="form-control" name="upload_audio_type" id="audio-type"
-                                       value="{{ config.upload_audio_type | default:'mp3, flac, wav, aac' }}">
-                            </div>
-                            <small class="form-hint offset-2">
-                                {% translate 'Maximum allowed size for audio uploads and file type (e.g. MP3, WAV).' %}
-                            </small>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="col-2 col-form-label text-end" for="max-video-size">{% translate 'Max video file size' %}</label>
-                            <div class="col-md-2 col-sm-9">
-                                <div class="input-group">
-                                    <input type="number" class="form-control" name="upload_video_size" id="max-video-size"
-                                           value="{{ config.upload_video_size | default:20 }}">
-                                    <span class="input-group-text"><b>MB</b></span>
-                                </div>
-                            </div>
-                            <label class="col-2 col-form-label text-end" for="video-type">{% translate 'Allowed file type' %}</label>
-                            <div class="col-md-5 col-sm-9">
-                                <input type="text" class="form-control" name="upload_video_type" id="video-type"
-                                       value="{{ config.upload_video_type | default:'mp4, mpeg, mov, avi, flv, 3gp' }}">
-                            </div>
-                            <small class="form-hint offset-2">
-                                {% translate 'Maximum allowed size for video uploads and file type (e.g. MP4, MOV).' %}
-                            </small>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="col-2 col-form-label text-end" for="max-doc-size">{% translate 'Max document file size' %}</label>
-                            <div class="col-md-2 col-sm-9">
-                                <div class="input-group">
-                                    <input type="number" class="form-control" name="upload_document_size" id="max-doc-size"
-                                           value="{{ config.upload_document_size | default:10 }}">
-                                    <span class="input-group-text"><b>MB</b></span>
-                                </div>
-                            </div>
-                            <label class="col-2 col-form-label text-end" for="doc-type">{% translate 'Allowed file type' %}</label>
-                            <div class="col-md-5 col-sm-9">
-                                <input type="text" class="form-control" name="upload_document_type" id="doc-type"
-                                       value="{{ config.upload_document_type | default:'pdf, doc, docx, xls, xlsx, ppt, pptx, txt, md, zip, rar' }}">
-                            </div>
-                            <small class="form-hint offset-2">
-                                {% translate 'Maximum allowed size for document uploads (e.g. PDF, DOCX, XLSX).' %}
-                            </small>
-                        </div>
-                        <div class="row">
-                            <label class="col-2 col-form-label text-end" for="path-rule">{% translate 'Upload Path Rule' %}</label>
-                            <div class="col-md-8 col-sm-10">
-                                <select class="form-select" name="upload_path_rule" id="path-rule">
-                                    {% for rule in path_rule %}
-                                        <option value="{{ rule.value }}" {% if config.upload_path_rule == rule.value %}>selected{% endif %}>
-                                        {{ rule.label }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
+                        <label class="col-2 col-form-label text-end">{% translate 'Allowed file type' %}</label>
+                        <div class="col-md-5 col-sm-9">
+                            <div class="form-selectgroup">
+                                {% for mime in ft.mimes %}
+                                    <label class="form-selectgroup-item">
+                                        <input type="checkbox" name="{{ ft.type_key }}" value="{{ mime.value }}"
+                                               class="form-selectgroup-input"
+                                               {% if mime in ft.type_value %}checked{% endif %}>
+                                        <span class="form-selectgroup-label">{{ mime.label }}</span>
+                                    </label>
+                                {% endfor %}
                             </div>
                         </div>
                     </div>
-                    <div class="card-footer">
-                        <button type="submit" class="btn btn-primary">{% translate 'Save' %}</button>
+                {% endfor %}
+                <div class="row">
+                    <label class="col-2 col-form-label text-end" for="path-rule">{% translate 'Upload Path Rule' %}</label>
+                    <div class="col-md-8 col-sm-10">
+                        <select class="form-select" name="upload_path_rule" id="path-rule">
+                            {% for rule in path_rule %}
+                                <option value="{{ rule.value }}" {% if config.upload_path_rule == rule.value %}selected{% endif %}>
+                                    {{ rule.label }}
+                                </option>
+                            {% endfor %}
+                        </select>
                     </div>
-                </form>
+                </div>
             </div>
-        </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary">{% translate 'Save' %}</button>
+            </div>
+        </form>
     </div>
 {% endblock %}

@@ -92,7 +92,7 @@ function ajaxRequest({
         ...headers
     };
 
-    if (method === 'GET') {
+    if (method === 'GET' || method === 'DELETE') {
         const queryString = new URLSearchParams(data).toString();
         if (queryString) {
             url += (url.includes('?') ? '&' : '?') + queryString;
@@ -165,3 +165,51 @@ function showToast(message, isSuccess = true) {
 
     toast.show();
 }
+
+// Upload a single file to the backend.
+const FileManager = {
+    upload: function (file, fileType, options = {}) {
+        const {
+            url = window.APP_URLS.uploadFile,
+            extraData = {},
+            btn = null,
+            onSuccess = null,
+            onError = null,
+            fileName = null
+        } = options;
+
+        const formData = new FormData();
+        formData.append('file', file, fileName || (file && file.name) || 'upload.dat');
+        formData.append('file_type', fileType);
+
+        for (const [k, v] of Object.entries(extraData)) {
+            formData.append(k, String(v));
+        }
+
+        ajaxRequest({
+            url,
+            method: 'POST',
+            data: formData,
+            contentType: 'form',
+            onSuccess,
+            onError
+        }, btn);
+    },
+
+    delete: function (filePath, options = {}) {
+        const {
+            url = window.APP_URLS.uploadFile,
+            btn = null,
+            onSuccess = null,
+            onError = null
+        } = options;
+
+        ajaxRequest({
+            url,
+            method: 'DELETE',
+            data: {path: filePath},
+            onSuccess,
+            onError
+        }, btn);
+    }
+};

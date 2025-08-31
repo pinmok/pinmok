@@ -18,6 +18,7 @@ from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.staticfiles import finders
 from django.core.exceptions import SuspiciousFileOperation, ValidationError
+from django.core.files.uploadedfile import UploadedFile
 from django.core.validators import validate_email
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -25,17 +26,18 @@ from django.urls import reverse
 from django.utils.translation import gettext, gettext_lazy as _
 from django.views import View
 
-from cmfadmin.constants import CUSTOM_SPRITE_FILE
-from cmfadmin.enums import ConfigCategory, MenuSyncMode, TargetChoices
+from cmfadmin.constants import CUSTOM_SPRITE_FILE, UPLOAD_FILE_CONFIG
+from cmfadmin.enums import ConfigCategory, MenuSyncMode, TargetChoices, FileType
 from cmfadmin.forms import NavItemForm
 from cmfadmin.libs import SpriteManager
 from cmfadmin.libs.sprite import SpriteError
+from cmfadmin.libs.upload import UploadPathRule
 from cmfadmin.menus import AdminMenuManager
 from cmfadmin.models import Nav, NavItem
 from cmfadmin.service.config import ConfigService
 from cmfadmin.service.email import EmailService
 from cmfadmin.service.navigation import NavService
-from cmfadmin.service.upload import UploadPathRule
+from cmfadmin.service.upload import UploadService
 from cmfadmin.utils.helper import get_static_dir, api_response
 
 
@@ -43,8 +45,30 @@ class ConfigView(View):
     category = None
     template_name = None
     extra_context = None
+    exclude_keys = ['csrfmiddlewaretoken']
 
-    def get(self, request):
+    def _get_cleaned_data(self, request):
+        """Filter out unwanted keys like csrfmiddlewaretoken."""
+        data = {}
+        exclude = self._get_exclude_keys()
+        for key, value in request.POST.lists():
+            if key in exclude:
+                continue
+            if len(value) == 1:
+                # single value, save as string
+                data[key] = value[0]
+            else:
+                # multi value, join as comma-separated string
+                data[key] = ",".join(value)
+        return data
+
+    def _get_exclude_keys(self):
+        """Return merged exclude_keys (base + subclass)."""
+        base = ConfigView.exclude_keys
+        current = getattr(self, 'exclude_keys', [])
+        return list(dict.fromkeys(base + current))
+
+    def get(self, request, *args, **kwargs):
         config_data = ConfigService.get_by_category(self.category)
         context = {
             'config': config_data,
@@ -54,16 +78,10 @@ class ConfigView(View):
 
         return render(request, self.template_name, context)
 
-    def post(self, request):
-        data = request.POST.dict()
+    def post(self, request, *args, **kwargs):
+        data = self._get_cleaned_data(request)
         ConfigService.set_by_category(self.category, data)
         return redirect(request.path)
-
-
-@staff_member_required
-def sync_menu(request):
-    result = AdminMenuManager.synchronize_menu(MenuSyncMode.SYNC_ALL, request.user)
-    return render(request, 'config/sync_menu.html', {'result': result})
 
 
 class SiteInfoView(ConfigView):
@@ -72,6 +90,19 @@ class SiteInfoView(ConfigView):
     extra_context = {
         'title': ConfigCategory.SITE.label,
     }
+
+    def post(self, request, *args, **kwargs):
+        data = self._get_cleaned_data(request)
+
+        logo_file: UploadedFile = request.FILES.get('site_logo')
+        if logo_file:
+            service = UploadService()
+            result = service.save(logo_file, FileType.IMAGE, request.user)
+
+            data['site_logo'] = result.path
+
+        ConfigService.set_by_category(self.category, data)
+        return redirect(request.path)
 
 
 class SystemSettingView(ConfigView):
@@ -90,6 +121,18 @@ class UploadSettingView(ConfigView):
         'path_rule': list(UploadPathRule),
     }
 
+    def get(self, request, *args, **kwargs):
+        config_data = ConfigService.get_by_category(self.category)
+
+        upload_file_config = {}
+        for key, ft in UPLOAD_FILE_CONFIG.items():
+            upload_file_config[key] = ft.copy()
+            upload_file_config[key]['size_value'] = config_data.get(ft['size_key'], ft['default_size'])
+            upload_file_config[key]['type_value'] = config_data.get(ft['type_key'], ','.join(ft['default_type'])).split(',')
+
+        self.extra_context['upload_file_config'] = upload_file_config
+        return super().get(request)
+
 
 class EmailConfigView(ConfigView):
     category = ConfigCategory.EMAIL
@@ -98,7 +141,7 @@ class EmailConfigView(ConfigView):
         'title': ConfigCategory.EMAIL.label,
     }
 
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         config_base = ConfigService.get_by_category(self.category)
         config_template = ConfigService.get_by_category(ConfigCategory.EMAIL_TEMPLATE)
 
@@ -110,8 +153,10 @@ class EmailConfigView(ConfigView):
 
         return render(request, self.template_name, context)
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         data = request.POST.copy()
+        data.pop('csrfmiddlewaretoken', None)
+
         action = data.get('action', '')
         data.pop('action')
         match action:
@@ -261,8 +306,7 @@ class NavItemView(View):
             'target': TargetChoices
         })
 
-    @staticmethod
-    def delete(request, *args, **kwargs):
+    def delete(self, request, *args, **kwargs):
         """
         Delete a NavItem if it has no children.
         Returns 400 error if the node has child nodes to prevent accidental cascading deletes.
@@ -393,17 +437,52 @@ class SpriteManagerView(View):
         symbol_id = data.get('symbol_id', '')
 
         if not symbol_id:
-            return JsonResponse({'error': _('Symbol ID is required.')}, status=400)
+            return api_response(1, _('Symbol ID is required.'), status=400)
 
         try:
             manager = SpriteManager(self._get_custom_sprite_file())
             if manager.has(symbol_id):
                 manager.remove(symbol_id)
-                return JsonResponse({'message': _('Deleted successfully.')}, status=200)
+                return api_response(0, _('Deleted successfully.'), status=200)
             else:
-                return JsonResponse({'message': _('Symbol ID not found.')}, status=404)
+                return api_response(1, _('Symbol ID not found.'), status=404)
         except Exception as e:
-            return JsonResponse({'message': _('Error: %(error)s') % {'error': e}}, status=500)
+            return api_response(1, _('Error: %(error)s') % {'error': e}, status=500)
+
+
+class UploadFileView(View):
+    def post(self, request, *args, **kwargs):
+        uploaded_file = request.FILES.get('file')
+        file_type_str = request.POST.get('file_type')
+
+        if not uploaded_file or not file_type_str:
+            return api_response(1, _('Missing file or file_type'), status=400)
+
+        try:
+            file_type = FileType(file_type_str)
+        except ValueError:
+            return api_response(1, _('Invalid file_type'), status=400)
+
+        uploader = UploadService()
+        info = uploader.save(uploaded_file, file_type, request.user)
+
+        return api_response(0, _('Upload successful.'), info.to_dict())
+
+    def delete(self, request, *args, **kwargs):
+        file_path = request.GET.get("path")
+        print(file_path)
+        if not file_path:
+            return api_response(1, _("Missing file path"), status=400)
+
+        if UploadService.delete(file_path):
+            return api_response(0, _("Delete successful."))
+        return api_response(1, _("File not found"), status=404)
+
+
+@staff_member_required
+def sync_menu(request):
+    result = AdminMenuManager.synchronize_menu(MenuSyncMode.SYNC_ALL, request.user)
+    return render(request, 'config/sync_menu.html', {'result': result})
 
 
 def nav_items_edit(request, pk):

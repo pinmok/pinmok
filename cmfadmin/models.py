@@ -10,11 +10,16 @@ Author:
 Created:
   2025-06-08
 """
+
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from cmfadmin.constants import DEFAULT_SORT_ORDER
-from cmfadmin.enums import ConfigCategory, TargetChoices
+from cmfadmin.enums import ConfigCategory, TargetChoices, MimeType
+from cmfadmin.libs.upload import UploadResult
+
+User = get_user_model()
 
 
 class Menu(models.Model):
@@ -135,3 +140,49 @@ class NavItem(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class UploadFile(models.Model):
+    """Model to store metadata for each uploaded file"""
+
+    uploader = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='uploaded_files',
+                                 help_text='The user who uploaded the file (optional)')
+    filename = models.CharField(max_length=255, help_text='Saved file name including extension')
+    original_name = models.CharField(max_length=255, help_text='Original file name before upload')
+    path = models.CharField(max_length=500, help_text='Relative path to the saved file')
+    mime_type = models.CharField(max_length=100, choices=MimeType.choices, help_text='MIME type of the uploaded file')
+    size = models.BigIntegerField(help_text='File size in bytes')
+    hash = models.CharField(max_length=64, db_index=True, help_text='SHA-256 hash of the file content')
+    created_at = models.DateTimeField(auto_now_add=True, help_text='Upload timestamp')
+
+    class Meta:
+        verbose_name = 'Uploaded File'
+        verbose_name_plural = 'Uploaded Files'
+
+    def __str__(self):
+        return self.original_name
+
+    @classmethod
+    def create_from_result(cls, result: UploadResult, user: User = None):
+        obj, created = cls.objects.get_or_create(
+            hash=result.hash,
+            defaults={
+                'uploader': user,
+                'filename': result.filename,
+                'original_name': result.original_name,
+                'path': result.path,
+                'mime_type': result.mime_type,
+                'size': result.size,
+            }
+        )
+        return obj
+
+    def to_result(self) -> UploadResult:
+        return UploadResult(
+            path=self.path,
+            filename=self.filename,
+            size=self.size,
+            mime_type=self.mime_type,
+            original_name=self.original_name,
+            hash=self.hash,
+        )

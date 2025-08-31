@@ -1,0 +1,83 @@
+{% load static i18n %}
+
+<link rel="stylesheet" href="{% static 'libs/cropperjs/cropper.min.css' %}">
+
+<!-- Cropper Modal -->
+<div class="modal modal-blur fade" id="cropperModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{% translate "Crop Image" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3">
+                <input type="file" id="cropperFileInput" accept="image/*" class="d-none">
+
+                <div class="row">
+                    <!-- Image container -->
+                    <div class="col-md-8 mb-3 mb-md-0 text-center">
+                        <img id="cropperImage" class="img-fluid d-none" alt="Crop Preview">
+                    </div>
+
+                    <div class="col-md-4 d-flex flex-column gap-2 ps-md-3">
+                        <div class="mb-3">
+                            <label class="form-label" for="cropperAspectRatio">{% translate "Crop Ratio" %}</label>
+                            <select id="cropperAspectRatio" class="form-select">
+                                <option value="1">1:1</option>
+                                <option value="1.78">16:9</option>
+                                <option value="1.33">4:3</option>
+                                <option value="NaN">{% translate "Free" %}</option>
+                            </select>
+                        </div>
+
+                        <button type="button" class="btn btn-outline-secondary" data-action="rotate-left">
+                            ⟲ {% translate "Rotate Left" %}
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-action="rotate-right">
+                            ⟳ {% translate "Rotate Right" %}
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-action="flip-horizontal">
+                            ⇋ {% translate "Flip H" %}
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-action="flip-vertical">
+                            ⇵ {% translate "Flip V" %}
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-action="zoom-in">
+                            ＋ {% translate "Zoom In" %}
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-action="zoom-out">
+                            － {% translate "Zoom Out" %}
+                        </button>
+                        <label class="form-check form-switch form-switch-3">
+                            <input type="checkbox" class="form-check-input" id="use-original">
+                            <span class="form-check-label">{% translate "Use Original Dimensions" %}</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% translate "Cancel" %}</button>
+                <button type="button" class="btn btn-primary" id="cropperSaveBtn">
+                    <span class="spinner-border spinner-border-sm d-none me-2" role="status" aria-hidden="true"></span>
+                    {% translate "Confirm and Upload" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #cropperModal .modal-body {
+        max-height: 80vh;
+        overflow: hidden;
+    }
+
+    #cropperModal #cropperImage {
+        max-height: 100%;
+        max-width: 100%;
+        width: auto;
+    }
+</style>
+
+<script src="{% static 'libs/cropperjs/cropper.min.js' %}"></script>
+<script src="{% static 'admin/js/image-cropper-modal.js' %}"></script>
