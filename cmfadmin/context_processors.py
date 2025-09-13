@@ -12,12 +12,11 @@ Created:
 """
 from cmfadmin import site
 from cmfadmin.menus import AdminMenuManager
-from cmfadmin.service.breadcrumb import BreadCrumb
 
 
 def admin_context(request):
     menu_tree = AdminMenuManager.get_admin_menu(request)
-    breadcrumbs = BreadCrumb.get_admin_breadcrumb(request)
+    breadcrumbs = AdminMenuManager.get_admin_breadcrumb(request, menu_tree)
 
     return {
         'site_header': site.site_header,

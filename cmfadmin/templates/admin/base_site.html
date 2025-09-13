@@ -8,182 +8,11 @@
 {% block body %}
     <div class="page {% block body_class %}{% endblock %}">
         {% if not is_popup %}
-            {% block sider_bar %}
-                <!--  BEGIN SIDEBAR  -->
-                {% include "admin/includes/sidebar.html" %}
-                <!--  END SIDEBAR  -->
-            {% endblock %}
+            <!--  BEGIN SIDEBAR  -->
+            {% include "admin/includes/sidebar.html" %}
+            <!--  END SIDEBAR  -->
 
-            <header class="navbar navbar-expand-md d-none d-lg-flex d-print-none">
-                <div class="container-xl">
-                    <!-- BEGIN NAVBAR TOGGLER -->
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu"
-                            aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <!-- END NAVBAR TOGGLER -->
-                    <div class="navbar-nav flex-row order-md-last">
-                        <div class="d-none d-md-flex">
-                            <!-- BEGIN THEME MODE -->
-                            <div class="nav-item">
-                                <a href="javascript:void(0);" class="nav-link px-0 hide-theme-dark" onclick="toggleTheme()"
-                                   title="{% translate 'Toggle theme (current theme: light)' %}"
-                                   data-bs-toggle="tooltip" data-bs-placement="bottom">
-                                    {% sprite 'tabler-moon' 'icon' %}
-                                </a>
-                                <a href="javascript:void(0);" class="nav-link px-0 hide-theme-light" onclick="toggleTheme()"
-                                   title="{% translate 'Toggle theme (current theme: dark)' %}"
-                                   data-bs-toggle="tooltip" data-bs-placement="bottom">
-                                    {% sprite 'tabler-sun' 'icon' %}
-                                </a>
-                            </div>
-                            <!-- END THEME MODE -->
-
-                            <!-- BEGIN NOTIFICATIONS -->
-                            <div class="nav-item dropdown d-none d-md-flex">
-                                <a href="#" class="nav-link px-0" data-bs-toggle="dropdown" tabindex="-1"
-                                   aria-label="Show notifications" data-bs-auto-close="outside" aria-expanded="false">
-                                    {% sprite 'tabler-bell' 'icon' %}
-                                    <span class="badge bg-red badge-blink"></span>
-                                </a>
-                                <div class="dropdown-menu dropdown-menu-arrow dropdown-menu-end dropdown-menu-card">
-                                    <div class="card">
-                                        <div class="card-header d-flex">
-                                            <h3 class="card-title">Notifications</h3>
-                                            <div class="btn-close ms-auto" data-bs-dismiss="dropdown"></div>
-                                        </div>
-                                        <div class="list-group list-group-flush list-group-hoverable">
-                                            <div class="list-group-item">
-                                                <div class="row align-items-center">
-                                                    <div class="col-auto"><span
-                                                            class="status-dot status-dot-animated bg-red d-block"></span></div>
-                                                    <div class="col text-truncate">
-                                                        <a href="#" class="text-body d-block">Example 1</a>
-                                                        <div class="d-block text-secondary text-truncate mt-n1">Change
-                                                            deprecated html tags to text decoration classes (#29604)
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-auto">
-                                                        <a href="#" class="list-group-item-actions">
-                                                            {% sprite 'tabler-star' 'icon text-muted' %}
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="list-group-item">
-                                                <div class="row align-items-center">
-                                                    <div class="col-auto"><span class="status-dot d-block"></span></div>
-                                                    <div class="col text-truncate">
-                                                        <a href="#" class="text-body d-block">Example 2</a>
-                                                        <div class="d-block text-secondary text-truncate mt-n1">
-                                                            justify-content:between ⇒ justify-content:space-between (#29734)
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-auto">
-                                                        <a href="#" class="list-group-item-actions show">
-                                                            {% sprite 'tabler-star' 'icon text-muted' %}
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="list-group-item">
-                                                <div class="row align-items-center">
-                                                    <div class="col-auto"><span class="status-dot d-block"></span></div>
-                                                    <div class="col text-truncate">
-                                                        <a href="#" class="text-body d-block">Example 3</a>
-                                                        <div class="d-block text-secondary text-truncate mt-n1">Update
-                                                            change-version.js (#29736)
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-auto">
-                                                        <a href="#" class="list-group-item-actions">
-                                                            {% sprite 'tabler-star' 'icon text-muted' %}
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="list-group-item">
-                                                <div class="row align-items-center">
-                                                    <div class="col-auto"><span
-                                                            class="status-dot status-dot-animated bg-green d-block"></span>
-                                                    </div>
-                                                    <div class="col text-truncate">
-                                                        <a href="#" class="text-body d-block">Example 4</a>
-                                                        <div class="d-block text-secondary text-truncate mt-n1">Regenerate
-                                                            package-lock.json (#29730)
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-auto">
-                                                        <a href="#" class="list-group-item-actions">
-                                                            {% sprite 'tabler-star' 'icon text-muted' %}
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col">
-                                                    <a href="#" class="btn btn-2 w-100"> Archive all </a>
-                                                </div>
-                                                <div class="col">
-                                                    <a href="#" class="btn btn-2 w-100"> Mark all as read </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- END NOTIFICATIONS -->
-                        </div>
-
-                        <!-- BEGIN USER INFORMATION -->
-                        <div class="nav-item dropdown">
-                            <a href="#" class="nav-link d-flex lh-1 p-0 px-2" data-bs-toggle="dropdown" aria-label="Open user menu">
-                                <span class="avatar avatar-sm"
-                                      style="background-image: url({% static 'admin/svg/crazy_logo.svg' %})"></span>
-                                <div class="d-none d-xl-block ps-2">
-                                    <div>{% firstof user.get_short_name user.get_username %}</div>
-                                    <div class="mt-1 small text-secondary">
-                                        {% if user.is_superuser %}
-                                            {% trans "Superuser" %}
-                                        {% else %}
-                                            {% trans "Staff" %}
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                                <!-- TODO 完善用户管理部分 -->
-                                <a href="#" class="dropdown-item">Status</a>
-                                <a href="#" class="dropdown-item">Profile</a>
-                                {% if user.has_usable_password %}
-                                    <a href="{% url 'admin:password_change' %}" class="dropdown-item">{% translate 'Change password' %}</a>
-                                {% endif %}
-                                <div class="dropdown-divider"></div>
-                                <a href="#" class="dropdown-item">Settings</a>
-                                <form id="logout-form" method="post" action="{% url 'admin:logout' %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="dropdown-item">{% translate "Log out" %}</button>
-                                </form>
-
-                            </div>
-                        </div>
-                        <!-- END USER INFORMATION -->
-                    </div>
-                    <ol class="breadcrumb mb-0" id="crazy-breadcrumb">
-                        <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate 'Home' %}</a></li>
-                        {% for bread in admin_breadcrumbs %}
-                            {% if bread.url %}
-                                <li class="breadcrumb-item"><a href="{{ bread.url }}">{{ bread.title }}</a></li>
-                            {% else %}
-                                <li class="breadcrumb-item link-blue">{{ bread.title }}</li>
-                            {% endif %}
-                        {% endfor %}
-                        {% block breadcrumbs %}{% endblock %}
-                    </ol>
-                </div>
-            </header>
+            {% include 'admin/includes/header.html' %}
         {% endif %}
 
         <div class="page-wrapper">
@@ -201,45 +30,12 @@
             </div>
 
             <!-- BEGIN FOOTER -->
-            <footer class="footer footer-transparent d-print-none">
-                <div class="container-xl">
-                    <div class="row text-center align-items-center flex-row-reverse">
-                        <div class="col-lg-auto ms-lg-auto">
-                            <ul class="list-inline list-inline-dots mb-0">
-                                <!-- BEGIN DOCUMENTATION -->
-                                {% if user.is_active and user.is_staff %}
-                                    {% url 'django-admindocs-docroot' as docs_root %}
-                                    {% if docs_root %}
-                                        <li class="list-inline-item">
-                                            <a href="{{ docs_root }}" class="link-secondary">{% translate 'Documentation' %}</a>
-                                        </li>
-                                    {% endif %}
-                                {% endif %}
-                                <!-- END DOCUMENTATION -->
-                                <!-- TODO 修改链接内容 -->
-                                <li class="list-inline-item">
-                                    <a href="#" class="link-secondary">License</a>
-                                </li>
-                                <li class="list-inline-item">
-                                    <a href="https://github.com/sponsors/codecalm" target="_blank" class="link-secondary" rel="noopener">
-                                        {% sprite 'tabler-heart' 'icon text-pink icon-inline' %} Sponsor
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="col-12 col-lg-auto mt-3 mt-lg-0">
-                            <ul class="list-inline list-inline-dots mb-0">
-                                <li class="list-inline-item">
-                                    Copyright &copy; 2025
-                                    <a href="https://www.qdcrazy.cn" target="_blank" rel="noopener noreferrer">惠达浪</a>
-                                    {% translate 'Based on Tabler' %}
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </footer>
+            {% include 'admin/includes/footer.html' %}
             <!-- END FOOTER -->
         </div>
     </div>
+{% endblock %}
+
+{% block additional %}
+    {% include 'admin/includes/toast.html' %}
 {% endblock %}

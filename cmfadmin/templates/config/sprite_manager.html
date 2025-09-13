@@ -1,8 +1,6 @@
 {% extends 'config/config_base.html' %}
 {% load i18n icons %}
-{% block extrahead %}
-    <script src="{% url 'admin:jsi18n' %}"></script>
-{% endblock %}
+
 {% block page_title %}{% translate 'Icons in sprite' %}{% endblock %}
 {% block page_right %}
     <a href="{% url 'admin:icons_manage' %}?action=add" class="btn btn-secondary">
@@ -87,7 +85,9 @@
                     </div>
                 </div>
                 <div class="tab-pane fade" id="tabs-help" role="tabpanel">
-                    Help Text
+                    <div class="row">
+                        Help Text
+                    </div>
                 </div>
             </div>
         </div>
@@ -107,7 +107,7 @@
         function deleteItem(symbol_id) {
             // Ensure symbol_id is provided
             if (!symbol_id) {
-                alert('Symbol ID is required.');
+                showToast(gettext('Symbol ID is required.'), false);
                 return;
             }
 
@@ -127,15 +127,15 @@
                     .then(response => response.json())  // Parse the response as JSON
                     .then(data => {
                         if (data.message === 'Deleted successfully.') {
-                            alert('Icon deleted successfully!');
+                            showToast(gettext('Icon deleted successfully!'));
                             location.reload();  // Optionally reload to reflect changes
                         } else {
-                            alert(data.message);  // Show error message from response
+                            showToast(data.message, false);  // Show error message from response
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        alert('An error occurred while deleting the item.');
+                        showToast(gettext('An error occurred while deleting the item.'), false);
                     });
             }
         }

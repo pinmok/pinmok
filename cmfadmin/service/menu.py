@@ -21,7 +21,7 @@ from django.db import transaction
 from django.templatetags.static import static
 
 from cmfadmin import constants
-from cmfadmin.enums import MenuSyncMode, MenuSource
+from cmfadmin.enums import MenuSyncMode, MenuSource, MenuPermissions
 from cmfadmin.libs import TreeNode
 from cmfadmin.models import Menu
 from cmfadmin.utils.helper import get_model_fields, get_valid_app_labels
@@ -316,18 +316,17 @@ class MenuSynchronizer:
     @classmethod
     def _insert_items(cls, menu_items: list[MenuItem], parent_db_id: int | None) -> int:
         """
-        Batch insert menu items (optimized recursive version).
-
-        Logic:
-        1. Process nodes level by level.
-        2. Maintain in-memory ID -> database ID mapping.
-        3. Handle child levels recursively.
+        Insert menu items into the database in batch and generate corresponding permissions.
 
         Args:
-            menu_items (list[MenuItem]): Flat list of all menu items to insert.
-            parent_db_id (int | None): Database ID of parent node, None for root level.
+            menu_items (list[MenuItem]): The flat list of menu items to insert.
+            parent_db_id (int | None): Database ID of the parent node, None for root.
+
+        Returns:
+            int: Total number of inserted menu records.
         """
         created_count = 0
+        # Select items of the current level
         current_level = [
             item for item in menu_items
             if item.parent_id == parent_db_id
@@ -343,13 +342,15 @@ class MenuSynchronizer:
                 if not hasattr(item, model_field):
                     continue
                 value = getattr(item, model_field)
-                if model_field == 'permission':
-                    value = ','.join(value)
+                # Directly store permission as list[str], no need to check for string
+                if model_field == "permission" and value is None:
+                    value = []
                 elif value is None:
                     value = ''
                 data[model_field] = value
+
             data['parent_id'] = parent_db_id
-            data['menu_key'] = uuid4().hex  # Consistent UUID4
+            data['menu_key'] = uuid4().hex  # Always generate a unique UUID4 key
             to_create.append(Menu(**data))
 
         with transaction.atomic():
@@ -359,51 +360,24 @@ class MenuSynchronizer:
             ))
         created_count += len(created_items)
 
+        # Build a mapping between temporary IDs and actual DB IDs
         id_mapping = {
             src.id: db.id
             for src, db in zip(current_level, created_items)
         }
 
+        # Update parent_id for child nodes
         for src, db in zip(current_level, created_items):
             src.db_id = db.id
             for child in menu_items:
                 if child.parent_id == src.id:
                     child.parent_id = id_mapping[src.id]
 
+        # Recursively insert child nodes
         for item in current_level:
             created_count += cls._insert_items(menu_items=menu_items, parent_db_id=item.db_id)
 
         return created_count
-
-    @classmethod
-    def _commit_menus_to_db(cls, menu_items: list[MenuItem], app_label: str) -> int:
-        """
-        Persist a flat list of MenuItem instances to the database, respecting hierarchy.
-
-        This method:
-        - Clears existing Menu entries.
-        - Inserts root menus and their descendants recursively.
-        - Updates each MenuItem's db_id with the actual database ID.
-
-        Args:
-            menu_items (list[MenuItem]): The flat list of menu items to persist.
-
-        Returns:
-            bool: True if menus were persisted, False if input is empty.
-        """
-        if not menu_items:
-            return 0
-        with transaction.atomic():
-            if app_label == MenuSyncMode.SYNC_ALL:
-                # Clear existing menu records before insertion
-                Menu.objects.all().delete()
-            else:
-                Menu.objects.filter(app_label=app_label).delete()
-
-            # Start inserting from root nodes (parent_db_id=None)
-            insert_count = cls._insert_items(menu_items=menu_items, parent_db_id=None)
-
-        return insert_count
 
     @classmethod
     def synchronize_menu(cls, app_label: str):
@@ -419,6 +393,8 @@ class MenuSynchronizer:
             inserted_menus = []
             # Get all menus from all apps
             all_menus = cls._get_sync_menus_all()
+            # Clear existing menu records before insertion
+            Menu.objects.all().delete()
 
             # Extract distinct app_labels from all_menus
             for label in {m.app_label for m in all_menus}:
@@ -427,7 +403,7 @@ class MenuSynchronizer:
                 # Sanitize parent-child relationships within this app's menus
                 clear_menus = cls._sanitize_menu(menu_items=menus_for_label)
                 # Persist the sanitized menus to DB and accumulate inserted count
-                created = cls._commit_menus_to_db(menu_items=clear_menus, app_label=label)
+                created = cls._insert_items(menu_items=clear_menus, parent_db_id=None)
                 # Return the total number of inserted menus across all apps
                 total_created += created
                 inserted_menus.extend([
@@ -442,7 +418,8 @@ class MenuSynchronizer:
             # Sanitize parent-child relationships within this app's menus
             clear_menus = cls._sanitize_menu(menu_items=sync_menus)
 
-            created = cls._commit_menus_to_db(menu_items=clear_menus, app_label=app_label)
+            Menu.objects.filter(app_label=app_label).delete()
+            created = cls._insert_items(menu_items=clear_menus, parent_db_id=None)
 
             return {
                 'total_created': created,
@@ -554,8 +531,29 @@ class AdminMenu:
 
     @staticmethod
     def filter_by_permissions(menu_tree: list[MenuItem], permissions: list[str]) -> list[MenuItem]:
-        # TODO 做权限过滤部分
-        return menu_tree
+        """
+        Filter menu tree according to user's permissions.
+
+        Args:
+            menu_tree (list[MenuItem]): The hierarchical menu tree to filter.
+            permissions (list[str]): List of permission codes the user has.
+
+        Returns:
+            list[MenuItem]: Filtered menu tree.
+        """
+        if MenuPermissions.ALL_PERMISSIONS in permissions:
+            return menu_tree
+
+        def _filter(node: MenuItem) -> MenuItem | None:
+            # Filter children recursively using walrus operator
+            node.children = [fc for child in getattr(node, 'children', []) if (fc := _filter(child))]
+
+            # Determine if node is visible
+            node_perms = node.permission if isinstance(node.permission, list) else [node.permission]
+            has_perm = not node_perms or any(p in permissions for p in node_perms)
+            return node if has_perm or node.children else None
+
+        return [result for root in menu_tree if (result := _filter(root))]
 
     @classmethod
     def get_menu(cls, app_list: list[dict]) -> list[MenuItem]:

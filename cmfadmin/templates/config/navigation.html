@@ -90,14 +90,14 @@
             }).then(response => {
                 return response.json().then(data => {
                     if (!response.ok) {
-                        alert(gettext('Error: ') + data.error);
+                        showToast(gettext('Error: ') + data.error, false);
                     } else {
-                        alert(gettext(data.message));
+                        showToast(gettext(data.message));
                         location.reload();
                     }
                 });
             }).catch(error => {
-                alert(gettext('Request error.') + error);
+                showToast(gettext('Request error.') + error, false);
             });
         }
     </script>

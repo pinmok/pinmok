@@ -1,3 +1,7 @@
+body {
+    overflow-y: scroll;
+}
+
 .logo-img {
     height: 4rem;
 }

@@ -65,16 +65,17 @@ function getCookie(name) {
     return cookieValue;
 }
 
-function ajaxRequest({
-                         url,
-                         method = 'POST',
-                         data = {},
-                         headers = {},
-                         responseType = 'json',
-                         onSuccess = null,
-                         onError = null,
-                         contentType = 'auto'
-                     }, btn) {
+function ajaxRequest(
+    {
+        url,
+        method = 'POST',
+        data = {},
+        headers = {},
+        responseType = 'json',
+        onSuccess = null,
+        onError = null,
+        contentType = 'auto'
+    }, btn) {
     let spinner = null
     if (btn) {
         spinner = btn.querySelector('.spinner-border');
@@ -157,7 +158,7 @@ function showToast(message, isSuccess = true) {
     toastHeader.textContent = isSuccess ? gettext('Success') : gettext('Failed');
     toastBody.textContent = message || (isSuccess ? gettext('Success') : gettext('An error occurred'));
 
-    const toast = new bootstrap.Toast(toastEl, {delay: 3000});
+    const toast = new tabler.Toast(toastEl, {delay: 3000});
 
     const toastHeaderContainer = toastEl.querySelector('.toast-header');
     toastHeaderContainer.classList.remove('bg-success', 'bg-danger');

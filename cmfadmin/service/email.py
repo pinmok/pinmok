@@ -5,7 +5,6 @@ email module
 
 Description:
   Provides a reusable email service for sending plain or template-based HTML emails.
-
 Author:
   惠达浪 <crazys@126.com>
 Created:

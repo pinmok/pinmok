@@ -4,7 +4,7 @@
 navigation module
 
 Description:
-  
+  Provides services for building and managing hierarchical navigation menus.
 Author:
   惠达浪 <crazys@126.com>
 Created:

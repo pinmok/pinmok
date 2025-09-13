@@ -43,3 +43,9 @@ msgstr "英文逗号分隔关键词，建议 5-10 个。"
 
 msgid "Meta description, maximum of 160 characters."
 msgstr "Meta 描述，最多 160 个字符。"
+
+msgid "permission.menu.show"
+msgstr "显示菜单: %(title)s"
+
+msgid "permission.menu.description"
+msgstr "菜单地址: %(url)s"

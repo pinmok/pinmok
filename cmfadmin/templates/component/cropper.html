@@ -19,36 +19,45 @@
                         <img id="cropperImage" class="img-fluid d-none" alt="Crop Preview">
                     </div>
 
+                    <!-- Controls -->
                     <div class="col-md-4 d-flex flex-column gap-2 ps-md-3">
-                        <div class="mb-3">
-                            <label class="form-label" for="cropperAspectRatio">{% translate "Crop Ratio" %}</label>
-                            <select id="cropperAspectRatio" class="form-select">
-                                <option value="1">1:1</option>
-                                <option value="1.78">16:9</option>
-                                <option value="1.33">4:3</option>
-                                <option value="NaN">{% translate "Free" %}</option>
-                            </select>
+                        <!-- Aspect Ratio Button Group -->
+                        <label class="form-label">{% translate "Crop Ratio" %}</label>
+                        <div class="btn-group w-100 mb-2" role="group">
+                            <input type="radio" class="btn-check" name="aspectRatio" id="ratio-1-1" value="1" autocomplete="off">
+                            <label class="btn btn-outline-secondary" for="ratio-1-1">1:1</label>
+
+                            <input type="radio" class="btn-check" name="aspectRatio" id="ratio-16-9" value="1.7777777777777777"
+                                   autocomplete="off">
+                            <label class="btn btn-outline-secondary" for="ratio-16-9">16:9</label>
+
+                            <input type="radio" class="btn-check" name="aspectRatio" id="ratio-4-3" value="1.3333333333333333"
+                                   autocomplete="off">
+                            <label class="btn btn-outline-secondary" for="ratio-4-3">4:3</label>
+
+                            <input type="radio" class="btn-check" name="aspectRatio" id="ratio-2-3" value="0.6666666666666666"
+                                   autocomplete="off">
+                            <label class="btn btn-outline-secondary" for="ratio-2-3">2:3</label>
+
+                            <input type="radio" class="btn-check" name="aspectRatio" id="ratio-free" value="NaN" autocomplete="off" checked>
+                            <label class="btn btn-outline-secondary" for="ratio-free">{% translate "Free" %}</label>
                         </div>
 
+                        <!-- Other Actions -->
                         <button type="button" class="btn btn-outline-secondary" data-action="rotate-left">
-                            ⟲ {% translate "Rotate Left" %}
-                        </button>
+                            ⟲ {% translate "Rotate Left" %}</button>
                         <button type="button" class="btn btn-outline-secondary" data-action="rotate-right">
-                            ⟳ {% translate "Rotate Right" %}
-                        </button>
+                            ⟳ {% translate "Rotate Right" %}</button>
                         <button type="button" class="btn btn-outline-secondary" data-action="flip-horizontal">
-                            ⇋ {% translate "Flip H" %}
-                        </button>
+                            ⇋ {% translate "Flip H" %}</button>
                         <button type="button" class="btn btn-outline-secondary" data-action="flip-vertical">
-                            ⇵ {% translate "Flip V" %}
-                        </button>
+                            ⇵ {% translate "Flip V" %}</button>
                         <button type="button" class="btn btn-outline-secondary" data-action="zoom-in">
-                            ＋ {% translate "Zoom In" %}
-                        </button>
+                            ＋ {% translate "Zoom In" %}</button>
                         <button type="button" class="btn btn-outline-secondary" data-action="zoom-out">
-                            － {% translate "Zoom Out" %}
-                        </button>
-                        <label class="form-check form-switch form-switch-3">
+                            － {% translate "Zoom Out" %}</button>
+
+                        <label class="form-check form-switch form-switch-3 mt-2">
                             <input type="checkbox" class="form-check-input" id="use-original">
                             <span class="form-check-label">{% translate "Use Original Dimensions" %}</span>
                         </label>
@@ -80,4 +89,149 @@
 </style>
 
 <script src="{% static 'libs/cropperjs/cropper.min.js' %}"></script>
-<script src="{% static 'admin/js/image-cropper-modal.js' %}"></script>
+{#<script src="{% static 'admin/js/image-cropper-modal.js' %}"></script>#}
+
+<script>
+    let cropper = null;
+    let modal = null;
+    let config = {input: null, preview: null, uploadUrl: null, originalFile: null, preserveOriginal: false};
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const fileInput = document.getElementById('cropperFileInput');
+        const imageEl = document.getElementById('cropperImage');
+        const saveBtn = document.getElementById('cropperSaveBtn');
+        const modalEl = document.getElementById('cropperModal');
+
+        modal = new tabler.Modal(modalEl);
+
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            fileInput.value = '';
+            imageEl.classList.add('d-none');
+            config.originalFile = null;
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            saveBtn.disabled = false;
+            saveBtn.querySelector('.spinner-border').classList.add('d-none');
+        });
+
+        document.querySelectorAll('.cropper-trigger').forEach(btn => {
+            btn.addEventListener('click', () => {
+                config.input = document.querySelector(btn.dataset.input);
+                config.preview = document.querySelector(btn.dataset.preview);
+                config.uploadUrl = btn.dataset.uploadUrl;
+                config.preserveOriginal = btn.dataset.original === 'true';
+
+                if (!config.input || !config.preview) {
+                    alert('Missing cropper parameters.');
+                    return;
+                }
+
+                fileInput.value = '';
+                fileInput.onchange = function () {
+                    const file = this.files[0];
+                    if (!file || !file.type.startsWith('image/')) return;
+                    if (file.type === 'image/svg+xml' || config.preserveOriginal) {
+                        const formData = new FormData();
+                        formData.append('file', file, file.name);
+                        formData.append('file_type', 'image');
+                        fetch(config.uploadUrl, {method: 'POST', body: formData})
+                            .then(r => r.json())
+                            .then(res => {
+                                config.input.value = res.data.path;
+                                config.preview.src = res.data.path;
+                            })
+                            .catch(err => console.error(err));
+                    } else {
+                        config.originalFile = file;
+                        imageEl.src = URL.createObjectURL(file);
+                        imageEl.classList.remove('d-none');
+                        imageEl.onload = () => modal.show();
+                    }
+                };
+                fileInput.click();
+            });
+        });
+
+        modalEl.addEventListener('shown.bs.modal', () => {
+            if (!config.originalFile) return;
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(imageEl, {
+                viewMode: 0,
+                aspectRatio: NaN,
+                autoCropArea: 1,
+                movable: true,
+                rotatable: true,
+                scalable: true,
+                zoomable: true,
+                responsive: true,
+                dragMode: 'move',
+            });
+        });
+
+        // Aspect Ratio Buttons
+        document.querySelectorAll('input[name="aspectRatio"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (!cropper) return;
+                const ratio = parseFloat(radio.value);
+                cropper.setAspectRatio(isNaN(ratio) ? NaN : ratio);
+            });
+        });
+
+        // Toolbar Actions
+        modalEl.querySelectorAll('[data-action]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (!cropper) return;
+                switch (btn.dataset.action) {
+                    case 'rotate-left':
+                        cropper.rotate(-90);
+                        break;
+                    case 'rotate-right':
+                        cropper.rotate(90);
+                        break;
+                    case 'flip-horizontal':
+                        cropper.scaleX(cropper.imageData.scaleX === 1 ? -1 : 1);
+                        break;
+                    case 'flip-vertical':
+                        cropper.scaleY(cropper.imageData.scaleY === 1 ? -1 : 1);
+                        break;
+                    case 'zoom-in':
+                        cropper.zoom(0.1);
+                        break;
+                    case 'zoom-out':
+                        cropper.zoom(-0.1);
+                        break;
+                }
+            });
+        });
+
+        // Save cropped image
+        saveBtn.addEventListener('click', async function () {
+            if (!config.uploadUrl || !config.input || !config.preview || !config.originalFile) return;
+            const file = config.originalFile;
+            let canvas = cropper.getCroppedCanvas();
+            if (!document.getElementById('use-original').checked && canvas.width > 1920) {
+                const aspect = canvas.width / canvas.height;
+                const targetW = 1920, targetH = 1920 / aspect;
+                const tmpCanvas = document.createElement('canvas');
+                tmpCanvas.width = targetW;
+                tmpCanvas.height = targetH;
+                tmpCanvas.getContext('2d').drawImage(canvas, 0, 0, targetW, targetH);
+                canvas = tmpCanvas;
+            }
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                formData.append('file', blob, file.name);
+                fetch(config.uploadUrl, {method: 'POST', body: formData})
+                    .then(r => r.json())
+                    .then(res => {
+                        config.input.value = res.data.path;
+                        config.preview.src = res.data.media_path;
+                        modal.hide();
+                    }).catch(err => console.error(err));
+            }, file.type || 'image/jpeg');
+        });
+
+    });
+</script>

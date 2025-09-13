@@ -14,7 +14,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import User, Group
 from django.urls import reverse
-from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from cmfadmin import site, CMFModelAdmin
@@ -82,7 +82,7 @@ class ExternalLinksAdmin(CMFModelAdmin):
     def url_link(self, obj):
         """Display the URL as a link that opens in a new tab in the list view"""
         if obj.url:
-            return format_html('<a href="{}" target="_blank">{}</a>', obj.url, obj.url)
+            return mark_safe(f'<a href="{obj.url}" target="_blank">{obj.url}</a>')
         return "-"
 
     url_link.short_description = 'url'
@@ -94,7 +94,7 @@ class NavAdmin(CMFModelAdmin):
 
     def edit_nav(self, obj):
         url = reverse('admin:nav_items_edit', args=[obj.pk])
-        return format_html('<a href="{}">{}</a>', url, _('Edit Menu'))
+        return mark_safe(f'<a href="{url}">{_("Edit Menu")}</a>')
 
     edit_nav.short_description = _('Action')
 

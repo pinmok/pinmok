@@ -16,8 +16,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const imageEl = document.getElementById('cropperImage');
     const saveBtn = document.getElementById('cropperSaveBtn');
     const modalEl = document.getElementById('cropperModal');
-    const aspectSelect = document.getElementById('cropperAspectRatio');
-    modal = new bootstrap.Modal(modalEl);
+    const aspectSelect = document.getElementById('input[name="aspectRatio"]');
+    modal = new tabler.Modal(modalEl);
 
     // Cleanup when modal is hidden
     modalEl.addEventListener('hidden.bs.modal', () => {
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
             config.preserveOriginal = btn.dataset.original === 'true';
 
             if (!config.input || !config.preview) {
-                alert('Missing cropper parameters.');
+                showToast(gettext('Missing cropper parameters.'), false)
                 return;
             }
 
@@ -89,22 +89,25 @@ document.addEventListener('DOMContentLoaded', function () {
         if (cropper) cropper.destroy();
 
         cropper = new Cropper(imageEl, {
-            viewMode: 1,
-            aspectRatio: parseFloat(aspectSelect.value) || NaN,
+            viewMode: 0,
+            aspectRatio: NaN,
             autoCropArea: 1,
             movable: true,
             rotatable: true,
             scalable: true,
             zoomable: true,
             responsive: true,
+            dragMode: 'move',
         });
     });
 
     // Handle aspect ratio change
-    aspectSelect.addEventListener('change', () => {
-        if (!cropper) return;
-        const ratio = parseFloat(aspectSelect.value);
-        cropper.setAspectRatio(isNaN(ratio) ? NaN : ratio);
+    aspectSelect.forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (!cropper) return;
+            const ratio = parseFloat(aspectSelect.value);
+            cropper.setAspectRatio(isNaN(ratio) ? NaN : ratio);
+        });
     });
 
     // Bind toolbar actions

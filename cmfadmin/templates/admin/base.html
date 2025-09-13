@@ -16,14 +16,15 @@
     <title>{% block title %}{% endblock %}</title>
     <!-- BEGIN GLOBAL MANDATORY STYLES -->
     {% if LANGUAGE_BIDI %}
-        <link rel="stylesheet" href="{% static "admin/css/tabler.rtl.min.css" %}">
+        <link rel="stylesheet" href="{% static 'admin/css/tabler.rtl.min.css' %}">
     {% else %}
-        <link rel="stylesheet" href="{% static "admin/css/tabler.min.css" %}"/>
+        <link rel="stylesheet" href="{% static 'admin/css/tabler.min.css' %}"/>
     {% endif %}
+    <link rel="stylesheet" href="{% static 'admin/css/tabler-themes.min.css' %}">
     <!-- END GLOBAL MANDATORY STYLES -->
 
     <!-- BEGIN CUSTOM FONT -->
-    <link rel="stylesheet" href="{% static "admin/fonts/inter/inter.css" %}">
+    <link rel="stylesheet" href="{% static 'admin/fonts/inter/inter.css' %}">
     <!-- END CUSTOM FONT -->
 
     <link rel="stylesheet" href="{% static 'admin/css/cmfadmin.css' %}">
@@ -31,26 +32,16 @@
     {% block extrastyle %}{% endblock %}
 </head>
 <body{% if is_popup %} class="popup"{% endif %} data-admin-utc-offset="{% now 'Z' %}">
+
 {% block body %}{% endblock %}
-{% block additional %}
-    <!-- Toast template -->
-    <div class="toast-container position-fixed bottom-0 end-0 p-3">
-        <div class="toast" id="global-toast" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header">
-                <strong class="me-auto text-white" id="global-toast-header"></strong>
-                <button type="button" class="ms-2 btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body" id="global-toast-body"></div>
-        </div>
-    </div>
-{% endblock %}
+
+{% block additional %}{% endblock %}
 <script>
     window.APP_URLS = {
         uploadFile: "{% url 'admin:upload_file' %}"
     }
     window.DEFAULT_IMG = "{% static 'admin/svg/photo.svg' %}"
 </script>
-<script src="{% static 'admin/js/bootstrap.bundle.min.js' %}"></script>
 <script src="{% static 'admin/js/tabler.min.js' %}" defer></script>
 <!-- BEGIN GLOBAL THEME SCRIPT -->
 <script src="{% static 'admin/js/tabler-theme.min.js' %}" defer></script>

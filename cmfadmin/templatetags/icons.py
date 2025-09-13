@@ -14,7 +14,7 @@ from django import template
 from django.templatetags.static import static
 from django.utils.safestring import mark_safe
 
-from cmfadmin.constants import CUSTOM_SPRITE_FILE
+from cmfadmin.constants import CUSTOM_SPRITE_FILE, CMF_SPRITE_FILE
 
 register = template.Library()
 
@@ -32,7 +32,7 @@ def sprite(icon_name: str, css_class: str = '', size: int = 16) -> str:
     Returns:
         django.utils.safestring.SafeString: An SVG element string ready for rendering in the template.
     """
-    sprite_path = static('admin/svg/sprite.svg')
+    sprite_path = static(CMF_SPRITE_FILE)
     return _process_file(sprite_path, icon_name, css_class, size)
 
 

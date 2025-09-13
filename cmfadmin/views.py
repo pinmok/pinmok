@@ -15,12 +15,11 @@ import os
 from json import JSONDecodeError
 
 from django.conf import settings
-from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.staticfiles import finders
 from django.core.exceptions import SuspiciousFileOperation, ValidationError
 from django.core.files.uploadedfile import UploadedFile
 from django.core.validators import validate_email
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.translation import gettext, gettext_lazy as _
@@ -479,8 +478,13 @@ class UploadFileView(View):
         return api_response(1, _("File not found"), status=404)
 
 
-@staff_member_required
 def sync_menu(request):
+    """
+    Sync all admin menus (superuser only).
+    """
+    if not request.user.is_active or not request.user.is_superuser:
+        return HttpResponseForbidden(_("You are not authorized to perform this action."))
+
     result = AdminMenuManager.synchronize_menu(MenuSyncMode.SYNC_ALL, request.user)
     return render(request, 'config/sync_menu.html', {'result': result})
 

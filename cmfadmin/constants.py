@@ -36,6 +36,7 @@ DEFAULT_SORT_ORDER = 10000
 
 # custom sprite.svg file path
 CUSTOM_SPRITE_FILE = 'svg/custom_sprite.svg'
+CMF_SPRITE_FILE = 'admin/svg/sprite.svg'
 
 UPLOAD_FILE_CONFIG = {
     FileType.IMAGE.value: {
