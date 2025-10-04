@@ -18,7 +18,7 @@ from django.http import HttpRequest
 from cmfadmin import constants
 from cmfadmin import site
 from cmfadmin.enums import MenuPermissions, ConfigCategory
-from cmfadmin.service.menu import MenuSynchronizer, AdminMenu, MenuItem
+from cmfadmin.service.menu import MenuSynchronizer, AdminMenu, MenuNode
 
 ADMIN_MENU = [
     {
@@ -31,27 +31,22 @@ ADMIN_MENU = [
                 'title': ConfigCategory.SITE.label,
                 'url': '/admin/cmfadmin/site/',
                 'sort_order': 100,
-                'permission': ['site.site.view_menu'],
             }, {
                 'title': ConfigCategory.EMAIL.label,
                 'url': '/admin/cmfadmin/email',
                 'sort_order': 200,
-                'permission': ['site.email.view_menu'],
             }, {
                 'title': ConfigCategory.SYSTEM.label,
                 'url': '/admin/cmfadmin/system',
                 'sort_order': 300,
-                'permission': ['site.system.view_menu'],
             }, {
                 'title': ConfigCategory.ICONS.label,
                 'url': '/admin/cmfadmin/icons',
                 'sort_order': 400,
-                'permission': ['site.icons.view_menu'],
             }, {
                 'title': ConfigCategory.UPLOAD.label,
                 'url': '/admin/cmfadmin/upload',
                 'sort_order': 500,
-                'permission': ['site.upload.view_menu'],
             },
         ]
     },
@@ -101,13 +96,13 @@ class AdminMenuManager:
         return list(all_perms)
 
     @staticmethod
-    def get_admin_breadcrumb(request: HttpRequest, menu_tree: list[MenuItem]) -> list[dict]:
+    def get_admin_breadcrumb(request: HttpRequest, menu_tree: list[MenuNode]) -> list[dict]:
         """
         Generate breadcrumb path for a given URL from the provided admin menu tree.
 
         Args:
             request(HttpRequest): The current HTTP request.
-            menu_tree(list[MenuItem]): Precomputed admin menu tree.
+            menu_tree(list[MenuNode]): Precomputed admin menu tree.
 
         Returns:
             list[dict]: Breadcrumb items with 'title' and 'url'.
@@ -115,7 +110,7 @@ class AdminMenuManager:
         path = []
         current_url = request.path
 
-        def search(bread_node: MenuItem, trail: list):
+        def search(bread_node: MenuNode, trail: list):
             new_trail = trail + [bread_node]
             if bread_node.url and current_url.startswith(bread_node.url):
                 nonlocal path
@@ -153,7 +148,7 @@ class AdminMenuManager:
         return MenuSynchronizer.synchronize_menu(app_label=app_label)
 
     @classmethod
-    def get_admin_menu(cls, request: HttpRequest) -> list[MenuItem]:
+    def get_admin_menu(cls, request: HttpRequest) -> list[MenuNode]:
         """
         Retrieve the final backend admin menu for the given user.
 

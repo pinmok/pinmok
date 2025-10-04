@@ -10,6 +10,7 @@ Author:
 Created:
   2025-06-09
 """
+import hashlib
 import importlib
 from dataclasses import dataclass, field
 from typing import Any
@@ -23,12 +24,13 @@ from django.templatetags.static import static
 from cmfadmin import constants
 from cmfadmin.enums import MenuSyncMode, MenuSource, MenuPermissions
 from cmfadmin.libs import TreeNode
-from cmfadmin.models import Menu
+from cmfadmin.models import Menu, MenuPermission
 from cmfadmin.utils.helper import get_model_fields, get_valid_app_labels
+from cmfadmin.utils.tools import safe_identifier
 
 
 @dataclass(kw_only=True)
-class MenuItem(TreeNode["MenuItem"]):
+class MenuNode(TreeNode["MenuNode"]):
     """
     Represents a single menu item within an admin menu group.
 
@@ -37,7 +39,6 @@ class MenuItem(TreeNode["MenuItem"]):
         url (str): The URL that the menu item points to.
         icon (str|None): Optional icon class for the menu item.
         sort_order (int): Sorting order within the group. Lower values appear first.
-        permission (list[str]): List of permission codes required to view this menu item.
         is_active (bool): Whether the menu item is active.
         visible (bool): Whether the menu item is visible.
         remark (str | None): Optional remark or note for the menu item.
@@ -49,7 +50,6 @@ class MenuItem(TreeNode["MenuItem"]):
     url: str | None = None
     icon: str | None = None
     sort_order: int = 10000
-    permission: list[str] = field(default_factory=list)
     is_active: bool = True
     visible: bool = True
     remark: str | None = None
@@ -175,14 +175,14 @@ class MenuSynchronizer:
         menu_node["app_label"] = app_label
 
         # Build MenuItem node
-        item = MenuItem.build_node(data=menu_node)
+        item = MenuNode.build_node(data=menu_node)
         cls.items.append(item)
 
         for child in menu_node.get("children", []):
             cls._parse_node(menu_node=child, app_label=app_label, p_id=new_id)
 
     @classmethod
-    def _parse_custom_menu(cls, menu_data: list[dict], app_label: str = None) -> list[MenuItem]:
+    def _parse_custom_menu(cls, menu_data: list[dict], app_label: str = None) -> list[MenuNode]:
         """
         Parse menu data (tree or flat) into a flat list of MenuItem instances.
         Supports mixed cases with or without 'parent_id' fields.
@@ -192,7 +192,7 @@ class MenuSynchronizer:
             app_label (str): App label this menu belongs to.
 
         Returns:
-            list[MenuItem]: Normalized flat list of MenuItem instances.
+            list[MenuNode]: Normalized flat list of MenuItem instances.
         """
         cls.id_map.clear()
         cls.items.clear()
@@ -203,7 +203,7 @@ class MenuSynchronizer:
         return cls.items
 
     @classmethod
-    def _get_sync_menus(cls, app_label: str) -> list[MenuItem]:
+    def _get_sync_menus(cls, app_label: str) -> list[MenuNode]:
         """
         Scan installed apps and settings for admin menus of the specified app_label only.
 
@@ -212,9 +212,9 @@ class MenuSynchronizer:
                              to avoid accidental full synchronization.
 
         Returns:
-            list[MenuItem]: A flat list of all MenuItem instances parsed for the app.
+            list[MenuNode]: A flat list of all MenuItem instances parsed for the app.
         """
-        custom_menus: list[MenuItem] = []
+        custom_menus: list[MenuNode] = []
 
         # Scan the specified app's menus.py if exists
         for app_config in apps.get_app_configs():
@@ -273,12 +273,12 @@ class MenuSynchronizer:
         return custom_menus
 
     @classmethod
-    def _get_sync_menus_all(cls) -> list[MenuItem]:
+    def _get_sync_menus_all(cls) -> list[MenuNode]:
         """
         Scan all valid user apps and aggregate all menus into one list.
         """
 
-        menus: list[MenuItem] = []
+        menus: list[MenuNode] = []
 
         for label in cls.valid_app_labels:
             try:
@@ -289,7 +289,7 @@ class MenuSynchronizer:
         return menus
 
     @staticmethod
-    def _sanitize_menu(menu_items: list[MenuItem]) -> list[MenuItem]:
+    def _sanitize_menu(menu_items: list[MenuNode]) -> list[MenuNode]:
         """
         Sanitize and fix parent-child relationships in a flat list of MenuItem instances.
 
@@ -298,10 +298,10 @@ class MenuSynchronizer:
         effectively promoting the item to a top-level menu.
 
         Args:
-            menu_items (list[MenuItem]): Flat list of MenuItem instances to sanitize.
+            menu_items (list[MenuNode]): Flat list of MenuItem instances to sanitize.
 
         Returns:
-            list[MenuItem]: The same input list, modified in place for corrected parent_id references.
+            list[MenuNode]: The same input list, modified in place for corrected parent_id references.
         """
         # Collect all valid ids from the current items
         valid_ids = {item.id for item in menu_items}
@@ -313,67 +313,64 @@ class MenuSynchronizer:
 
         return menu_items
 
+    @staticmethod
+    def _prepare_menu_obj(item, parent_db_id):
+        """Prepare Menu instance from MenuNode"""
+        model_fields = get_model_fields(Menu)
+        data = {}
+        for model_field in model_fields:
+            if hasattr(item, model_field):
+                value = getattr(item, model_field)
+                if value is not None:
+                    data[model_field] = value
+        data["parent_id"] = parent_db_id
+        base_str = item.url or f"{item.title}_{parent_db_id or 'root'}"
+        data["menu_key"] = hashlib.md5(base_str.encode("utf-8")).hexdigest()
+        return Menu(**data)
+
     @classmethod
-    def _insert_items(cls, menu_items: list[MenuItem], parent_db_id: int | None) -> int:
+    def _insert_items(cls, menu_items: list["MenuNode"], parent_db_id: int | None) -> int:
         """
-        Insert menu items into the database in batch and generate corresponding permissions.
-
-        Args:
-            menu_items (list[MenuItem]): The flat list of menu items to insert.
-            parent_db_id (int | None): Database ID of the parent node, None for root.
-
-        Returns:
-            int: Total number of inserted menu records.
+        Insert menu items into the database and generate corresponding permissions recursively.
         """
         created_count = 0
-        # Select items of the current level
-        current_level = [
-            item for item in menu_items
-            if item.parent_id == parent_db_id
-        ]
+        current_level = [item for item in menu_items if item.parent_id == parent_db_id]
         if not current_level:
             return 0
 
-        model_fields = get_model_fields(Menu)
-        to_create = []
-        for item in current_level:
-            data = {}
-            for model_field in model_fields:
-                if not hasattr(item, model_field):
-                    continue
-                value = getattr(item, model_field)
-                # Directly store permission as list[str], no need to check for string
-                if model_field == "permission" and value is None:
-                    value = []
-                elif value is None:
-                    value = ''
-                data[model_field] = value
+        # Step 1: Prepare Menu objects to bulk_create
+        to_create = [cls._prepare_menu_obj(item, parent_db_id) for item in current_level]
 
-            data['parent_id'] = parent_db_id
-            data['menu_key'] = uuid4().hex  # Always generate a unique UUID4 key
-            to_create.append(Menu(**data))
-
-        with transaction.atomic():
-            Menu.objects.bulk_create(to_create, batch_size=100)
-            created_items = list(Menu.objects.filter(
-                menu_key__in=[item.menu_key for item in to_create]
-            ))
+        # Step 2: Insert Menu objects
+        Menu.objects.bulk_create(to_create, batch_size=100)
+        created_items = list(Menu.objects.filter(menu_key__in=[m.menu_key for m in to_create]))
         created_count += len(created_items)
 
-        # Build a mapping between temporary IDs and actual DB IDs
-        id_mapping = {
-            src.id: db.id
-            for src, db in zip(current_level, created_items)
-        }
-
-        # Update parent_id for child nodes
+        # Step 3: Build mapping from temporary ID to DB ID
+        id_mapping = {src.id: db.id for src, db in zip(current_level, created_items)}
         for src, db in zip(current_level, created_items):
             src.db_id = db.id
             for child in menu_items:
                 if child.parent_id == src.id:
                     child.parent_id = id_mapping[src.id]
 
-        # Recursively insert child nodes
+        # Step 4: Generate permissions
+        parent_code_map = {}
+        for menu in created_items:
+            parent_code = parent_code_map.get(menu.parent_id, "")
+            safe_menu_title = safe_identifier(menu.title)
+            code = f"display_{parent_code}_{safe_menu_title}" if parent_code else f"display_{safe_menu_title}"
+
+            MenuPermission.objects.update_or_create(
+                menu_key=menu.menu_key,
+                defaults={
+                    "name": f"Can display {menu.title}",
+                    "code": code,
+                }
+            )
+            parent_code_map[menu.id] = safe_menu_title
+
+        # Step 5: Recursively insert child nodes
         for item in current_level:
             created_count += cls._insert_items(menu_items=menu_items, parent_db_id=item.db_id)
 
@@ -383,51 +380,45 @@ class MenuSynchronizer:
     def synchronize_menu(cls, app_label: str):
         """
         Synchronize and persist all custom admin menus defined in installed apps.
+        This is atomic: deletion + insertion of menus and permissions are in one transaction.
         """
-        # Filter out system apps (e.g., starting with 'django.')
         if app_label != MenuSyncMode.SYNC_ALL and app_label not in cls.valid_app_labels:
-            raise AdminMenuImportError(f"Invalid app_label '{app_label}', must be one of installed apps.")
+            raise AdminMenuImportError(
+                f"Invalid app_label '{app_label}', must be one of installed apps."
+            )
 
-        if app_label == MenuSyncMode.SYNC_ALL:
+        with transaction.atomic():  # Outer transaction ensures atomicity
             total_created = 0
             inserted_menus = []
-            # Get all menus from all apps
-            all_menus = cls._get_sync_menus_all()
-            # Clear existing menu records before insertion
-            Menu.objects.all().delete()
 
-            # Extract distinct app_labels from all_menus
-            for label in {m.app_label for m in all_menus}:
-                # Filter menus belonging to the current app_label
-                menus_for_label = [m for m in all_menus if m.app_label == label]
-                # Sanitize parent-child relationships within this app's menus
-                clear_menus = cls._sanitize_menu(menu_items=menus_for_label)
-                # Persist the sanitized menus to DB and accumulate inserted count
-                created = cls._insert_items(menu_items=clear_menus, parent_db_id=None)
-                # Return the total number of inserted menus across all apps
+            if app_label == MenuSyncMode.SYNC_ALL:
+                all_menus = cls._get_sync_menus_all()
+                # Clear all existing menu records and permissions
+                MenuPermission.objects.all().delete()
+                Menu.objects.all().delete()
+
+                for label in {m.app_label for m in all_menus}:
+                    menus_for_label = [m for m in all_menus if m.app_label == label]
+                    clear_menus = cls._sanitize_menu(menu_items=menus_for_label)
+                    created = cls._insert_items(clear_menus, parent_db_id=None)
+                    total_created += created
+                    inserted_menus.extend([
+                        {"app_label": label, "title": m.title, "url": m.url}
+                        for m in clear_menus
+                    ])
+            else:
+                sync_menus = cls._get_sync_menus(app_label=app_label)
+                clear_menus = cls._sanitize_menu(menu_items=sync_menus)
+                MenuPermission.objects.filter(menu__app_label=app_label).delete()
+                Menu.objects.filter(app_label=app_label).delete()
+                created = cls._insert_items(clear_menus, parent_db_id=None)
                 total_created += created
                 inserted_menus.extend([
-                    {'app_label': label, 'title': m.title, 'url': m.url}
+                    {"app_label": app_label, "title": m.title, "url": m.url}
                     for m in clear_menus
                 ])
 
-            return {'total_created': total_created, 'menus': inserted_menus}
-        else:
-            # Get menus for the specific app
-            sync_menus = cls._get_sync_menus(app_label=app_label)
-            # Sanitize parent-child relationships within this app's menus
-            clear_menus = cls._sanitize_menu(menu_items=sync_menus)
-
-            Menu.objects.filter(app_label=app_label).delete()
-            created = cls._insert_items(menu_items=clear_menus, parent_db_id=None)
-
-            return {
-                'total_created': created,
-                'menus': [
-                    {'app_label': app_label, 'title': m.title, 'url': m.url}
-                    for m in clear_menus
-                ]
-            }
+            return {"total_created": total_created, "menus": inserted_menus}
 
 
 class AdminMenu:
@@ -437,35 +428,36 @@ class AdminMenu:
     """
 
     @staticmethod
-    def _load_from_database() -> list[MenuItem]:
+    def _load_from_database() -> list[MenuNode]:
         """
         Fetch active menu items from database and convert to MenuItem.
         """
         menu_data = Menu.objects.filter(is_active=True)
 
-        menu_items = []
+        menu_items: list[MenuNode] = []
         for menu in menu_data:
-            item = MenuItem.build_node(menu)
+            item = MenuNode.build_node(menu)
             item.source = MenuSource.DATABASE
             menu_items.append(item)
         return menu_items
 
     @staticmethod
-    def _load_from_app_list(app_list: list[dict]) -> list[MenuItem]:
+    def _load_from_app_list(app_list: list[dict]) -> list[MenuNode]:
         """
         Convert Django admin app_list data to a flat list of MenuItem objects.
 
         Since the 'auth' module requires customized display titles, they are hardcoded here.
         """
 
-        menu_items = []
+        menu_items: list[MenuNode] = []
 
         for app in app_list:
             # Top-level menu (application)
             app_label = app.get('app_label')
-            app_item = MenuItem(
+            app_config = apps.get_app_config(app_label)
+            app_item = MenuNode(
                 id=app.get('app_label'),
-                title='Authentication and Authorization' if app_label == 'auth' else app.get('name', ''),
+                title=app_config.verbose_name,
                 url=app.get('app_url'),
                 icon=constants.AUTH_ICON,
                 app_label=app_label,
@@ -477,10 +469,10 @@ class AdminMenu:
             # Process models under the application
             for model in app.get('models', []):
                 object_name = model.get('object_name')
-                model_item = MenuItem(
+                model_item = MenuNode(
                     id=object_name,
                     parent_id=app_item.id,
-                    title=object_name.lower() if app_label == 'auth' else model.get('name', ''),
+                    title=model.get('name') or object_name,
                     url=model.get('admin_url'),
                     app_label=app_label,
                     source=MenuSource.APP_LIST,
@@ -490,7 +482,7 @@ class AdminMenu:
         return menu_items
 
     @staticmethod
-    def _merge_items(db_menus: list[MenuItem], app_list_menus: list[MenuItem]) -> list[MenuItem]:
+    def get_merged_items(db_menus: list[MenuNode], app_list_menus: list[MenuNode]) -> list[MenuNode]:
         """
         Merge two lists of MenuItem objects with database items taking priority.
 
@@ -501,24 +493,26 @@ class AdminMenu:
             - Append all valid items into the merged result.
 
         Args:
-            db_menus (list[MenuItem]): Menus loaded from the database.
-            app_list_menus (list[MenuItem]): Menus generated from app_list sources.
+            db_menus (list[MenuNode]): Menus loaded from the database.
+            app_list_menus (list[MenuNode]): Menus generated from app_list sources.
 
         Returns:
-            list[MenuItem]: Combined menu list for display, with conflicts resolved.
+            list[MenuNode]: Combined menu list for display, with conflicts resolved.
         """
-        merged_items: list[MenuItem] = list(db_menus)
+        merged_items: list[MenuNode] = list(db_menus)
 
-        # Build a mapping {app_label: id} for all database top-level menus
-        app_label_to_db_id = {
-            item.app_label: item.id for item in db_menus if item.parent_id is None
-        }
+        # Build a mapping {app_label: first_root_id} for all database top-level menus
+        app_label_to_db_id = {}
+        for item in db_menus:
+            if item.parent_id is None and item.app_label not in app_label_to_db_id:
+                app_label_to_db_id[item.app_label] = item.id
 
         for app_menu_item in app_list_menus:
             if app_menu_item.parent_id is None:
                 # Skip top-level app_list menus if a database menu with the same app_label exists
                 if app_menu_item.app_label in app_label_to_db_id:
-                    continue
+                    # Attach to the first root
+                    app_menu_item.parent_id = app_label_to_db_id[app_menu_item.app_label]
                 else:
                     merged_items.append(app_menu_item)
             else:
@@ -530,33 +524,23 @@ class AdminMenu:
         return merged_items
 
     @staticmethod
-    def filter_by_permissions(menu_tree: list[MenuItem], permissions: list[str]) -> list[MenuItem]:
+    def filter_by_permissions(menu_tree: list[MenuNode], permissions: list[str]) -> list[MenuNode]:
         """
         Filter menu tree according to user's permissions.
 
         Args:
-            menu_tree (list[MenuItem]): The hierarchical menu tree to filter.
+            menu_tree (list[MenuNode]): The hierarchical menu tree to filter.
             permissions (list[str]): List of permission codes the user has.
 
         Returns:
-            list[MenuItem]: Filtered menu tree.
+            list[MenuNode]: Filtered menu tree.
         """
         if MenuPermissions.ALL_PERMISSIONS in permissions:
             return menu_tree
-
-        def _filter(node: MenuItem) -> MenuItem | None:
-            # Filter children recursively using walrus operator
-            node.children = [fc for child in getattr(node, 'children', []) if (fc := _filter(child))]
-
-            # Determine if node is visible
-            node_perms = node.permission if isinstance(node.permission, list) else [node.permission]
-            has_perm = not node_perms or any(p in permissions for p in node_perms)
-            return node if has_perm or node.children else None
-
-        return [result for root in menu_tree if (result := _filter(root))]
+        return menu_tree
 
     @classmethod
-    def get_menu(cls, app_list: list[dict]) -> list[MenuItem]:
+    def get_menu(cls, app_list: list[dict]) -> list[MenuNode]:
         """ Get final admin menu. """
         #  Load menu from database
         db_items = cls._load_from_database()
@@ -565,7 +549,7 @@ class AdminMenu:
         app_items = cls._load_from_app_list(app_list=app_list)
 
         # Merge two sources (db priority)
-        merged_items = cls._merge_items(db_menus=db_items, app_list_menus=app_items)
+        merged_items = cls.get_merged_items(db_menus=db_items, app_list_menus=app_items)
 
         # Build hierarchical tree
-        return MenuItem.build_tree(merged_items, sort_key='sort_order')
+        return MenuNode.build_tree(merged_items, sort_key='sort_order')

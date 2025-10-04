@@ -30,10 +30,6 @@ function setupDropdownToggle(selector) {
             // Check if the menu is currently expanded (aria-expanded="true")
             let isOpen = this.getAttribute('aria-expanded') === 'true';
 
-            // toggle Bootstrap dropdown
-            const bsDropdown = bootstrap.Dropdown.getOrCreateInstance(this);
-            bsDropdown.toggle();
-
             // Toggle the dropdown direction class based on the state
             if (isOpen) {
                 parentLi.classList.remove('dropend');

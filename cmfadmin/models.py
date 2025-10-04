@@ -12,6 +12,7 @@ Created:
 """
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -27,7 +28,7 @@ class Menu(models.Model):
     Backend admin menu item supporting multi-level hierarchy and permission control.
     """
     menu_key = models.CharField(max_length=32, unique=True, db_index=True,
-                                help_text=_("Temporary UUID used to identify this menu item."))
+                                help_text=_("Stable hash used to uniquely identify this menu item, based on URL and parent id."))
     title = models.CharField(max_length=50, verbose_name=_("Title"),
                              help_text=_("Menu title displayed in the admin."))
     url = models.CharField(max_length=200, blank=True, default='', verbose_name=_("URL"),
@@ -41,8 +42,6 @@ class Menu(models.Model):
                                  help_text=_("Application label associated with this menu item."))
     sort_order = models.PositiveIntegerField(default=DEFAULT_SORT_ORDER, verbose_name=_("Sort Order"),
                                              help_text=_("Order for menu sorting."))
-    permission = models.JSONField(blank=True, default=list, verbose_name=_("Permission Code"),
-                                  help_text=_("List of permission codes required to view this menu item."))
     is_active = models.BooleanField(default=True, verbose_name=_("Active"),
                                     help_text=_("Whether this menu is active and visible."))
     visible = models.BooleanField(default=True, verbose_name=_("Visible"),
@@ -59,6 +58,46 @@ class Menu(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class MenuPermission(models.Model):
+    """
+    Custom permission definitions (business permissions).
+    These are independent of Django's auth_permission.
+    """
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=128, unique=True)  # stable identifier, e.g. "menu:reports:view"
+    menu_key = models.CharField(max_length=100, db_index=True)
+
+    # Centralized field name for dynamic relation
+    PERMISSION_RELATED_NAME = 'menu_permissions'
+
+    class Meta:
+        verbose_name = _("Menu Permission")
+        verbose_name_plural = _("Menu Permissions")
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+
+# Extend User and Group with many-to-many to CustomPermission
+User.add_to_class(
+    MenuPermission.PERMISSION_RELATED_NAME,
+    models.ManyToManyField(
+        MenuPermission,
+        blank=True,
+        related_name=f"{MenuPermission.PERMISSION_RELATED_NAME}_user_set"
+    )
+)
+
+Group.add_to_class(
+    MenuPermission.PERMISSION_RELATED_NAME,
+    models.ManyToManyField(
+        MenuPermission,
+        blank=True,
+        related_name=f"{MenuPermission.PERMISSION_RELATED_NAME}_group_set"
+    )
+)
 
 
 class Config(models.Model):

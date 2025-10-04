@@ -31,6 +31,13 @@ class MenuSource(StrEnum):
     APP_LIST = 'app_list'
 
 
+# Permission data source
+class PermissionSource(StrEnum):
+    SYSTEM = "system"
+    MENU = "menu"
+    CUSTOM = "custom"
+
+
 # Config model enum
 class ConfigCategory(models.TextChoices):
     SITE = 'site', 'Site Information'

@@ -1,0 +1,134 @@
+{% load icons %}
+<div id="permission-tree" class="permission-tree">
+    <!-- hidden input for form submit -->
+    <input type="hidden" name="user_permissions" id="user-permissions-input">
+
+    <!-- tree will be rendered here -->
+    <ul class="list-unstyled tree-root"></ul>
+</div>
+
+<script>
+    // Permissions data from backend
+    const permissionsData = {{ permissions|safe }};
+
+    // Build tree recursively
+    function buildTree(nodes) {
+        const ul = document.createElement("ul");
+        ul.classList.add("list-unstyled", "ms-3", "mt-2"); // indent children
+        nodes.forEach(node => {
+            const li = document.createElement("li");
+            li.classList.add("mb-1");
+
+            // expand/collapse toggle
+            const toggle = document.createElement("span");
+            toggle.classList.add("me-1", "cursor-pointer");
+            toggle.innerHTML = node.children && node.children.length > 0 ?
+                '{% sprite "tabler-chevron-right" "icon" %}'
+                : '<span style="display:inline-block;width:16px"></span>';
+
+            // checkbox
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.classList.add("form-check-input", "me-1");
+            checkbox.dataset.id = node.id;
+            checkbox.checked = node.checked;
+
+            // label
+            const label = document.createElement("span");
+            label.textContent = node.text;
+
+            // append parts
+            if (toggle.innerHTML) li.appendChild(toggle);
+            li.appendChild(checkbox);
+            li.appendChild(label);
+
+            // children
+            if (node.children && node.children.length > 0) {
+                const childUl = buildTree(node.children);
+                childUl.style.display = "none"; // collapsed by default
+                li.appendChild(childUl);
+
+                toggle.addEventListener("click", () => {
+                    const isHidden = childUl.style.display === "none";
+                    childUl.style.display = isHidden ? "block" : "none";
+                    toggle.innerHTML = isHidden
+                        ? '{% sprite "tabler-chevron-down" "icon" %}'
+                        : '{% sprite "tabler-chevron-right" "icon" %}'
+                });
+            }
+
+            ul.appendChild(li);
+        });
+        return ul;
+    }
+
+    // Initialize tree
+    const root = document.querySelector("#permission-tree .tree-root");
+    root.appendChild(buildTree(permissionsData));
+
+    // Update hidden input with selected IDs
+    function updateHiddenInput() {
+        const checked = document.querySelectorAll("#permission-tree input[type=checkbox]:checked");
+        const ids = Array.from(checked).map(cb => cb.dataset.id);
+        document.getElementById("user-permissions-input").value = ids.join(",");
+    }
+
+    // Recursively update children checkboxes
+    function updateChildren(cb, checked) {
+        const childUl = cb.closest("li").querySelector("ul");
+        if (!childUl) return;
+        const childCbs = childUl.querySelectorAll(":scope > li > input[type=checkbox]");
+        childCbs.forEach(child => {
+            child.checked = checked;
+            child.indeterminate = false;
+            updateChildren(child, checked);
+        });
+    }
+
+    // Recursively update parent checkboxes
+    function updateParents(cb) {
+        const parentLi = cb.closest("li").closest("ul")?.closest("li");
+        if (!parentLi) return;
+        const parentCb = parentLi.querySelector(":scope > input[type=checkbox]");
+        const siblings = parentLi.querySelectorAll("ul > li > input[type=checkbox]");
+        const allChecked = Array.from(siblings).every(s => s.checked);
+        const noneChecked = Array.from(siblings).every(s => !s.checked);
+        if (allChecked) {
+            parentCb.checked = true;
+            parentCb.indeterminate = false;
+        } else if (noneChecked) {
+            parentCb.checked = false;
+            parentCb.indeterminate = false;
+        } else {
+            parentCb.checked = false;
+            parentCb.indeterminate = true;
+        }
+        updateParents(parentCb);
+    }
+
+    // Handle checkbox change event
+    function handleCheckboxChange(cb) {
+        // update children
+        updateChildren(cb, cb.checked);
+        // update parents
+        updateParents(cb);
+        // sync hidden input
+        updateHiddenInput();
+    }
+
+    // Attach change event listeners to all checkboxes
+    document.querySelectorAll("#permission-tree input[type=checkbox]").forEach(cb => {
+        cb.addEventListener("change", () => handleCheckboxChange(cb));
+    });
+
+    // Initialize parent indeterminate state
+    function initParentStates() {
+        document.querySelectorAll("#permission-tree input[type=checkbox]").forEach(cb => {
+            updateParents(cb);
+        });
+    }
+
+    // Initial sync
+    updateHiddenInput();
+    initParentStates();
+</script>

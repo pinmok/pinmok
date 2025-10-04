@@ -12,7 +12,9 @@ Created:
   2025-06-09
 """
 from dataclasses import field, dataclass
-from typing import TypeVar, Generic, Callable, Type, Any, Mapping
+from typing import TypeVar, Generic, Callable, Any, Mapping
+
+from django.utils.translation import gettext_lazy as _
 
 # Generic type for TreeNode subclasses
 T = TypeVar("T", bound="TreeNode[Any]")
@@ -88,7 +90,7 @@ class TreeNode(Generic[T]):
             child.traverse(func)
 
     @classmethod
-    def build_tree(cls: Type[T], nodes: list[T], sort_key: str | None = None) -> list[T]:
+    def build_tree(cls: type[T], nodes: list[T], sort_key: str | None = None) -> list[T]:
         """
         Build a tree structure from a flat list of nodes.
 
@@ -130,7 +132,7 @@ class TreeNode(Generic[T]):
 
             sort_tree(roots)
             sort_nodes(roots)
-            
+
         return roots
 
     def find_in_subtree(self, predicate: Callable[[T], bool]) -> T | None:
@@ -188,7 +190,7 @@ class TreeNode(Generic[T]):
             ValueError: If both 'include' and 'exclude' are provided.
         """
         if include and exclude:
-            raise ValueError("Cannot specify both 'include' and 'exclude'.")
+            raise ValueError(_("Cannot specify both 'include' and 'exclude'."))
 
         field_names = self.__annotations__.keys()
 
@@ -198,7 +200,7 @@ class TreeNode(Generic[T]):
         elif exclude:
             field_names = [f for f in field_names if f not in exclude]
 
-        data = {field: getattr(self, field) for field in field_names}
+        data = {f: getattr(self, f) for f in field_names}
 
         # Recursively convert children if within depth limit
         if depth is None or depth > 0:
@@ -277,7 +279,7 @@ class TreeNode(Generic[T]):
         return result
 
     @classmethod
-    def build_node(cls: Type[T], data: Any) -> T:
+    def build_node(cls: type[T], data: Any) -> T:
         """
         Create an instance from dict-like data.
 
@@ -295,7 +297,7 @@ class TreeNode(Generic[T]):
         if not isinstance(data, Mapping):
             data = data.__dict__
 
-        field_names = cls.__dataclass_fields__.keys()
+        field_names = cls.__dataclass_fields__.keys()  # type: ignore
 
         # Only include keys that exist in data, skip missing ones
         kwargs = {key: data.get(key) for key in field_names if key in data}

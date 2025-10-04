@@ -34,7 +34,7 @@
                                 <small class="form-hint">{{ cmf.username.help_text }}</small>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label"> {{ cmf.password.label }} </label>
+                                <div class="form-label"> {{ cmf.password.label }} </div>
                                 <span class="me-3">{{ cmf.password.value|truncatechars:32 }}</span>
                                 <a href="../password" class="btn btn-primary btn-sm">
                                     {% if cmf.password.value %}
@@ -47,7 +47,7 @@
                             </div>
                             <div class="row">
                                 <div class="col-6">
-                                    <label class="form-label">{{ cmf.last_login.label }}</label>
+                                    <div class="form-label">{{ cmf.last_login.label }}</div>
                                     <input type="hidden" name="{{ cmf.last_login.name }}_0" readonly
                                            value="{{ original.last_login|date:'Y-m-d' }}">
                                     <input type="hidden" name="{{ cmf.last_login.name }}_1" readonly
@@ -55,7 +55,7 @@
                                     <h3>{{ cmf.last_login.value }}</h3>
                                 </div>
                                 <div class="col-6">
-                                    <label class="form-label">{{ cmf.date_joined.label }}</label>
+                                    <div class="form-label">{{ cmf.date_joined.label }}</div>
                                     <input type="hidden" name="{{ cmf.date_joined.name }}_0" readonly
                                            value="{{ original.date_joined|date:'Y-m-d' }}">
                                     <input type="hidden" name="{{ cmf.date_joined.name }}_1" readonly
@@ -99,6 +99,7 @@
                     </div>
                     <small class="form-hint">{{ cmf.groups.help_text }}</small>
                 </div>
+                <!-- permissions tree block -->
                 <div class="tab-pane" id="tabs-permission" role="tabpanel">
                     <div class="row mt-3">
                         <div class="col-4">
@@ -120,25 +121,15 @@
                         <div class="col-4">
                             <label class="form-check">
                                 <input type="checkbox" name="{{ cmf.is_superuser.name }}" class="form-check-input"
-                                       {% if cmf.is_staff.value %}checked{% endif %}>
+                                       {% if cmf.is_superuser.value %}checked{% endif %}>
                                 <span class="form-label">{{ cmf.is_superuser.label }}</span>
                             </label>
                             <small class="form-hint">{{ cmf.is_superuser.help_text }}</small>
                         </div>
                     </div>
-                    <hr>
-                    <div class="row">
-                        <select name="user_permissions" id="id_user_permissions" class="selectfilter" multiple
-                                data-field-name="user permissions" data-is-stacked="0"
-                                aria-describedby="id_user_permissions_helptext">
-                            {% for p in cmf.user_permissions.queryset %}
-                                <option value="{{ p.id }}" {% if p.id in cmf.user_permissions.value %} selected {% endif %}>
-                                    {{ p.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
+                    <div class="row mt-3">
+                        {% include 'component/permission.html' %}
                     </div>
-                    <small class="form-hint">{{ cmf.user_permissions.help_text }}</small>
                 </div>
             </div>
         </div>

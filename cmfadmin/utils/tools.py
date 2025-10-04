@@ -10,6 +10,7 @@ Author:
 Created:
   2025-06-10
 """
+import re
 
 
 def int_to_bytes(num: float) -> str:
@@ -97,3 +98,13 @@ def bytes_to_int(size_str: str) -> int:
     if number < 0:
         raise ValueError("Size cannot be negative")
     return int(number)
+
+
+def safe_identifier(title: str) -> str:
+    """
+    Convert a string into a safe identifier for code, key, or slug.
+    - Strip leading/trailing spaces
+    - Lowercase
+    - Replace non-word characters with underscore
+    """
+    return re.sub(r"\W+", "_", title.strip().lower())

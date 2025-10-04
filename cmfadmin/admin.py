@@ -10,6 +10,8 @@ Author:
 Created:
   2025-06-08
 """
+import json
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import User, Group
@@ -19,6 +21,7 @@ from django.utils.translation import gettext_lazy as _
 
 from cmfadmin import site, CMFModelAdmin
 from cmfadmin.models import ExternalLink, Nav
+from cmfadmin.service.authorization import PermissionService
 
 
 class CmfUserAdmin(CMFModelAdmin, UserAdmin):
@@ -64,7 +67,11 @@ class CmfUserAdmin(CMFModelAdmin, UserAdmin):
                     # Store the field attributes and values in the dictionary
                     field_data[field_name] = field_properties
 
-        context.update({'cmf': field_data})
+        # Attach permission tree if applicable
+        perms_tree = PermissionService.get_permission_tree_for_instance(obj)
+        permissions = json.dumps([node.to_dict() for node in perms_tree])
+
+        context.update({'cmf': field_data, 'permissions': permissions})
 
         return super().render_change_form(request, context, add, change, form_url, obj)
 
