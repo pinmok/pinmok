@@ -289,7 +289,7 @@ class MenuSynchronizer:
         return menus
 
     @staticmethod
-    def _sanitize_menu(menu_items: list[MenuNode]) -> list[MenuNode]:
+    def _sanitize_menu(menu_nodes: list[MenuNode]) -> list[MenuNode]:
         """
         Sanitize and fix parent-child relationships in a flat list of MenuItem instances.
 
@@ -298,20 +298,20 @@ class MenuSynchronizer:
         effectively promoting the item to a top-level menu.
 
         Args:
-            menu_items (list[MenuNode]): Flat list of MenuItem instances to sanitize.
+            menu_nodes (list[MenuNode]): Flat list of MenuItem instances to sanitize.
 
         Returns:
             list[MenuNode]: The same input list, modified in place for corrected parent_id references.
         """
         # Collect all valid ids from the current items
-        valid_ids = {item.id for item in menu_items}
+        valid_ids = {item.id for item in menu_nodes}
 
-        for item in menu_items:
+        for item in menu_nodes:
             if item.parent_id is not None and item.parent_id not in valid_ids:
                 # If parent_id is invalid, reset it to None (top-level)
                 item.parent_id = None
 
-        return menu_items
+        return menu_nodes
 
     @staticmethod
     def _prepare_menu_obj(item, parent_db_id):
@@ -329,12 +329,12 @@ class MenuSynchronizer:
         return Menu(**data)
 
     @classmethod
-    def _insert_items(cls, menu_items: list["MenuNode"], parent_db_id: int | None) -> int:
+    def _insert_items(cls, menu_nodes: list["MenuNode"], parent_db_id: int | None) -> int:
         """
         Insert menu items into the database and generate corresponding permissions recursively.
         """
         created_count = 0
-        current_level = [item for item in menu_items if item.parent_id == parent_db_id]
+        current_level = [item for item in menu_nodes if item.parent_id == parent_db_id]
         if not current_level:
             return 0
 
@@ -350,13 +350,18 @@ class MenuSynchronizer:
         id_mapping = {src.id: db.id for src, db in zip(current_level, created_items)}
         for src, db in zip(current_level, created_items):
             src.db_id = db.id
-            for child in menu_items:
+            for child in menu_nodes:
                 if child.parent_id == src.id:
                     child.parent_id = id_mapping[src.id]
 
         # Step 4: Generate permissions
         parent_code_map = {}
         for menu in created_items:
+            # No permission if node is root
+            if menu.parent_id is None:
+                parent_code_map[menu.id] = safe_identifier(menu.title)
+                continue
+
             parent_code = parent_code_map.get(menu.parent_id, "")
             safe_menu_title = safe_identifier(menu.title)
             code = f"display_{parent_code}_{safe_menu_title}" if parent_code else f"display_{safe_menu_title}"
@@ -372,7 +377,7 @@ class MenuSynchronizer:
 
         # Step 5: Recursively insert child nodes
         for item in current_level:
-            created_count += cls._insert_items(menu_items=menu_items, parent_db_id=item.db_id)
+            created_count += cls._insert_items(menu_nodes=menu_nodes, parent_db_id=item.db_id)
 
         return created_count
 
@@ -399,7 +404,7 @@ class MenuSynchronizer:
 
                 for label in {m.app_label for m in all_menus}:
                     menus_for_label = [m for m in all_menus if m.app_label == label]
-                    clear_menus = cls._sanitize_menu(menu_items=menus_for_label)
+                    clear_menus = cls._sanitize_menu(menu_nodes=menus_for_label)
                     created = cls._insert_items(clear_menus, parent_db_id=None)
                     total_created += created
                     inserted_menus.extend([
@@ -408,7 +413,7 @@ class MenuSynchronizer:
                     ])
             else:
                 sync_menus = cls._get_sync_menus(app_label=app_label)
-                clear_menus = cls._sanitize_menu(menu_items=sync_menus)
+                clear_menus = cls._sanitize_menu(menu_nodes=sync_menus)
                 MenuPermission.objects.filter(menu__app_label=app_label).delete()
                 Menu.objects.filter(app_label=app_label).delete()
                 created = cls._insert_items(clear_menus, parent_db_id=None)
@@ -434,12 +439,12 @@ class AdminMenu:
         """
         menu_data = Menu.objects.filter(is_active=True)
 
-        menu_items: list[MenuNode] = []
+        menu_nodes: list[MenuNode] = []
         for menu in menu_data:
             item = MenuNode.build_node(menu)
             item.source = MenuSource.DATABASE
-            menu_items.append(item)
-        return menu_items
+            menu_nodes.append(item)
+        return menu_nodes
 
     @staticmethod
     def _load_from_app_list(app_list: list[dict]) -> list[MenuNode]:
@@ -449,7 +454,7 @@ class AdminMenu:
         Since the 'auth' module requires customized display titles, they are hardcoded here.
         """
 
-        menu_items: list[MenuNode] = []
+        menu_nodes: list[MenuNode] = []
 
         for app in app_list:
             # Top-level menu (application)
@@ -464,7 +469,7 @@ class AdminMenu:
                 source=MenuSource.APP_LIST,
                 sort_order=1
             )
-            menu_items.append(app_item)
+            menu_nodes.append(app_item)
 
             # Process models under the application
             for model in app.get('models', []):
@@ -477,12 +482,12 @@ class AdminMenu:
                     app_label=app_label,
                     source=MenuSource.APP_LIST,
                 )
-                menu_items.append(model_item)
+                menu_nodes.append(model_item)
 
-        return menu_items
+        return menu_nodes
 
-    @staticmethod
-    def get_merged_items(db_menus: list[MenuNode], app_list_menus: list[MenuNode]) -> list[MenuNode]:
+    @classmethod
+    def get_merged_nodes(cls, app_list: list[dict]) -> list[MenuNode]:
         """
         Merge two lists of MenuItem objects with database items taking priority.
 
@@ -492,14 +497,15 @@ class AdminMenu:
               update its parent_id to the corresponding database menu's id.
             - Append all valid items into the merged result.
 
-        Args:
-            db_menus (list[MenuNode]): Menus loaded from the database.
-            app_list_menus (list[MenuNode]): Menus generated from app_list sources.
-
         Returns:
             list[MenuNode]: Combined menu list for display, with conflicts resolved.
         """
-        merged_items: list[MenuNode] = list(db_menus)
+        #  Load menu from database
+        db_menus: list[MenuNode] = cls._load_from_database()
+        # Load menu from app_list
+        app_list_menus: list[MenuNode] = cls._load_from_app_list(app_list=app_list)
+
+        merged_nodes: list[MenuNode] = list(db_menus)
 
         # Build a mapping {app_label: first_root_id} for all database top-level menus
         app_label_to_db_id = {}
@@ -514,14 +520,14 @@ class AdminMenu:
                     # Attach to the first root
                     app_menu_item.parent_id = app_label_to_db_id[app_menu_item.app_label]
                 else:
-                    merged_items.append(app_menu_item)
+                    merged_nodes.append(app_menu_item)
             else:
                 # For child menus, if their parent exists in database, remap parent_id to database id
                 if app_menu_item.parent_id in app_label_to_db_id:
                     app_menu_item.parent_id = app_label_to_db_id[app_menu_item.parent_id]
-                merged_items.append(app_menu_item)
+                merged_nodes.append(app_menu_item)
 
-        return merged_items
+        return merged_nodes
 
     @staticmethod
     def filter_by_permissions(menu_tree: list[MenuNode], permissions: list[str]) -> list[MenuNode]:
@@ -542,14 +548,8 @@ class AdminMenu:
     @classmethod
     def get_menu(cls, app_list: list[dict]) -> list[MenuNode]:
         """ Get final admin menu. """
-        #  Load menu from database
-        db_items = cls._load_from_database()
-
-        # Load menu from app_list
-        app_items = cls._load_from_app_list(app_list=app_list)
-
         # Merge two sources (db priority)
-        merged_items = cls.get_merged_items(db_menus=db_items, app_list_menus=app_items)
+        merged_items = cls.get_merged_nodes(app_list)
 
         # Build hierarchical tree
         return MenuNode.build_tree(merged_items, sort_key='sort_order')

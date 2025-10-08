@@ -1,5 +1,5 @@
 {% extends "admin/change_form.html" %}
-{% load static i18n icons %}
+{% load i18n icons %}
 
 {% block field_sets %}
     <div class="card">
@@ -28,103 +28,145 @@
                     <div class="row">
                         <div class="col-12 col-md-6">
                             <div class="mb-3">
-                                <label class="form-label required" for="{{ cmf.username.name }}"> {{ cmf.username.label }} </label>
-                                <input type="text" name="{{ cmf.username.name }}" id="{{ cmf.username.name }}" class="form-control"
-                                       value="{{ cmf.username.value }}" required>
-                                <small class="form-hint">{{ cmf.username.help_text }}</small>
+                                <label class="form-label{% if adminform.form.username.required %} required{% endif %}"
+                                       for="username">
+                                    {{ adminform.form.username.label }}
+                                </label>
+                                <input type="text"
+                                       name="{{ adminform.form.username.name }}"
+                                       id="username" class="form-control"
+                                       value="{{ adminform.form.username.value }}"
+                                       autocomplete="username"
+                                       {% if adminform.form.username.required %}required{% endif %}>
+                                {% if adminform.form.username.help_text %}
+                                    <small class="form-hint">{{ adminform.form.username.help_text }}</small>
+                                {% endif %}
                             </div>
                             <div class="mb-3">
-                                <div class="form-label"> {{ cmf.password.label }} </div>
-                                <span class="me-3">{{ cmf.password.value|truncatechars:32 }}</span>
+                                <div class="form-label">{{ adminform.form.password.label }}</div>
+                                <span class="me-3">{{ adminform.form.password.value|truncatechars:32 }}</span>
                                 <a href="../password" class="btn btn-primary btn-sm">
-                                    {% if cmf.password.value %}
-                                        {% translate 'Reset password' %}
-                                    {% else %}
-                                        {% translate 'Set password' %}
-                                    {% endif %}
+                                    {% if original.has_usable_password %} {% translate 'Reset password' %} {% else %}
+                                        {% translate 'Set password' %} {% endif %}
                                 </a>
-                                <small class="form-hint">{{ cmf.username.help_text }}</small>
+                                <small class="form-hint">{{ adminform.form.password.help_text }}</small>
                             </div>
                             <div class="row">
                                 <div class="col-6">
-                                    <div class="form-label">{{ cmf.last_login.label }}</div>
-                                    <input type="hidden" name="{{ cmf.last_login.name }}_0" readonly
-                                           value="{{ original.last_login|date:'Y-m-d' }}">
-                                    <input type="hidden" name="{{ cmf.last_login.name }}_1" readonly
-                                           value="{{ original.last_login|date:'H:i:s' }}">
-                                    <h3>{{ cmf.last_login.value }}</h3>
+                                    <div class="form-label">{{ adminform.form.last_login.label }}</div>
+                                    <input type="hidden" name="{{ adminform.form.last_login.name }}_0"
+                                           value="{{ adminform.form.last_login.value|date:'Y-m-d' }}" readonly>
+                                    <input type="hidden" name="{{ adminform.form.last_login.name }}_1"
+                                           value="{{ adminform.form.last_login.value|date:'H:i:s' }}" readonly>
+                                    <h3>{{ adminform.form.last_login.value }}</h3>
+                                    {% if adminform.form.last_login.help_text %}
+                                        <small class="form-hint">{{ adminform.form.last_login.help_text }}</small>
+                                    {% endif %}
                                 </div>
+
                                 <div class="col-6">
-                                    <div class="form-label">{{ cmf.date_joined.label }}</div>
-                                    <input type="hidden" name="{{ cmf.date_joined.name }}_0" readonly
-                                           value="{{ original.date_joined|date:'Y-m-d' }}">
-                                    <input type="hidden" name="{{ cmf.date_joined.name }}_1" readonly
-                                           value="{{ original.date_joined|date:'H:i:s' }}">
-                                    <h3>{{ cmf.date_joined.value }}</h3>
+                                    <div class="form-label">{{ adminform.form.date_joined.label }}</div>
+                                    <input type="hidden" name="{{ adminform.form.date_joined.name }}_0"
+                                           value="{{ adminform.form.date_joined.value|date:'Y-m-d' }}" readonly>
+                                    <input type="hidden" name="{{ adminform.form.date_joined.name }}_1"
+                                           value="{{ adminform.form.date_joined.value|date:'H:i:s' }}" readonly>
+                                    <h3>{{ adminform.form.date_joined.value }}</h3>
+                                    {% if adminform.form.date_joined.help_text %}
+                                        <small class="form-hint">{{ adminform.form.date_joined.help_text }}</small>
+                                    {% endif %}
                                 </div>
                             </div>
+
                         </div>
                         <div class="col-12 col-md-6">
+                            <!-- First Name -->
                             <div class="mb-3">
-                                <label class="form-label" for="{{ cmf.first_name.name }}"> {{ cmf.first_name.label }} </label>
-                                <input type="text" name="{{ cmf.first_name.name }}" id="{{ cmf.first_name.name }}" class="form-control"
-                                       value="{{ cmf.first_name.value }}">
-                                <small class="form-hint">{{ cmf.first_name.help_text }}</small>
+                                <label class="form-label" for="{{ adminform.form.first_name.name }}">
+                                    {{ adminform.form.first_name.label }}
+                                </label>
+                                <input type="text"
+                                       name="{{ adminform.form.first_name.name }}"
+                                       id="{{ adminform.form.first_name.name }}"
+                                       class="form-control"
+                                       value="{{ adminform.form.first_name.value }}">
+                                {% if adminform.form.first_name.help_text %}
+                                    <small class="form-hint">{{ adminform.form.first_name.help_text }}</small>
+                                {% endif %}
                             </div>
+
+                            <!-- Last Name -->
                             <div class="mb-3">
-                                <label class="form-label" for="{{ cmf.last_name.name }}"> {{ cmf.last_name.label }} </label>
-                                <input type="text" name="{{ cmf.last_name.name }}" id="{{ cmf.last_name.name }}" class="form-control"
-                                       value="{{ cmf.last_name.value }}">
-                                <small class="form-hint">{{ cmf.last_name.help_text }}</small>
+                                <label class="form-label" for="{{ adminform.form.last_name.name }}">
+                                    {{ adminform.form.last_name.label }}
+                                </label>
+                                <input type="text"
+                                       name="{{ adminform.form.last_name.name }}"
+                                       id="{{ adminform.form.last_name.name }}"
+                                       class="form-control"
+                                       value="{{ adminform.form.last_name.value }}">
+                                {% if adminform.form.last_name.help_text %}
+                                    <small class="form-hint">{{ adminform.form.last_name.help_text }}</small>
+                                {% endif %}
                             </div>
+
+                            <!-- Email -->
                             <div class="mb-3">
-                                <label class="form-label" for="{{ cmf.email.name }}"> {{ cmf.email.label }} </label>
-                                <input type="email" name="{{ cmf.email.name }}" id="{{ cmf.email.name }}" class="form-control"
-                                       value="{{ cmf.email.value }}">
-                                <small class="form-hint">{{ cmf.email.help_text }}</small>
+                                <label class="form-label" for="{{ adminform.form.email.name }}">
+                                    {{ adminform.form.email.label }}
+                                </label>
+                                <input type="email"
+                                       name="{{ adminform.form.email.name }}"
+                                       id="{{ adminform.form.email.name }}"
+                                       class="form-control"
+                                       value="{{ adminform.form.email.value }}">
+                                {% if adminform.form.email.help_text %}
+                                    <small class="form-hint">{{ adminform.form.email.help_text }}</small>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="tab-pane" id="tabs-groups" role="tabpanel">
                     <div class="row">
-                        <select name="groups" id="id_groups_to" class="selectfilter" multiple data-is-stacked="0"
-                                data-field-name="groups" aria-labelledby="id_groups_to_title">
-                            {% for g in cmf.groups.queryset %}
-                                <option value="{{ g.id }}" {% if g.id in cmf.groups.value %} selected {% endif %}>
+                        <select name="{{ adminform.form.groups.name }}" id="id_groups_to" class="selectfilter" multiple
+                                data-is-stacked="0" data-field-name="groups" aria-labelledby="id_groups_to_title">
+                            {% for g in adminform.form.groups.queryset %}
+                                <option value="{{ g.id }}" {% if g.id in adminform.form.groups.value %} selected {% endif %}>
                                     {{ g.name }}
                                 </option>
                             {% endfor %}
                         </select>
                     </div>
-                    <small class="form-hint">{{ cmf.groups.help_text }}</small>
+                    <small class="form-hint">{{ adminform.form.groups.help_text }}</small>
                 </div>
+
                 <!-- permissions tree block -->
                 <div class="tab-pane" id="tabs-permission" role="tabpanel">
                     <div class="row mt-3">
                         <div class="col-4">
                             <label class="form-check">
-                                <input type="checkbox" name="{{ cmf.is_active.name }}" class="form-check-input"
-                                       {% if cmf.is_active.value %}checked{% endif %}>
-                                <span class="form-label">{{ cmf.is_active.label }}</span>
+                                <input type="checkbox" name="{{ adminform.form.is_active.name }}" class="form-check-input"
+                                       {% if adminform.form.is_active.value %}checked{% endif %}>
+                                <span class="form-label">{{ adminform.form.is_active.label }}</span>
                             </label>
-                            <small class="form-hint">{{ cmf.is_active.help_text }}</small>
+                            <small class="form-hint">{{ adminform.form.is_active.help_text }}</small>
                         </div>
                         <div class="col-4">
                             <label class="form-check">
-                                <input type="checkbox" name="{{ cmf.is_staff.name }}" class="form-check-input"
-                                       {% if cmf.is_staff.value %}checked{% endif %}>
-                                <span class="form-label">{{ cmf.is_staff.label }}</span>
+                                <input type="checkbox" name="{{ adminform.form.is_staff.name }}" class="form-check-input"
+                                       {% if adminform.form.is_staff.value %}checked{% endif %}>
+                                <span class="form-label">{{ adminform.form.is_staff.label }}</span>
                             </label>
-                            <small class="form-hint">{{ cmf.is_staff.help_text }}</small>
+                            <small class="form-hint">{{ adminform.form.is_staff.help_text }}</small>
                         </div>
                         <div class="col-4">
                             <label class="form-check">
-                                <input type="checkbox" name="{{ cmf.is_superuser.name }}" class="form-check-input"
-                                       {% if cmf.is_superuser.value %}checked{% endif %}>
-                                <span class="form-label">{{ cmf.is_superuser.label }}</span>
+                                <input type="checkbox" name="{{ adminform.form.is_superuser.name }}" class="form-check-input"
+                                       {% if adminform.form.is_superuser.value %}checked{% endif %}>
+                                <span class="form-label">{{ adminform.form.is_superuser.label }}</span>
                             </label>
-                            <small class="form-hint">{{ cmf.is_superuser.help_text }}</small>
+                            <small class="form-hint">{{ adminform.form.is_superuser.help_text }}</small>
                         </div>
                     </div>
                     <div class="row mt-3">

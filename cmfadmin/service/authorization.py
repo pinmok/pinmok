@@ -75,6 +75,7 @@ class PermissionRegistry:
     """
 
     _registry: list[dict[str, Any]] = []
+    _source_map: dict[type, str] = {}
 
     @classmethod
     def register_permissions(cls, permissions: Iterable[dict[str, Any]]) -> None:
@@ -116,6 +117,26 @@ class PermissionRegistry:
         Return all registered custom permissions.
         """
         return cls._registry.copy()
+
+    @classmethod
+    def register_source(cls, model_class: type, attr_name: str) -> None:
+        """
+        Register a source attribute or method for custom permissions of a given model class.
+
+        Args:
+            model_class: the class (e.g. User or Group)
+            attr_name: attribute or method name that returns the custom permission queryset
+        """
+        if not model_class or not attr_name:
+            raise ValidationError(_("Both model_class and attr_name are required."))
+        cls._source_map[model_class] = attr_name
+
+    @classmethod
+    def get_source(cls, model_class: type) -> str | None:
+        """
+        Retrieve the registered custom permission source name for the given model class.
+        """
+        return cls._source_map.get(model_class)
 
 
 class PermissionService:
@@ -222,28 +243,26 @@ class PermissionService:
 
         nodes: list[PermissionNode] = []
         seen_menus: dict[str, PermissionNode] = {}
+        for menu in menus:
+            if menu.menu_key not in seen_menus:
+                parent_id = f"menu_{menu.parent_id}" if menu.parent_id else None
+                menu_node = PermissionNode(
+                    id=f"menu_{menu.id}",
+                    parent_id=parent_id,
+                    title=_(menu.title),
+                    source=PermissionSource.MENU,
+                    category=getattr(menu, "app_label", None),
+                    db_id=menu.id,
+                    sort_order=getattr(menu, 'sort_order', 10000),
+                )
+                nodes.append(menu_node)
+                seen_menus[menu.menu_key] = menu_node
 
         permissions = MenuPermission.objects.all()
         for perm in permissions:
             menu = menu_map.get(perm.menu_key)
             if not menu:
                 continue
-
-            # create virtual menu node if not exists
-            if menu.menu_key not in seen_menus:
-                menu_node = PermissionNode(
-                    id=f"menu_{menu.id}",
-                    parent_id=f"menu_{menu.parent_id}" if menu.parent_id else None,
-                    title=_(menu.title),
-                    source=PermissionSource.MENU,
-                    category=getattr(menu, "app_label", None),
-                    db_id=menu.id,
-                    sort_order=getattr(menu, "sort_order", 10000),
-                )
-                nodes.append(menu_node)
-                seen_menus[menu.menu_key] = menu_node
-
-            # attach permission node under menu node
             perm_node = PermissionNode(
                 id=f"perm_{perm.id}",
                 parent_id=f"menu_{menu.id}",
@@ -285,48 +304,155 @@ class PermissionService:
 
     @staticmethod
     def _get_instance_permissions(instance: User | Group) -> list[str]:
-        # Only allow User or Group
-        if isinstance(instance, (User, Group)):
-            # Access the permission field defined in MenuPermission.PERMISSION_FIELD
-            perm_qs = getattr(instance, MenuPermission.PERMISSION_RELATED_NAME).all()
-            return list(perm_qs.values_list('code', flat=True))
+        """
+        Collect permission identifiers from three sources:
+          - system permissions (Django auth): "app_label.codename"
+          - menu permissions (MenuPermission.code) via MenuPermission.PERMISSION_RELATED_NAME
+          - custom permissions (if instance has a 'custom_permissions' related manager, use its 'code' field)
+
+        Returns a de-duplicated list of strings.
+        """
+
+        # system permissions
+        if isinstance(instance, User):
+            sys_qs = instance.user_permissions.select_related("content_type").all()
+        elif isinstance(instance, Group):
+            sys_qs = instance.permissions.select_related("content_type").all()
         else:
-            raise TypeError(_("instance must be a User or Group"))
+            return []
+
+        codes: list[str] = []
+        for app_label, codename in sys_qs.values_list("content_type__app_label", "codename"):
+            if app_label and codename:
+                codes.append(f"{app_label}.{codename}")
+
+        # menu permissions
+        menu_related = getattr(MenuPermission, "PERMISSION_RELATED_NAME", None)
+        if menu_related and hasattr(instance, menu_related):
+            menu_qs = getattr(instance, menu_related).all()
+            codes.extend(list(menu_qs.values_list("code", flat=True)))
+
+        # custom permissions (resolved via PermissionRegistry)
+        related_attr = PermissionRegistry.get_source(type(instance))
+        if related_attr:
+            target = getattr(instance, related_attr, None)
+            if target is not None:
+                if callable(target):
+                    result = target()
+                    if hasattr(result, "values_list"):
+                        codes.extend(list(result.values_list("code", flat=True)))
+                elif hasattr(target, "all"):
+                    codes.extend(list(target.all().values_list("code", flat=True)))
+
+        # remove duplicates
+        return list(set(codes))
 
     @classmethod
     def _get_merged_permissions(cls, instance: User | Group) -> list[PermissionNode]:
         """
         Merge menu, system, and custom permissions into a flat list.
-        Mark nodes checked according to the user's assigned permissions.
+        Ensure tree completeness by preserving virtual menu roots (even if they have no real permission)
+        and reparenting system-root children under corresponding menu roots when available.
+        Mark nodes.checked according to instance's assigned permission codes.
         """
-        menu_nodes = cls._get_menu_permissions()
+        # load source nodes
+        menu_nodes = cls._get_menu_permissions()  # menu nodes include virtual menu nodes
         system_nodes = cls._get_system_permissions()
         custom_nodes = cls._get_custom_permissions()
 
-        # Merge all permissions into a single flat list
+        # flat combined list
         all_nodes: list[PermissionNode] = []
         all_nodes.extend(menu_nodes)
         all_nodes.extend(system_nodes)
         all_nodes.extend(custom_nodes)
 
-        # Build menu root mapping (category/app_label -> menu root id)
-        menu_root_map = {n.category: n.id for n in menu_nodes if n.parent_id is None and n.category}
+        # build mapping: for menu roots (by category) -> root node id
+        menu_root_map: dict[str, str] = {}
+        for node in menu_nodes:
+            # a menu root is a menu node with no parent_id and has a category (app_label)
+            if node.parent_id is None and node.category:
+                if node.category not in menu_root_map:
+                    menu_root_map[node.category] = node.id
 
-        # Fetch codes assigned to this user
+        # fetch permission codes assigned to the instance
         user_codes = set(cls._get_instance_permissions(instance))
 
-        # Adjust system parent_id and mark checked
+        # list of nodes to remove from final result (e.g. system virtual roots reparented)
+        to_delete: list[PermissionNode] = []
+
+        # mark checked and reparent system-root children if corresponding menu root exists
         for node in all_nodes:
+            # mark checked if node.code in user's codes (code may be None for virtual menu nodes)
+            node.checked = bool(node.code and node.code in user_codes)
+
+        # handle reparenting of system-root children to menu roots (and schedule system roots for removal)
+        for node in list(all_nodes):  # iterate over a snapshot
             if node.parent_id is None and node.source == PermissionSource.SYSTEM:
-                if node.category in menu_root_map:
-                    node.parent_id = menu_root_map[node.category]
+                # if there is a menu root for this node's category, move its children under that menu root
+                target_menu_root_id = menu_root_map.get(node.category)
+                if target_menu_root_id:
+                    for child in all_nodes:
+                        if child.parent_id == node.id:
+                            child.parent_id = target_menu_root_id
+                    # mark the system root node for deletion (we don't want to render system-root duplicates)
+                    to_delete.append(node)
 
-            # Mark checked if user has permission
-            node.checked = node.code in user_codes
-
-        return all_nodes
+        # return nodes excluding those scheduled for deletion
+        result = [n for n in all_nodes if n not in to_delete]
+        return result
 
     @classmethod
     def get_permission_tree_for_instance(cls, user_or_group: User | Group) -> list[PermissionNode]:
         all_nodes = cls._get_merged_permissions(user_or_group)
         return PermissionNode.build_tree(all_nodes)
+
+    @classmethod
+    def save_menu_permissions(cls, user_or_group: User | Group, menu_ids: list) -> None:
+        """
+        Save menu permissions for a user or group.
+        Uses dynamic related name defined in MenuPermission.PERMISSION_RELATED_NAME.
+        """
+
+        # Clean invalid IDs
+        ids = [int(mid) for mid in menu_ids if mid.isdigit()]
+
+        # Get dynamic field name
+        field_name = MenuPermission.PERMISSION_RELATED_NAME
+
+        # Validate that the field exists
+        if not hasattr(user_or_group, field_name):
+            raise AttributeError(
+                _(f"Model '{user_or_group.__class__.__name__}' must define a ManyToMany field '{field_name}'")
+            )
+
+        manager = getattr(user_or_group, field_name)
+
+        # Clear all if no valid IDs
+        if not ids:
+            manager.clear()
+            return
+
+        # Set new relations
+        manager.set(manager.model.objects.filter(id__in=ids))
+
+    @classmethod
+    def save_custom_permissions(cls, user_or_group: User | Group, custom_ids: list) -> None:
+        """
+                Save custom permissions for a User or Group.
+                Field/method name is determined via PermissionRegistry.get_source().
+                """
+        if not custom_ids:
+            # nothing to save
+            source_attr = PermissionRegistry.get_source(type(user_or_group))
+            if source_attr:
+                getattr(user_or_group, source_attr).clear()
+            return
+
+        source_attr = PermissionRegistry.get_source(type(user_or_group))
+        if not source_attr:
+            raise AttributeError(
+                f"Custom permission source for {user_or_group.__class__.__name__} is not registered in PermissionRegistry."
+            )
+
+        manager = getattr(user_or_group, source_attr)
+        manager.set(manager.model.objects.filter(id__in=[int(cid) for cid in custom_ids if str(cid).isdigit()]))

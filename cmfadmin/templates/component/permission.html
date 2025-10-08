@@ -1,134 +1,160 @@
 {% load icons %}
 <div id="permission-tree" class="permission-tree">
-    <!-- hidden input for form submit -->
-    <input type="hidden" name="user_permissions" id="user-permissions-input">
-
-    <!-- tree will be rendered here -->
     <ul class="list-unstyled tree-root"></ul>
 </div>
 
 <script>
-    // Permissions data from backend
-    const permissionsData = {{ permissions|safe }};
+    (function () {
+        const permissionsData = {{ permissions|safe }};
 
-    // Build tree recursively
-    function buildTree(nodes) {
-        const ul = document.createElement("ul");
-        ul.classList.add("list-unstyled", "ms-3", "mt-2"); // indent children
-        nodes.forEach(node => {
-            const li = document.createElement("li");
-            li.classList.add("mb-1");
-
-            // expand/collapse toggle
-            const toggle = document.createElement("span");
-            toggle.classList.add("me-1", "cursor-pointer");
-            toggle.innerHTML = node.children && node.children.length > 0 ?
-                '{% sprite "tabler-chevron-right" "icon" %}'
-                : '<span style="display:inline-block;width:16px"></span>';
-
-            // checkbox
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.classList.add("form-check-input", "me-1");
-            checkbox.dataset.id = node.id;
-            checkbox.checked = node.checked;
-
-            // label
-            const label = document.createElement("span");
-            label.textContent = node.text;
-
-            // append parts
-            if (toggle.innerHTML) li.appendChild(toggle);
-            li.appendChild(checkbox);
-            li.appendChild(label);
-
-            // children
-            if (node.children && node.children.length > 0) {
-                const childUl = buildTree(node.children);
-                childUl.style.display = "none"; // collapsed by default
-                li.appendChild(childUl);
-
-                toggle.addEventListener("click", () => {
-                    const isHidden = childUl.style.display === "none";
-                    childUl.style.display = isHidden ? "block" : "none";
-                    toggle.innerHTML = isHidden
-                        ? '{% sprite "tabler-chevron-down" "icon" %}'
-                        : '{% sprite "tabler-chevron-right" "icon" %}'
-                });
-            }
-
-            ul.appendChild(li);
-        });
-        return ul;
-    }
-
-    // Initialize tree
-    const root = document.querySelector("#permission-tree .tree-root");
-    root.appendChild(buildTree(permissionsData));
-
-    // Update hidden input with selected IDs
-    function updateHiddenInput() {
-        const checked = document.querySelectorAll("#permission-tree input[type=checkbox]:checked");
-        const ids = Array.from(checked).map(cb => cb.dataset.id);
-        document.getElementById("user-permissions-input").value = ids.join(",");
-    }
-
-    // Recursively update children checkboxes
-    function updateChildren(cb, checked) {
-        const childUl = cb.closest("li").querySelector("ul");
-        if (!childUl) return;
-        const childCbs = childUl.querySelectorAll(":scope > li > input[type=checkbox]");
-        childCbs.forEach(child => {
-            child.checked = checked;
-            child.indeterminate = false;
-            updateChildren(child, checked);
-        });
-    }
-
-    // Recursively update parent checkboxes
-    function updateParents(cb) {
-        const parentLi = cb.closest("li").closest("ul")?.closest("li");
-        if (!parentLi) return;
-        const parentCb = parentLi.querySelector(":scope > input[type=checkbox]");
-        const siblings = parentLi.querySelectorAll("ul > li > input[type=checkbox]");
-        const allChecked = Array.from(siblings).every(s => s.checked);
-        const noneChecked = Array.from(siblings).every(s => !s.checked);
-        if (allChecked) {
-            parentCb.checked = true;
-            parentCb.indeterminate = false;
-        } else if (noneChecked) {
-            parentCb.checked = false;
-            parentCb.indeterminate = false;
-        } else {
-            parentCb.checked = false;
-            parentCb.indeterminate = true;
+        function isPermissionNode(node) {
+            return node && node.code != null && String(node.code).length > 0;
         }
-        updateParents(parentCb);
-    }
 
-    // Handle checkbox change event
-    function handleCheckboxChange(cb) {
-        // update children
-        updateChildren(cb, cb.checked);
-        // update parents
-        updateParents(cb);
-        // sync hidden input
-        updateHiddenInput();
-    }
+        function createPermissionCheckbox(permNode) {
+            const wrapper = document.createElement('label');
+            wrapper.classList.add('form-check', 'form-check-inline', 'me-2');
 
-    // Attach change event listeners to all checkboxes
-    document.querySelectorAll("#permission-tree input[type=checkbox]").forEach(cb => {
-        cb.addEventListener("change", () => handleCheckboxChange(cb));
-    });
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.classList.add('form-check-input', 'permission-checkbox');
 
-    // Initialize parent indeterminate state
-    function initParentStates() {
-        document.querySelectorAll("#permission-tree input[type=checkbox]").forEach(cb => {
-            updateParents(cb);
-        });
-    }
+            // Checkbox name matches permission source with [] to simulate <select multiple> for Django.
+            const model_type = '{{ model_type }}'
+            if (permNode.source === 'system') {
+                input.name = model_type === 'user' ? 'user_permissions' : 'permissions';
+            } else if (permNode.source === 'menu') input.name = 'menu_permissions[]';
+            else input.name = 'custom_permissions[]';
 
-    // Initial sync
-    updateHiddenInput();
-    initParentStates();
+            if (permNode.db_id != null) input.value = permNode.db_id;
+            else if (permNode.code != null) input.value = permNode.code;
+
+            if (permNode.checked) input.checked = true;
+
+            const span = document.createElement('span');
+            span.classList.add('form-check-label');
+            span.textContent = permNode.title || permNode.code || '';
+
+            wrapper.appendChild(input);
+            wrapper.appendChild(span);
+            return wrapper;
+        }
+
+        function buildTree(nodes) {
+            const ul = document.createElement('ul');
+            ul.classList.add('list-unstyled', 'ms-3', 'mt-2');
+
+            nodes.forEach(node => {
+                const li = document.createElement('li');
+                li.classList.add('mb-2');
+
+                const row = document.createElement('div');
+                row.classList.add('d-flex', 'gap-2');
+
+                const iconsCol = document.createElement('div');
+                iconsCol.classList.add('d-flex', 'align-items-start', 'pe-1');
+                iconsCol.style.minWidth = '36px';
+                iconsCol.style.maxWidth = '36px';
+
+                const hasMenuChildren = Array.isArray(node.children) && node.children.some(c => !isPermissionNode(c));
+                const toggle = document.createElement('span');
+                toggle.classList.add('me-1', 'cursor-pointer', 'toggle-icon');
+                toggle.innerHTML = hasMenuChildren ? '{% sprite "tabler-chevron-right" "icon" %}' : '<span style="display:inline-block;width:18px"></span>';
+
+                const groupCheckbox = document.createElement('input');
+                groupCheckbox.type = 'checkbox';
+                groupCheckbox.classList.add('form-check-input', 'group-checkbox');
+                groupCheckbox.style.margin = '0 6px 0 0';
+
+                iconsCol.appendChild(toggle);
+                iconsCol.appendChild(groupCheckbox);
+
+                const contentCol = document.createElement('div');
+                contentCol.classList.add('flex-grow-1');
+
+                const titleSpan = document.createElement('div');
+                titleSpan.classList.add('fw-semibold');
+                titleSpan.textContent = node.title || '';
+                contentCol.appendChild(titleSpan);
+
+                const permsContainer = document.createElement('div');
+                permsContainer.classList.add('permission-list', 'd-flex', 'flex-wrap', 'align-items-center', 'gap-2', 'mt-1');
+
+                if (isPermissionNode(node)) permsContainer.appendChild(createPermissionCheckbox(node));
+                if (Array.isArray(node.children)) {
+                    node.children.forEach(c => {
+                        if (isPermissionNode(c)) permsContainer.appendChild(createPermissionCheckbox(c));
+                    });
+                }
+
+                if (permsContainer.children.length) contentCol.appendChild(permsContainer);
+
+                row.appendChild(iconsCol);
+                row.appendChild(contentCol);
+                li.appendChild(row);
+
+                const menuChildren = Array.isArray(node.children) ? node.children.filter(c => !isPermissionNode(c)) : [];
+                if (menuChildren.length) {
+                    const childUl = buildTree(menuChildren);
+                    childUl.style.display = 'none';
+                    li.appendChild(childUl);
+
+                    toggle.addEventListener('click', () => {
+                        const hidden = childUl.style.display === 'none';
+                        childUl.style.display = hidden ? 'block' : 'none';
+                        toggle.innerHTML = hidden ? '{% sprite "tabler-chevron-down" "icon" %}' : '{% sprite "tabler-chevron-right" "icon" %}';
+                    });
+                }
+
+                ul.appendChild(li);
+            });
+
+            return ul;
+        }
+
+        const root = document.querySelector('#permission-tree .tree-root');
+        root.appendChild(buildTree(permissionsData || []));
+
+        function initGroupStates() {
+            document.querySelectorAll('#permission-tree li').forEach(li => {
+                const groupCb = li.querySelector(':scope > div .group-checkbox');
+                if (!groupCb) return;
+                const desc = li.querySelectorAll(':scope .permission-checkbox');
+                if (!desc.length) {
+                    groupCb.checked = false;
+                    groupCb.indeterminate = false;
+                    return;
+                }
+
+                const allChecked = Array.from(desc).every(p => p.checked);
+                const noneChecked = Array.from(desc).every(p => !p.checked);
+
+                groupCb.checked = allChecked;
+                groupCb.indeterminate = !allChecked && !noneChecked;
+            });
+        }
+
+        function attachPermissionHandlers() {
+            document.querySelectorAll('.permission-checkbox').forEach(cb => {
+                cb.addEventListener('change', initGroupStates);
+            });
+        }
+
+        function attachGroupHandlers() {
+            document.querySelectorAll('.group-checkbox').forEach(gcb => {
+                gcb.addEventListener('change', () => {
+                    const checked = gcb.checked;
+                    const li = gcb.closest('li');
+                    if (!li) return;
+                    li.querySelectorAll(':scope .permission-checkbox').forEach(p => p.checked = checked);
+                    initGroupStates();
+                });
+            });
+        }
+
+        attachPermissionHandlers();
+        attachGroupHandlers();
+        initGroupStates();
+
+    })();
 </script>
