@@ -1,0 +1,31 @@
+{% extends 'config/config_base.html' %}
+{% load i18n %}
+
+{% block page_title %}{% translate 'Manage Uploaded Files' %}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <table class="table table-vcenter card-table">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Title</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th class="w-1"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Paweł Kuna</td>
+                <td class="text-secondary">UI Designer, Training</td>
+                <td class="text-secondary"><a href="#" class="text-reset">paweluna@howstuffworks.com</a></td>
+                <td class="text-secondary">User</td>
+                <td>
+                    <a href="#">Edit</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

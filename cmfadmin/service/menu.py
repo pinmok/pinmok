@@ -18,6 +18,7 @@ from uuid import uuid4
 
 from django.apps import apps
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.templatetags.static import static
 
@@ -25,8 +26,11 @@ from cmfadmin import constants
 from cmfadmin.enums import MenuSyncMode, MenuSource, MenuPermissions
 from cmfadmin.libs import TreeNode
 from cmfadmin.models import Menu, MenuPermission
+from cmfadmin.service.authorization import PermissionService
 from cmfadmin.utils.helper import get_model_fields, get_valid_app_labels
-from cmfadmin.utils.tools import safe_identifier
+from cmfadmin.utils.tools import to_snake_case, to_compact_case
+
+User = get_user_model()
 
 
 @dataclass(kw_only=True)
@@ -56,6 +60,8 @@ class MenuNode(TreeNode["MenuNode"]):
     source: str | None = None
     app_label: str | None = None
     db_id: int | None = None  # The auto-incrementing ID in the database.
+    menu_key: str | None = None
+    permissions: list = field(default_factory=list)
     extra: dict = field(default_factory=dict)
 
     def __repr__(self):
@@ -288,6 +294,53 @@ class MenuSynchronizer:
 
         return menus
 
+    @classmethod
+    def _generate_permissions(cls, menu_nodes: list[MenuNode], parent_code_map: dict[int, str]):
+        """
+        Generate permissions for a list of menu nodes.
+        Mixed scheme: default 'view' permission + custom permissions.
+        Updates parent_code_map in-place for recursion.
+        """
+        for src in menu_nodes:
+            # Skip root nodes
+            if src.parent_id is None:
+                continue
+
+            # Record safe id for children
+            parent_code_map[src.db_id] = to_snake_case(src.title)
+
+            # 1️. Generate default view permission
+            safe_title = to_compact_case(src.title)
+            code = f"view_{safe_title}"
+            parent_id = src.parent_id
+
+            while MenuPermission.objects.filter(code=code).exists() and parent_id:
+                parent_safe = to_compact_case(parent_code_map.get(parent_id, ""))
+                if parent_safe:  # only prepend if parent_safe is not empty
+                    code = f"view_{parent_safe}_{safe_title}"
+                # Move up the tree
+                parent_node = next((p for p in menu_nodes if p.db_id == parent_id), None)
+                parent_id = getattr(parent_node, "parent_id", None) if parent_node else None
+
+            MenuPermission.objects.update_or_create(
+                menu_key=src.menu_key,
+                code=code,
+                defaults={"name": f"Can view {src.title}"}
+            )
+
+            # 2. Generate custom permissions if defined
+            if getattr(src, "permissions", None):
+                for perm in src.permissions:
+                    perm_code = perm.get("code")
+                    if not perm_code:
+                        continue
+                    perm_name = perm.get("name", f"Can {perm_code} {src.title}")
+                    MenuPermission.objects.update_or_create(
+                        menu_key=src.menu_key,
+                        code=perm_code,
+                        defaults={"name": perm_name}
+                    )
+
     @staticmethod
     def _sanitize_menu(menu_nodes: list[MenuNode]) -> list[MenuNode]:
         """
@@ -329,7 +382,7 @@ class MenuSynchronizer:
         return Menu(**data)
 
     @classmethod
-    def _insert_items(cls, menu_nodes: list["MenuNode"], parent_db_id: int | None) -> int:
+    def _insert_items(cls, menu_nodes: list[MenuNode], parent_db_id: int | None) -> int:
         """
         Insert menu items into the database and generate corresponding permissions recursively.
         """
@@ -350,30 +403,14 @@ class MenuSynchronizer:
         id_mapping = {src.id: db.id for src, db in zip(current_level, created_items)}
         for src, db in zip(current_level, created_items):
             src.db_id = db.id
+            src.menu_key = db.menu_key
             for child in menu_nodes:
                 if child.parent_id == src.id:
                     child.parent_id = id_mapping[src.id]
 
-        # Step 4: Generate permissions
-        parent_code_map = {}
-        for menu in created_items:
-            # No permission if node is root
-            if menu.parent_id is None:
-                parent_code_map[menu.id] = safe_identifier(menu.title)
-                continue
-
-            parent_code = parent_code_map.get(menu.parent_id, "")
-            safe_menu_title = safe_identifier(menu.title)
-            code = f"display_{parent_code}_{safe_menu_title}" if parent_code else f"display_{safe_menu_title}"
-
-            MenuPermission.objects.update_or_create(
-                menu_key=menu.menu_key,
-                defaults={
-                    "name": f"Can display {menu.title}",
-                    "code": code,
-                }
-            )
-            parent_code_map[menu.id] = safe_menu_title
+        # Step 4: insert permissions
+        parent_code_map: dict[int, str] = {}
+        cls._generate_permissions(current_level, parent_code_map)
 
         # Step 5: Recursively insert child nodes
         for item in current_level:
@@ -399,7 +436,6 @@ class MenuSynchronizer:
             if app_label == MenuSyncMode.SYNC_ALL:
                 all_menus = cls._get_sync_menus_all()
                 # Clear all existing menu records and permissions
-                MenuPermission.objects.all().delete()
                 Menu.objects.all().delete()
 
                 for label in {m.app_label for m in all_menus}:
@@ -438,12 +474,20 @@ class AdminMenu:
         Fetch active menu items from database and convert to MenuItem.
         """
         menu_data = Menu.objects.filter(is_active=True)
-
         menu_nodes: list[MenuNode] = []
+
+        all_perms = MenuPermission.objects.all()
+        perms_by_menu = {}
+
+        for perm in all_perms:
+            perms_by_menu.setdefault(perm.menu_key, []).append(perm.code)
+
         for menu in menu_data:
-            item = MenuNode.build_node(menu)
-            item.source = MenuSource.DATABASE
-            menu_nodes.append(item)
+            node = MenuNode.build_node(menu)
+            node.source = MenuSource.DATABASE
+            # Attach permission codes
+            node.extra['perms'] = perms_by_menu.get(menu.menu_key, [])
+            menu_nodes.append(node)
         return menu_nodes
 
     @staticmethod
@@ -487,7 +531,7 @@ class AdminMenu:
         return menu_nodes
 
     @classmethod
-    def get_merged_nodes(cls, app_list: list[dict]) -> list[MenuNode]:
+    def get_merged_nodes(cls, menu_nodes: list[MenuNode], app_list_menu_nodes: list[MenuNode]) -> list[MenuNode]:
         """
         Merge two lists of MenuItem objects with database items taking priority.
 
@@ -500,20 +544,15 @@ class AdminMenu:
         Returns:
             list[MenuNode]: Combined menu list for display, with conflicts resolved.
         """
-        #  Load menu from database
-        db_menus: list[MenuNode] = cls._load_from_database()
-        # Load menu from app_list
-        app_list_menus: list[MenuNode] = cls._load_from_app_list(app_list=app_list)
-
-        merged_nodes: list[MenuNode] = list(db_menus)
+        merged_nodes: list[MenuNode] = list(menu_nodes)
 
         # Build a mapping {app_label: first_root_id} for all database top-level menus
         app_label_to_db_id = {}
-        for item in db_menus:
+        for item in menu_nodes:
             if item.parent_id is None and item.app_label not in app_label_to_db_id:
                 app_label_to_db_id[item.app_label] = item.id
 
-        for app_menu_item in app_list_menus:
+        for app_menu_item in app_list_menu_nodes:
             if app_menu_item.parent_id is None:
                 # Skip top-level app_list menus if a database menu with the same app_label exists
                 if app_menu_item.app_label in app_label_to_db_id:
@@ -530,26 +569,51 @@ class AdminMenu:
         return merged_nodes
 
     @staticmethod
-    def filter_by_permissions(menu_tree: list[MenuNode], permissions: list[str]) -> list[MenuNode]:
+    def _filter_by_permissions(menu_nodes: list[MenuNode], user: User) -> list[MenuNode]:
         """
-        Filter menu tree according to user's permissions.
-
-        Args:
-            menu_tree (list[MenuNode]): The hierarchical menu tree to filter.
-            permissions (list[str]): List of permission codes the user has.
-
-        Returns:
-            list[MenuNode]: Filtered menu tree.
+        Filter menu nodes according to user's permissions.
         """
-        if MenuPermissions.ALL_PERMISSIONS in permissions:
-            return menu_tree
-        return menu_tree
+        if user is None or not user.is_authenticated or not user.is_active:
+            return []
+
+        # Get all permissions of current user
+        user_permissions = PermissionService.get_user_permissions(user)
+
+        # If user has all permissions, skip filtering
+        if MenuPermissions.ALL_PERMISSIONS in user_permissions:
+            return menu_nodes
+
+        # Result list
+        filtered_nodes: list[MenuNode] = []
+
+        for node in menu_nodes:
+            node_perms = node.extra.get("perms", [])
+            # If no permissions defined, keep node
+            if not node_perms:
+                filtered_nodes.append(node)
+                continue
+            # Keep node if user has at least one permission
+            if any(perm in user_permissions for perm in node_perms):
+                filtered_nodes.append(node)
+
+        return filtered_nodes
 
     @classmethod
-    def get_menu(cls, app_list: list[dict]) -> list[MenuNode]:
-        """ Get final admin menu. """
+    def get_menu(cls, app_list: list[dict], user: User | None = None) -> list[MenuNode]:
+        """
+        Get final admin menu.
+        """
+        #  Load menu from database
+        db_menus = cls._load_from_database()
+
+        # Filter menu by permissions
+        menu_nodes = cls._filter_by_permissions(db_menus, user)
+
+        # Load menu from app_list
+        app_list_menus_nodes = cls._load_from_app_list(app_list=app_list)
+
         # Merge two sources (db priority)
-        merged_items = cls.get_merged_nodes(app_list)
+        merged_nodes = cls.get_merged_nodes(menu_nodes, app_list_menus_nodes)
 
         # Build hierarchical tree
-        return MenuNode.build_tree(merged_items, sort_key='sort_order')
+        return MenuNode.build_tree(merged_nodes, sort_key='sort_order')

@@ -1,0 +1,30 @@
+<!-- components/dialog.html -->
+{% load i18n icons static %}
+
+<div class="modal modal-blur fade" id="cmf-dialog-template" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
+            <div class="modal-status" id="dialogStatus"></div>
+            <div class="modal-body text-center py-4">
+                <div id="dialogIcon"></div>
+                <h3 id="dialogTitle" class="text-uppercase"></h3>
+                <div id="dialogMessage" class="text-secondary"></div>
+            </div>
+            <div class="modal-footer">
+                <div class="w-100">
+                    <div class="row">
+                        <div class="col">
+                            <button id="dialogCancelBtn" class="btn w-100" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="col">
+                            <button id="dialogOkBtn" class="btn w-100"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'admin/js/components/dialog.js' %}"></script>

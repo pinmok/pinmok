@@ -43,11 +43,16 @@
     window.DEFAULT_IMG = "{% static 'admin/svg/photo.svg' %}"
 </script>
 <script src="{% static 'admin/js/tabler.min.js' %}" defer></script>
-<!-- BEGIN GLOBAL THEME SCRIPT -->
 <script src="{% static 'admin/js/tabler-theme.min.js' %}" defer></script>
-<!-- END GLOBAL THEME SCRIPT -->
+<script src="{% url 'admin:jsi18n' %}"></script>
 <script src="{% static 'admin/js/admin.js' %}" defer></script>
 <script src="{% static 'admin/js/sidebar.js' %}" defer></script>
+
+<!-- Global toast -->
+{% include 'component/toast.html' %}
+<!-- Global model -->
+{% include 'component/dialog.html' %}
+
 {% block scripts %}{% endblock %}
 </body>
 </html>

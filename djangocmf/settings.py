@@ -36,7 +36,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'apps.portal.apps.PortalConfig',
 ]
 
 MIDDLEWARE = [
@@ -64,7 +63,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'cmfadmin.context_processors.admin_context'
+                'cmfadmin.context_processors.cmf_context'
             ],
         },
     },

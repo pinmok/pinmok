@@ -129,14 +129,7 @@
 
                 <div class="tab-pane" id="tabs-groups" role="tabpanel">
                     <div class="row">
-                        <select name="{{ adminform.form.groups.name }}" id="id_groups_to" class="selectfilter" multiple
-                                data-is-stacked="0" data-field-name="groups" aria-labelledby="id_groups_to_title">
-                            {% for g in adminform.form.groups.queryset %}
-                                <option value="{{ g.id }}" {% if g.id in adminform.form.groups.value %} selected {% endif %}>
-                                    {{ g.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
+                        {{ adminform.form.groups }}
                     </div>
                     <small class="form-hint">{{ adminform.form.groups.help_text }}</small>
                 </div>
@@ -170,7 +163,7 @@
                         </div>
                     </div>
                     <div class="row mt-3">
-                        {% include 'component/permission.html' %}
+                        {% include 'admin/includes/permission.html' %}
                     </div>
                 </div>
             </div>

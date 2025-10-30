@@ -100,11 +100,60 @@ def bytes_to_int(size_str: str) -> int:
     return int(number)
 
 
-def safe_identifier(title: str) -> str:
+def to_snake_case(text: str) -> str:
     """
-    Convert a string into a safe identifier for code, key, or slug.
+    Convert text into a snake_case string safe for identifiers (permissions, menu codes, etc.).
+
+    Rules:
     - Strip leading/trailing spaces
-    - Lowercase
-    - Replace non-word characters with underscore
+    - Keep letters, digits, underscores, and CJK characters
+    - Replace other characters (punctuation, symbols, etc.) with underscores
+    - Collapse multiple underscores into one
+    - Remove leading/trailing underscores
+    - Convert to lowercase
+
+    Example:
+        "Site Info"        -> "site_info"
+        "User@List(Admin)" -> "user_list_admin"
+        "---Config---"     -> "config"
     """
-    return re.sub(r"\W+", "_", title.strip().lower())
+    cleaned = re.sub(r"[^\w\u4e00-\u9fff]+", "_", text.strip().lower())
+    cleaned = re.sub(r"_+", "_", cleaned)
+    return cleaned.strip("_")
+
+
+def to_compact_case(text: str) -> str:
+    """
+    Convert a string into a compact, lowercase form by removing all spaces
+    and non-alphanumeric/non-CJK characters. Letters, digits, and CJK characters
+    are preserved. Output is in lowercase.
+
+    Examples:
+        "Site Setting" -> "sitesetting"
+        "User List(Admin)" -> "userlistadmin"
+    """
+    cleaned = re.sub(r"[^\w\u4e00-\u9fff]", "", text, flags=re.UNICODE)
+    return cleaned.lower()
+
+
+def to_camel_case(text: str) -> str:
+    """
+    Convert a string into camelCase by removing spaces and symbols, preserving letters, digits, and CJK characters.
+    The first word is lowercase, subsequent words have their first letter capitalized.
+
+    Examples:
+        "Site Setting"        -> "siteSetting"
+        "User List(Admin)"    -> "userListAdmin"
+    """
+
+    # Split by non-alphanumeric/non-CJK characters
+    parts = re.split(r"[^\w\u4e00-\u9fff]+", text, flags=re.UNICODE)
+    # Remove empty parts
+    parts = [p for p in parts if p]
+    if not parts:
+        return ""
+
+    # First part lowercase, rest capitalize first letter
+    first = parts[0].lower()
+    rest = [p[0].upper() + p[1:] if len(p) > 1 else p.upper() for p in parts[1:]]
+    return first + "".join(rest)

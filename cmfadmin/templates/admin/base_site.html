@@ -16,13 +16,11 @@
         {% endif %}
 
         <div class="page-wrapper">
-            {% block messages %}
-                <div class="page-header d-print-none" aria-label="Page header">
-                    <div class="container-xl">
-                        {% block page_header %}{% endblock %}
-                    </div>
+            <div class="page-header d-print-none" aria-label="Page header">
+                <div class="container-xl">
+                    {% block page_header %}{% endblock %}
                 </div>
-            {% endblock %}
+            </div>
             <div class="page-body">
                 <div class="container-xl">
                     {% block content %}{% endblock %}
@@ -34,8 +32,4 @@
             <!-- END FOOTER -->
         </div>
     </div>
-{% endblock %}
-
-{% block additional %}
-    {% include 'admin/includes/toast.html' %}
 {% endblock %}

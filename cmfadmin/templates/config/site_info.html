@@ -53,6 +53,8 @@
                                 <button type="button" class="btn btn-outline-primary cropper-trigger"
                                         data-input="#site-logo"
                                         data-preview="#img-logo"
+                                        data-aspect-ratio="1"
+                                        data-target-width="128"
                                         data-upload-url="{% url 'admin:upload_file' %}">
                                     {% translate 'Upload' %}
                                 </button>
@@ -135,6 +137,7 @@
                                 <button type="button" class="btn btn-outline-primary cropper-trigger"
                                         data-input="#wechat"
                                         data-preview="#qrcode"
+                                        data-aspect-ratio="1"
                                         data-upload-url="{% url 'admin:upload_file' %}">
                                     {% translate 'Upload' %}
                                 </button>
@@ -178,4 +181,3 @@
     </div>
     {% include 'component/cropper.html' %}
 {% endblock %}
-

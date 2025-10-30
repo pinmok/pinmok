@@ -20,8 +20,6 @@
     <li class="breadcrumb-item active"> {% translate 'Delete multiple objects' %} </li>
 {% endblock %}
 
-{% block messages %} {% endblock %}
-
 {% block content %}
     {% if perms_lacking %}
         <div class="alert alert-warning" role="alert">
@@ -40,7 +38,7 @@
     {% else %}
         <div class="alert alert-warning" role="alert">
             <div class="alert-icon">{% sprite 'tabler-alert-triangle' 'icon alert-icon' %}</div>
-            {% blocktranslate %}Are you sure you want to delete the selected {{ objects_name }}? All of the following objects and
+            {% blocktranslate %}Are you sure you want to delete the selected {{ objects_name }}? All the following objects and
                 their related items will be deleted:{% endblocktranslate %}
         </div>
         <div class="row row-cards">

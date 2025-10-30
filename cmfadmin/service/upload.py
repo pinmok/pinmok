@@ -36,6 +36,7 @@ class UploadService:
 
         # Allowed MIME types (from user config or default)
         allowed_mimes = ConfigService.get(cfg['type_key'], default=cfg['default_type'])
+
         if isinstance(allowed_mimes, str):
             allowed_mimes = [e.strip().lower() for e in allowed_mimes.split(',') if e.strip()]
         else:

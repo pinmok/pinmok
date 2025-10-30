@@ -19,7 +19,7 @@ from django.contrib.admin.sites import DefaultAdminSite
 from django.core.cache import cache
 from django.urls import path
 from django.utils.text import format_lazy
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_lazy as _
 
 import djangocmf
 from cmfadmin.options import CMFModelAdmin
@@ -37,8 +37,8 @@ class CMFAdminSite(AdminSite):
     functionalities.
     """
     site_title = djangocmf.name
-    site_header = format_lazy('{} {}', djangocmf.name, gettext_lazy('Administration'))
-    index_title = format_lazy('{} {}', djangocmf.name, gettext_lazy('Site administration'))
+    site_header = format_lazy('{} {}', djangocmf.name, _('Administration'))
+    index_title = format_lazy('{} {}', djangocmf.name, _('Site administration'))
 
     index_template = "admin/index.html"
 
@@ -67,12 +67,12 @@ class CMFAdminSite(AdminSite):
         Each view is wrapped with self.admin_view() to apply admin-specific permissions,
         CSRF protection, and exception handling.
         """
-        from cmfadmin import urls
+        from cmfadmin.views import CMFADMIN_URLS
 
         custom_urls = []
 
         # Load custom admin views from cmfadmin_urls (a list of (route, view, name) tuples)
-        for route, view, name in getattr(urls, 'cmfadmin_urls', []):
+        for route, view, name in CMFADMIN_URLS:
             # Ensure the route ends with a trailing slash for consistency
             if not route.endswith('/'):
                 route = f'{route}/'
@@ -90,6 +90,7 @@ class CMFAdminSite(AdminSite):
 
         # Add custom context variables
         extra_context.update({
+            'index_title': self.index_title,
             'sys_info': cache.get_or_set('sys_info', get_system_info, timeout=3600 * 24 * 30),
             'disk_info': cache.get_or_set('disk_info', get_disk_info, timeout=3600)
         })

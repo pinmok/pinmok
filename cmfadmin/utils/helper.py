@@ -21,8 +21,11 @@ from django.conf import settings
 from django.db import connection, utils, models
 from django.db.models import Model
 from django.http import JsonResponse
+from django.utils.functional import Promise
 
 import djangocmf
+from cmfadmin.constants import API_DEFAULT_MESSAGES, API_HTTP_STATUS
+from cmfadmin.enums import ErrorCode
 from cmfadmin.utils.tools import int_to_bytes
 
 
@@ -192,13 +195,26 @@ def get_static_dir() -> str:
     return os.path.abspath(os.path.join(os.path.normpath(base_path), ''))
 
 
-def api_response(err_code: int = 0, message='Success', data: dict | None = None, status: int = 200) -> JsonResponse:
+def api_response(
+        err_code: int = ErrorCode.SUCCESS,
+        message: str | Promise | None = None,
+        data: dict | None = None,
+        status: int | None = None
+) -> JsonResponse:
     """
-    Auto decide whether it's a success or error response based on code.
-    code == 0 means success, otherwise it's an error.
+    Unified API JSON response builder.
+    Automatically maps code to HTTP status and default message.
     """
     if data is None:
         data = {}
+
+    # Default message
+    if not message:
+        message = API_DEFAULT_MESSAGES.get(err_code, "Undefined error.")
+
+    # Default status
+    if not status:
+        status = API_HTTP_STATUS.get(err_code, 200)
 
     return JsonResponse({
         'code': err_code,

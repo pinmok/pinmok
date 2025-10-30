@@ -1,0 +1,89 @@
+{% extends 'admin/base_site.html' %}
+{% load i18n static media %}
+{% block page_header %}
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <!-- Page pre-title -->
+            <div class="page-pretitle">
+                {% trans 'Profile' %}
+            </div>
+            <h2 class="page-title">{{ user.username }}</h2>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <form method="post" enctype="multipart/form-data">{% csrf_token %}
+        <div class="card">
+            <div class="card-body">
+                {#                <div class="row align-items-center">#}
+                {#                    <div class="col-auto">#}
+                {#                        <div class="avatar avatar-xl">#}
+                {#                            <img src="{% if config.site_logo %}{% media_url user.avatar %}{% else %}#}
+                {#                            {% static 'admin/svg/photo.svg' %}{% endif %}" class="logo-img" id="img-avatar" alt="{% translate 'Avatar' %}">#}
+                {#                        </div>#}
+                {#                    </div>#}
+                {#                    <div class="col-auto">#}
+                {#                        <input type="hidden" name="avatar" id="user-avatar" accept="image/*" value="{{ user.avatar }}">#}
+                {#                        <button type="button" class="btn cropper-trigger"#}
+                {#                                data-input="#user-avatar"#}
+                {#                                data-preview="#img-avatar"#}
+                {#                                data-upload-url="{% url 'admin:upload_file' %}">#}
+                {#                            {% translate 'Change avatar' %}#}
+                {#                        </button>#}
+                {#                    </div>#}
+                {#                    <div class="col-auto">#}
+                {#                        <button type="button" class="btn btn-ghost-danger delete-file-btn"#}
+                {#                                data-input="#user-avatar"#}
+                {#                                data-preview="#img-avatar"#}
+                {#                                data-path="{{ user.avatar }}">#}
+                {#                            {% translate 'Delete avatar' %}#}
+                {#                        </button>#}
+                {#                    </div>#}
+                {#                </div>#}
+                <h3 class="card-title mt-4">{% translate 'Base Profile' %}</h3>
+                <div class="row g-3">
+                    <div class="col-md">
+                        <label class="form-label" for="first-name">{% translate 'First Name' %}</label>
+                        <input type="text" class="form-control" name="first_name" id="first-name" value="{{ user.first_name }}"
+                               autocomplete="given-name">
+                    </div>
+                    <div class="col-md">
+                        <label class="form-label" for="last-name">{% translate 'Last Name' %}</label>
+                        <input type="text" class="form-control" name="last_name" id="last-name" value="{{ user.last_name }}"
+                               autocomplete="family-name">
+                    </div>
+                    <div class="col-md">
+                        <label class="form-label" for="email">{% translate 'Email' %}</label>
+                        <input type="email" class="form-control" name="email" id="email" value="{{ user.email }}" autocomplete="email">
+                    </div>
+                </div>
+                <h3 class="card-title mt-4">Password</h3>
+                <p class="card-subtitle text-muted">
+                    {% translate 'You can click the button below to go to the password change page.' %}
+                </p>
+                <div>
+                    <a href="{% url 'admin:password_change' %}" class="btn btn-1"> {% translate 'Change password' %} </a>
+                </div>
+                <h3 class="card-title mt-4">{% translate 'Status' %}</h3>
+                <p class="card-subtitle">
+                    {% translate 'Current user identity and status.' %}
+                </p>
+                <div>
+                    {% if user.is_superuser %}
+                        <span class="tag">{% translate 'Super user' %}</span>
+                    {% else %}
+                        <span class="tag">{% translate 'Normal user' %}</span>
+                    {% endif %}
+                    {% if user.is_staff %}
+                        <span class="tag">{% translate 'Is staff' %}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary">{% translate 'Save' %}</button>
+            </div>
+        </div>
+    </form>
+    {% include 'component/cropper.html' %}
+{% endblock %}

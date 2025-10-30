@@ -82,23 +82,13 @@
             const navItemId = confirmButton.getAttribute('data-id');
             const url = `/admin/cmfadmin/nav/navitem/{{ nav.pk }}/${navItemId}/`;
 
-            fetch(url, {
+            ajaxRequest({
+                url,
                 method: 'DELETE',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken')
+                onSuccess: () => {
+                    location.reload();
                 }
-            }).then(response => {
-                return response.json().then(data => {
-                    if (!response.ok) {
-                        showToast(gettext('Error: ') + data.error, false);
-                    } else {
-                        showToast(gettext(data.message));
-                        location.reload();
-                    }
-                });
-            }).catch(error => {
-                showToast(gettext('Request error.') + error, false);
-            });
+            }, confirmButton);
         }
     </script>
 {% endblock %}

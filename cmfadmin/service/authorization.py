@@ -10,17 +10,23 @@ Author:
 Created:
   2025-09-09
 """
+from collections.abc import Sequence
 from dataclasses import dataclass, field
+from datetime import timedelta
 from typing import Any, Iterable
 
 from django.apps import apps
 from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.mixins import PermissionRequiredMixin as DjangoPermissionMixin
 from django.contrib.auth.models import Permission, Group
-from django.core.exceptions import ValidationError
+from django.core.cache import cache
+from django.core.exceptions import ValidationError, PermissionDenied
+from django.http import HttpRequest
 from django.utils.functional import Promise
 from django.utils.translation import gettext_lazy as _
 
-from cmfadmin.enums import PermissionSource
+from cmfadmin.enums import PermissionSource, MenuPermissions
 from cmfadmin.libs import TreeNode
 from cmfadmin.models import MenuPermission, Menu
 
@@ -33,7 +39,7 @@ class PermissionNode(TreeNode["PermissionNode"]):
     Tree node specialized for CustomPermission.
     Only contains fields relevant to permission management.
     """
-    title: str
+    title: str | Promise
     source: PermissionSource
     code: str | None = None
     category: str | None = None
@@ -140,6 +146,8 @@ class PermissionRegistry:
 
 
 class PermissionService:
+    CACHE_KEY_PREFIX = "admin:user_perms_"
+    CACHE_TIMEOUT = timedelta(days=1).total_seconds()
 
     @staticmethod
     def _get_system_permissions() -> list[PermissionNode]:
@@ -303,7 +311,7 @@ class PermissionService:
         return nodes
 
     @staticmethod
-    def _get_instance_permissions(instance: User | Group) -> list[str]:
+    def _get_instance_permissions(instance: User | Group) -> set[str]:
         """
         Collect permission identifiers from three sources:
           - system permissions (Django auth): "app_label.codename"
@@ -319,18 +327,20 @@ class PermissionService:
         elif isinstance(instance, Group):
             sys_qs = instance.permissions.select_related("content_type").all()
         else:
-            return []
+            return set()
 
-        codes: list[str] = []
+        codes: set[str] = set()
+
+        # system permissions
         for app_label, codename in sys_qs.values_list("content_type__app_label", "codename"):
             if app_label and codename:
-                codes.append(f"{app_label}.{codename}")
+                codes.add(f"{app_label}.{codename}")
 
         # menu permissions
         menu_related = getattr(MenuPermission, "PERMISSION_RELATED_NAME", None)
         if menu_related and hasattr(instance, menu_related):
             menu_qs = getattr(instance, menu_related).all()
-            codes.extend(list(menu_qs.values_list("code", flat=True)))
+            codes.update(filter(None, menu_qs.values_list("code", flat=True)))
 
         # custom permissions (resolved via PermissionRegistry)
         related_attr = PermissionRegistry.get_source(type(instance))
@@ -340,12 +350,12 @@ class PermissionService:
                 if callable(target):
                     result = target()
                     if hasattr(result, "values_list"):
-                        codes.extend(list(result.values_list("code", flat=True)))
+                        codes.update(filter(None, result.values_list("code", flat=True)))
                 elif hasattr(target, "all"):
-                    codes.extend(list(target.all().values_list("code", flat=True)))
+                    codes.update(filter(None, target.all().values_list("code", flat=True)))
 
         # remove duplicates
-        return list(set(codes))
+        return codes
 
     @classmethod
     def _get_merged_permissions(cls, instance: User | Group) -> list[PermissionNode]:
@@ -375,7 +385,7 @@ class PermissionService:
                     menu_root_map[node.category] = node.id
 
         # fetch permission codes assigned to the instance
-        user_codes = set(cls._get_instance_permissions(instance))
+        user_codes = cls._get_instance_permissions(instance)
 
         # list of nodes to remove from final result (e.g. system virtual roots reparented)
         to_delete: list[PermissionNode] = []
@@ -456,3 +466,130 @@ class PermissionService:
 
         manager = getattr(user_or_group, source_attr)
         manager.set(manager.model.objects.filter(id__in=[int(cid) for cid in custom_ids if str(cid).isdigit()]))
+
+    @classmethod
+    def get_user_permissions(cls, user: User) -> set[str]:
+        """
+        Return all merged permissions for a user.
+        Combines user-level and group-level permissions,
+        supports custom/menu/system permission sources,
+        and caches results for one day.
+        """
+        if not user or not user.is_active:
+            return set()
+
+        # Superuser shortcut
+        if user.is_superuser:
+            return {MenuPermissions.ALL_PERMISSIONS}
+
+        cache_key = f"{cls.CACHE_KEY_PREFIX}{user.pk}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        # Collect user-level permissions
+        user_codes = cls._get_instance_permissions(user)
+
+        # Collect group-level permissions
+        group_codes: set[str] = set()
+        for group in user.groups.all().only("id"):
+            group_codes |= cls._get_instance_permissions(group)
+
+        # Merge and cache
+        all_codes = user_codes | group_codes
+        cache.set(cache_key, all_codes, cls.CACHE_TIMEOUT)
+
+        return all_codes
+
+    @classmethod
+    def clear_user_cache(cls, user_id: int | None = None) -> None:
+        """
+        Clear cached permissions for a specific user or all users.
+        """
+        if user_id:
+            cache.delete(f"{cls.CACHE_KEY_PREFIX}{user_id}")
+
+    @classmethod
+    def has_permission(cls, user: User, perm_codes: str | Sequence[str]) -> bool:
+        """
+        Check whether the user has a given permission (system or custom/menu).
+
+        Args:
+            user: User instance
+            perm_codes: Single code or list of codes
+        Returns:
+            bool: True if user has permission, False otherwise
+        """
+        if not user or not user.is_active:
+            return False
+
+        # Superuser shortcut
+        if user.is_superuser:
+            return True
+
+        # Fetch all permissions for user (system + menu + custom)
+        user_perms = cls.get_user_permissions(user)
+
+        # Normalize perm_codes to tuple
+        if isinstance(perm_codes, str):
+            perm_codes = (perm_codes,)
+        else:
+            perm_codes = tuple(perm_codes)
+
+        return any(code in user_perms for code in perm_codes)
+
+
+def permission_required(
+        perms: str | Sequence[str] = None,
+        login_url=None,
+        raise_exception: bool = False,
+        superuser_only: bool = False
+):
+    """
+    Decorator for function-based views.
+    - Accepts single or multiple permission codes.
+    - Returns 403 if user lacks all required permissions.
+    - If superuser_only=True, only superusers are allowed, others denied.
+    """
+
+    def decorator(view_func):
+        def check_perms(user):
+            if user.is_superuser:
+                return True
+
+            # Superuser-only mode: short-circuit everything else
+            if superuser_only and not user.is_superuser:
+                if raise_exception:
+                    raise PermissionDenied
+                return False
+
+            # Normal permission check
+            if not PermissionService.has_permission(user, perms):
+                if raise_exception:
+                    raise PermissionDenied
+                return False
+
+            # Allow by default if superuser or no perms specified
+            return True
+
+        return user_passes_test(check_perms, login_url=login_url)(view_func)
+
+    return decorator
+
+
+class PermissionRequiredMixin(DjangoPermissionMixin):
+    """
+    Mixin for class-based views.
+    Usage:
+        class MyView(PermissionRequiredMixin, TemplateView):
+            permission_required = ["app_label.codename", "menu_code"]
+    """
+    request: HttpRequest  # type hint for IDE
+
+    def has_permission(self) -> bool:
+        """Core permission check logic."""
+        if not self.permission_required:
+            return True  # Allow by default if not specified
+
+        perms = self.get_permission_required()
+        return PermissionService.has_permission(self.request.user, perms)

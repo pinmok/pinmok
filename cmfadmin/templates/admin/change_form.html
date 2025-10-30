@@ -2,8 +2,9 @@
 {% load i18n admin_urls static admin_modify icons %}
 
 {% block title %}{% if errors %}{% translate "Error:" %} {% endif %}{{ block.super }}{% endblock %}
-{% block extrahead %}{{ block.super }}
-    <script src="{% url 'admin:jsi18n' %}"></script>
+
+{% block extrahead %}
+    {{ block.super }}
     {{ media }}
 {% endblock %}
 
@@ -12,8 +13,6 @@
     <link rel="stylesheet" href="{% static "admin/css/widgets.css" %}">
     <link rel="stylesheet" href="{% static "admin/css/responsive.css" %}">
 {% endblock %}
-
-{% block coltype %}colM{% endblock %}
 
 {% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} change-form{% endblock %}
 

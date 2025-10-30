@@ -4,145 +4,271 @@
 config module
 
 Description:
-  CMF Config Service
+    A lightweight, high-performance configuration management service with cache-layer abstraction
+    and atomic database operations.
 Author:
   惠达浪 <crazys@126.com>
 Created:
   2025-07-24
 """
-from typing import Any
+from typing import Any, Iterable
 
 from django.core.cache import cache
+from django.db import transaction
+from django.db.utils import OperationalError
 
 from cmfadmin.enums import ConfigCategory
 from cmfadmin.models import Config
 
 
-class ConfigService:
-    CACHE_PREFIX = 'crazy_cmf_config'
-    CATEGORY_PREFIX = CACHE_PREFIX + '_category'
+class ConfigCache:
+    """
+    Lightweight cache helper class.
+    Responsible only for cache I/O, no business logic.
+    """
+
+    PREFIX = "crazy_cmf_config"
+    TIMEOUT = 3600
+    NULL = object()  # Sentinel for caching missing keys
+
+    # --- Key Generators ---
 
     @classmethod
-    def _cache_key(cls, key: str) -> str:
-        """Generate the cache key for a specific config key."""
-        return f'{cls.CACHE_PREFIX}:{key}'
+    def key(cls, k: str) -> str:
+        """Return full cache key for a single config key."""
+        return f"{cls.PREFIX}:{k}"
 
     @classmethod
-    def _category_cache_key(cls, category: str) -> str:
-        """Generate the cache key for a config category."""
-        return f'{cls.CATEGORY_PREFIX}:{category}'
+    def category_key(cls, c: str) -> str:
+        """Return full cache key for a config category."""
+        return f"{cls.PREFIX}:cat:{c}"
+
+    # --- Basic Cache Operations ---
 
     @classmethod
-    def get(cls, key: str | list | tuple, default: Any = None) -> Any | dict:
-        keys = [key] if isinstance(key, str) else list(key)
+    def get_many(cls, keys: Iterable[str]) -> dict[str, Any]:
+        """Batch get config values from cache."""
+        cache_keys = {k: cls.key(k) for k in keys}
+        cached = cache.get_many(cache_keys.values())
         result = {}
-
-        for k in keys:
-            cache_key = cls._cache_key(k)
-            val = cache.get(cache_key)
-            if val is None:
-                try:
-                    obj = Config.objects.get(key=k)
-                    val = obj.value
-                    cache.set(cache_key, val)
-                except Config.DoesNotExist:
-                    val = default
-            result[k] = val
-
-        return result[key] if isinstance(key, str) else result
+        for k, ck in cache_keys.items():
+            if ck in cached:
+                val = cached[ck]
+                result[k] = None if val is cls.NULL else val
+        return result
 
     @classmethod
-    def set(cls, category: ConfigCategory, key: str, value: Any):
-        obj, _ = Config.objects.update_or_create(
-            key=key,
-            defaults={'value': value, 'category': category}
-        )
-
-        # Update key cache
-        cache.set(cls._cache_key(key), value)
-
-        # Update category cache
-        category_key = cls._category_cache_key(category)
-        category_data = cache.get(category_key) or {}
-        category_data[key] = value
-        cache.set(category_key, category_data)
+    def set_many(cls, data: dict[str, Any]) -> None:
+        """Batch set config values into cache."""
+        if not data:
+            return
+        mapped = {cls.key(k): (v if v is not None else cls.NULL) for k, v in data.items()}
+        cache.set_many(mapped, cls.TIMEOUT)
 
     @classmethod
-    def get_by_category(cls, category: ConfigCategory) -> dict:
-        cache_key = cls._category_cache_key(category)
-        if (data := cache.get(cache_key)) is not None:
-            return data
+    def delete_many(cls, keys: Iterable[str]) -> None:
+        """Batch delete config cache keys."""
+        cache.delete_many([cls.key(k) for k in keys])
 
-        # Retrieve all configuration items for the given category with a single database query
-        data = {
-            item.key: item.value
-            for item in Config.objects.filter(category=category).only('key', 'value')
-        }
-        cache.set(cache_key, data)
-
-        # Set cache for keys in batch
-        cache.set_many({cls._cache_key(k): v for k, v in data.items()})
-
-        return data
+    # --- Category Cache Operations ---
 
     @classmethod
-    def set_by_category(cls, category: ConfigCategory, data: dict[str, Any]):
-        """
-        Batch set config items under the given category.
-        """
-        category_data = {}
+    def get_category(cls, category: str) -> dict[str, Any] | None:
+        """Get entire category data from cache."""
+        return cache.get(cls.category_key(category))
 
-        for key, value in data.items():
-            Config.objects.update_or_create(
-                category=category,
-                key=key,
-                defaults={'value': value}
-            )
-            cache.set(cls._cache_key(key), value)
-            category_data[key] = value
+    @classmethod
+    def set_category(cls, category: str, data: dict[str, Any]) -> None:
+        """Cache all config items under one category."""
+        cache.set(cls.category_key(category), data, cls.TIMEOUT)
 
-        cache.set(cls._category_cache_key(category), category_data)
+    @classmethod
+    def delete_category(cls, category: str) -> None:
+        """Delete cached category data."""
+        cache.delete(cls.category_key(category))
+
+
+class ConfigStore:
+    """
+    Database helper class.
+    Contains only ORM logic, no caching or business logic.
+    """
 
     @staticmethod
-    def delete(key: str | list | tuple | None = None, category: ConfigCategory | None = None) -> int:
-        """
-        Delete config(s) by key(s) and/or category, and clear corresponding cache.
+    def fetch(keys: Iterable[str]) -> dict[str, Any]:
+        """Fetch config values by key list."""
+        return {c.key: c.value for c in Config.objects.filter(key__in=keys).only("key", "value")}
 
-        Returns:
-            int: Number of deleted records
+    @staticmethod
+    def fetch_by_category(category: ConfigCategory) -> dict[str, Any]:
+        """Fetch all configs under a given category."""
+        return {c.key: c.value for c in Config.objects.filter(category=category).only("key", "value")}
+
+    @staticmethod
+    def save(category: ConfigCategory, key: str, value: Any) -> None:
+        """Insert or update a single config record."""
+        Config.objects.update_or_create(key=key, defaults={"value": value, "category": category})
+
+    @staticmethod
+    def save_many(category: ConfigCategory, data: dict[str, Any]) -> None:
+        """Batch insert or update configs atomically."""
+        with transaction.atomic():
+            for k, v in data.items():
+                Config.objects.update_or_create(category=category, key=k, defaults={"value": v})
+
+    @staticmethod
+    def delete(keys: list[str]) -> int:
+        """Delete configs by key list."""
+        return Config.objects.filter(key__in=keys).delete()[0]
+
+    @staticmethod
+    def delete_by_category(category: ConfigCategory) -> int:
+        """Delete all configs under a category."""
+        return Config.objects.filter(category=category).delete()[0]
+
+
+class ConfigService:
+    """
+    Unified configuration service.
+    Combines cache layer and DB layer to minimize queries while ensuring consistency.
+    """
+
+    # --- Read Operations ---
+
+    @classmethod
+    def get(cls, keys: str | list[str] | tuple[str, ...], default: Any = None) -> Any | dict[str, Any]:
         """
-        if key is None and category is None:
+        Get single or multiple config values with transparent caching.
+        Args:
+            keys: Single key or list/tuple of keys
+            default: Default value for missing keys
+        Returns:
+            Single value or dict of values
+        """
+        single = isinstance(keys, str)
+        keys = [keys] if single else list(keys)
+
+        try:
+            # Read from cache
+            cached = ConfigCache.get_many(keys)
+
+            # If cache is None or empty, fallback to empty dict
+            if not isinstance(cached, dict):
+                cached = {}
+
+            # Determine which keys are missing or invalid
+            missing = [k for k in keys if k not in cached or cached[k] is None]
+
+            # Query DB for missing keys
+            if missing:
+                db_data = ConfigStore.fetch(missing)
+                ConfigCache.set_many(db_data)
+
+                # Cache NULL for truly missing keys
+                missed = {k: default for k in missing if k not in db_data}
+                ConfigCache.set_many(missed)
+
+                cached.update(db_data)
+                cached.update(missed)
+        except OperationalError:
+            # DB down fallback
+            cached = {k: default for k in keys}
+
+        # Ensure defaults (also cover cached None values)
+        for k in keys:
+            if cached.get(k) is None:
+                cached[k] = default
+
+        return cached[keys[0]] if single else cached
+
+    @classmethod
+    def get_by_category(cls, category: ConfigCategory) -> dict[str, Any]:
+        """
+        Get all config items under a category.
+        Uses category-level cache first, then falls back to DB.
+        """
+        cached = ConfigCache.get_category(category)
+        if cached is not None:
+            return cached
+
+        try:
+            data = ConfigStore.fetch_by_category(category)
+            ConfigCache.set_category(category, data)
+            ConfigCache.set_many(data)
+            return data
+        except OperationalError:
+            return {}
+
+    # --- Write Operations ---
+
+    @classmethod
+    def set(cls, category: ConfigCategory, key: str, value: Any) -> None:
+        """
+        Update a single config item.
+        Ensures cache consistency between key and category.
+        """
+        try:
+            ConfigStore.save(category, key, value)
+            ConfigCache.set_many({key: value})
+
+            # Update category cache in-place if available
+            cat_data = ConfigCache.get_category(category)
+            if cat_data is not None:
+                cat_data[key] = value
+                ConfigCache.set_category(category, cat_data)
+        except OperationalError:
+            pass
+
+    @classmethod
+    def set_by_category(cls, category: ConfigCategory, data: dict[str, Any]) -> None:
+        """
+        Batch update multiple configs under a category.
+        All operations are atomic.
+        """
+        if not data:
+            return
+        try:
+            ConfigStore.save_many(category, data)
+            ConfigCache.set_many(data)
+            ConfigCache.set_category(category, data)
+        except OperationalError:
+            pass
+
+    # --- Delete Operations ---
+
+    @classmethod
+    def delete(
+            cls,
+            keys: str | list[str] | tuple[str, ...] | None = None,
+            category: ConfigCategory | None = None
+    ) -> int:
+        """
+        Delete configs by key or category.
+        Ensures both DB and cache consistency.
+        """
+        if not keys and not category:
             return 0
 
-        deleted_count = 0
+        try:
+            deleted_keys: list[str] = []
+            count = 0
 
-        if key is not None:
-            keys = [key] if isinstance(key, str) else list(key)
+            # Delete by key(s)
+            if keys:
+                keys = [keys] if isinstance(keys, str) else list(keys)
+                count += ConfigStore.delete(keys)
+                deleted_keys.extend(keys)
 
-            for k in keys:
-                qs = Config.objects.filter(key=k)
-                if category is not None:
-                    qs = qs.filter(category=category)
+            # Delete by category
+            if category:
+                deleted_keys.extend(ConfigStore.fetch_by_category(category).keys())
+                count += ConfigStore.delete_by_category(category)
+                ConfigCache.delete_category(category)
 
-                count, _ = qs.delete()
-                deleted_count += count
+            # Cache cleanup
+            if deleted_keys:
+                ConfigCache.delete_many(deleted_keys)
 
-                # Clear cache for this key
-                cache.delete(ConfigService._cache_key(k))
-
-        if category is not None:
-            # Delete all configs in this category
-            qs = Config.objects.filter(category=category)
-            deleted_items = qs.only("key")
-            deleted_keys = [item.key for item in deleted_items]
-
-            count, _ = qs.delete()
-            deleted_count += count
-
-            # Clear key-level caches
-            cache.delete_many([ConfigService._cache_key(k) for k in deleted_keys])
-
-            # Clear category-level cache if category is given
-            cache.delete(ConfigService._category_cache_key(category))
-
-        return deleted_count
+            return count
+        except OperationalError:
+            return 0

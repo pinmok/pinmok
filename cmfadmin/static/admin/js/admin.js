@@ -80,9 +80,7 @@ function ajaxRequest(
     if (btn) {
         spinner = btn.querySelector('.spinner-border');
         btn.disabled = true;
-        if (spinner) {
-            spinner.classList.remove('d-none');
-        }
+        if (spinner) spinner.classList.remove('d-none');
     }
 
     method = method.toUpperCase();
@@ -93,17 +91,15 @@ function ajaxRequest(
         ...headers
     };
 
-    if (method === 'GET' || method === 'DELETE') {
+    // === REST-style data handling ===
+    if (method === 'GET') {
         const queryString = new URLSearchParams(data).toString();
-        if (queryString) {
-            url += (url.includes('?') ? '&' : '?') + queryString;
-        }
+        if (queryString) url += (url.includes('?') ? '&' : '?') + queryString;
     } else {
+        // POST/PUT/PATCH → JSON or FormData in body
         if (contentType === 'json' || (contentType === 'auto' && typeof data === 'object' && !(data instanceof FormData))) {
             finalHeaders['Content-Type'] = 'application/json';
             body = JSON.stringify(data);
-        } else if (contentType === 'form' || (contentType === 'auto' && data instanceof FormData)) {
-            body = data;
         } else {
             body = data;
         }
@@ -118,53 +114,37 @@ function ajaxRequest(
     })
         .then(res => res[responseType]())
         .then(res => {
-            if (btn) {
-                btn.disabled = false;
-            }
-            if (spinner) {
-                spinner.classList.add('d-none');
-            }
+            if (btn) btn.disabled = false;
+            if (spinner) spinner.classList.add('d-none');
 
-            const ok = res.code === 0;
-            showToast(res.message || (ok ? gettext('Success') : gettext('Error')), ok);
+            const type = res.code === 0 ? ToastType.SUCCESS : ToastType.ERROR;
+            showToast(res.message || gettext(type === ToastType.SUCCESS ? 'Success' : 'Error'), type);
 
-            if (ok && typeof onSuccess === 'function') {
+            if (type === ToastType.SUCCESS && typeof onSuccess === 'function') {
                 onSuccess(res);
-            } else if (!ok && typeof onError === 'function') {
+            } else if (typeof onError === 'function') {
                 onError(res);
             }
         })
         .catch(err => {
-            if (btn) {
-                btn.disabled = false;
-            }
-            if (spinner) {
-                spinner.classList.add('d-none');
-            }
+            if (btn) btn.disabled = false;
+            if (spinner) spinner.classList.add('d-none');
 
-            showToast(gettext('Network error or server exception.'), false);
+            // Default message
+            let msg = gettext('Network error or server exception.');
+
+            // Try to use backend JSON message if exists
+            if (err?.response?.data?.message) msg = err.response.data.message;
+
+            showToast(msg, ToastType.ERROR);
+
             if (typeof onError === 'function') {
-                onError({code: -1, message: err.message});
+                onError({
+                    code: err.response?.data?.code ?? -1,
+                    message: msg
+                });
             }
         });
-}
-
-// Show toast with header and body
-function showToast(message, isSuccess = true) {
-    const toastEl = document.getElementById('global-toast');
-    const toastHeader = document.getElementById('global-toast-header');
-    const toastBody = document.getElementById('global-toast-body');
-
-    toastHeader.textContent = isSuccess ? gettext('Success') : gettext('Failed');
-    toastBody.textContent = message || (isSuccess ? gettext('Success') : gettext('An error occurred'));
-
-    const toast = new tabler.Toast(toastEl, {delay: 3000});
-
-    const toastHeaderContainer = toastEl.querySelector('.toast-header');
-    toastHeaderContainer.classList.remove('bg-success', 'bg-danger');
-    toastHeaderContainer.classList.add(isSuccess ? 'bg-success' : 'bg-danger');
-
-    toast.show();
 }
 
 // Upload a single file to the backend.
@@ -214,3 +194,29 @@ const FileManager = {
         }, btn);
     }
 };
+
+/**
+ * Navigate back if possible, otherwise go to a specified home page.
+ * @param {string} frontendHome - URL of the front-end home page
+ * @param {string} adminHome - URL of the admin/back-end home page
+ */
+function goBackOrHome(frontendHome = "/", adminHome = "/admin") {
+    const referrer = document.referrer;
+    const currentHost = window.location.host;
+
+    if (referrer) {
+        const referrerHost = new URL(referrer).host;
+        // Only go back if the referrer is the same host
+        if (referrerHost === currentHost) {
+            window.history.back();
+            return;
+        }
+    }
+
+    // Decide which home to go to based on current URL
+    if (window.location.pathname.startsWith("/admin")) {
+        window.location.href = adminHome;
+    } else {
+        window.location.href = frontendHome;
+    }
+}

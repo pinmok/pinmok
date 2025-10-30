@@ -1,0 +1,150 @@
+<!-- Toast template -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div class="toast fade toast-template" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <strong class="me-auto text-white toast-title"></strong>
+            <small class="toast-tip"></small>
+            <button type="button" class="ms-2 btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body toast-message"></div>
+    </div>
+</div>
+<script>
+    (function (window) {
+        // ToastType enum
+        const ToastType = {
+            INFO: "info",
+            SUCCESS: "success",
+            WARNING: "warning",
+            ERROR: "error"
+        };
+
+        // Normalize type to enum, default is INFO
+        function normalizeToastType(type) {
+            const t = String(type || '').trim().toLowerCase();
+            return Object.values(ToastType).includes(t) ? t : ToastType.INFO;
+        }
+
+        // Show toast
+        function showToast(message, type = ToastType.INFO, {tip = '', delay} = {}) {
+            const template = document.querySelector('.toast-template');
+            const container = document.querySelector('.toast-container');
+            if (!template || !container) return;
+
+            // Clone template
+            const toastEl = template.cloneNode(true);
+            toastEl.classList.remove('toast-template');
+            container.appendChild(toastEl);
+
+            // Find element in toast scope
+            const toastHeader = toastEl.querySelector('.toast-title');
+            const toastTip = toastEl.querySelector('.toast-tip');
+            const toastMessage = toastEl.querySelector('.toast-message');
+
+            const titles = {
+                [ToastType.SUCCESS]: gettext('Success'),
+                [ToastType.ERROR]: gettext('Error'),
+                [ToastType.WARNING]: gettext('Warning'),
+                [ToastType.INFO]: gettext('Info'),
+            };
+
+            const colors = {
+                [ToastType.SUCCESS]: 'bg-success',
+                [ToastType.ERROR]: 'bg-danger',
+                [ToastType.WARNING]: 'bg-warning',
+                [ToastType.INFO]: 'bg-info',
+            };
+            const toast_delay = {
+                [ToastType.SUCCESS]: 2000,
+                [ToastType.ERROR]: 7000,
+                [ToastType.WARNING]: 5000,
+                [ToastType.INFO]: 3000,
+            };
+            // normalize
+            const toast_type = normalizeToastType(type);
+
+            toastHeader.textContent = titles[toast_type];
+            toastTip.textContent = tip || '';
+            toastMessage.textContent = message || titles[toast_type];
+
+            const headerContainer = toastEl.querySelector('.toast-header');
+            headerContainer.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'bg-info');
+            headerContainer.classList.add(colors[toast_type]);
+
+            const toast_instance = new tabler.Toast(toastEl, {delay: delay || toast_delay[toast_type]});
+            toast_instance.show();
+
+            // Automatically clean up the DOM
+            toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+        }
+
+        // Export globally
+        window.ToastType = ToastType;
+        window.showToast = showToast;
+
+        // ==================================================
+        // Messages
+        function parseExtras(rawExtra) {
+            if (!rawExtra) return {}; // Empty string → return empty object
+
+            // Try parsing as valid JSON
+            try {
+                const obj = JSON.parse(rawExtra);
+                if (typeof obj === 'object' && obj !== null) return obj;
+            } catch (_) {
+                // ignore, fallback to other parsing methods
+            }
+
+            // Handle pseudo JSON format: {key:value,...}
+            if (rawExtra.startsWith('{') && rawExtra.endsWith('}')) {
+                const inner = rawExtra.slice(1, -1); // Remove braces
+                return parseExtras(inner); // Recursively treat as key=value pairs
+            }
+
+            // Parse as key=value pairs separated by ; or ,
+            const extras = {};
+            rawExtra.split(/[;,]/).forEach(p => {
+                const [rawK, rawV] = p.split('='); // Split key and value
+                const key = rawK?.trim();
+                let value = rawV?.trim();
+                if (!key) return;
+
+                // Convert value to proper type
+                if (value === undefined) {
+                    extras[key] = true; // No value → boolean true
+                } else if (value === 'true') {
+                    extras[key] = true;
+                } else if (value === 'false') {
+                    extras[key] = false;
+                } else if (value === 'null') {
+                    extras[key] = null;
+                } else if (!isNaN(value)) {
+                    extras[key] = Number(value); // Convert numeric string to number
+                } else {
+                    extras[key] = value; // Keep string as is
+                }
+            });
+
+            return extras;
+        }
+
+        // Auto show Django messages
+        {% if messages %}
+            document.addEventListener('DOMContentLoaded', function () {
+                {% for msg in messages %}
+                    (function () {
+                        const rawExtra = '{{ msg.extra_tags|default:""|escapejs }}';
+                        const extras = parseExtras(rawExtra);
+                        const level_tag = "{{ msg.level_tag|lower }}"
+                        const type = normalizeToastType(level_tag)
+
+                        // Ensure delay is numeric for Tabler Toast
+                        if (extras.delay) extras.delay = Number(extras.delay);
+
+                        showToast("{{ msg.message|escapejs }}", type || ToastType.INFO, extras);
+                    })();
+                {% endfor %}
+            });
+        {% endif %}
+    })(window);
+</script>

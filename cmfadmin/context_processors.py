@@ -14,13 +14,19 @@ from cmfadmin import site
 from cmfadmin.menus import AdminMenuManager
 
 
-def admin_context(request):
-    menu_tree = AdminMenuManager.get_admin_menu(request)
-    breadcrumbs = AdminMenuManager.get_admin_breadcrumb(request, menu_tree)
+def cmf_context(request):
+    """Unified CMF global context."""
+    admin_context = {}
+    if request.path.startswith('/admin/'):
+        menu_tree = AdminMenuManager.get_admin_menu(request)
+        breadcrumbs = AdminMenuManager.get_admin_breadcrumb(request, menu_tree)
+        admin_context = {
+            'admin_menu': menu_tree,
+            'admin_breadcrumbs': breadcrumbs
+        }
 
     return {
         'site_header': site.site_header,
         'site_title': site.site_title,
-        'admin_menu': menu_tree,
-        'admin_breadcrumbs': breadcrumbs
+        **admin_context
     }

@@ -17,7 +17,7 @@ from django.http import HttpRequest
 
 from cmfadmin import constants
 from cmfadmin import site
-from cmfadmin.enums import MenuPermissions, ConfigCategory
+from cmfadmin.enums import ConfigCategory
 from cmfadmin.service.menu import MenuSynchronizer, AdminMenu, MenuNode
 
 ADMIN_MENU = [
@@ -25,7 +25,6 @@ ADMIN_MENU = [
         'title': 'Site Settings',
         'icon': 'tabler-setting',
         'sort_order': 0,
-        'permission': ['site.view_menu'],
         'children': [
             {
                 'title': ConfigCategory.SITE.label,
@@ -36,8 +35,8 @@ ADMIN_MENU = [
                 'url': '/admin/cmfadmin/email',
                 'sort_order': 200,
             }, {
-                'title': ConfigCategory.SYSTEM.label,
-                'url': '/admin/cmfadmin/system',
+                'title': ConfigCategory.FILE.label,
+                'url': '/admin/cmfadmin/files',
                 'sort_order': 300,
             }, {
                 'title': ConfigCategory.ICONS.label,
@@ -62,38 +61,6 @@ class AdminMenuManager:
         Should be called when menu definitions change (e.g., menu sync or edit).
         """
         cache.delete(constants.ADMIN_ALL_MENU)
-
-    @staticmethod
-    def _get_user_permissions(user: User) -> list[str]:
-        """
-        Map a Django User to a list of menu permissions.
-
-        Returns ALL_PERMISSIONS for superusers.
-        Returns actual permission codes for normal users.
-
-        Args:
-            user (User): Django user object.
-
-        Returns:
-            list[str]: List of permission codes.
-        """
-        if user.is_superuser:
-            return [MenuPermissions.ALL_PERMISSIONS]
-
-        # Normal user permissions: match user's Django permissions
-        # You can filter only menu-related permissions if needed
-        perms_qs = user.user_permissions.values_list('content_type__app_label', 'codename')
-        perms_list = [f"{app}.{codename}" for app, codename in perms_qs]
-
-        # Also include permissions via groups
-        group_perms_qs = user.groups.values_list(
-            'permissions__content_type__app_label',
-            'permissions__codename'
-        )
-        group_perms_list = [f"{app}.{codename}" for app, codename in group_perms_qs]
-
-        all_perms = set(perms_list) | set(group_perms_list)
-        return list(all_perms)
 
     @staticmethod
     def get_admin_breadcrumb(request: HttpRequest, menu_tree: list[MenuNode]) -> list[dict]:
@@ -163,7 +130,4 @@ class AdminMenuManager:
             list[dict]: The final filtered admin menu for the user.
         """
         app_list = site.get_app_list(request)
-        menu_tree = AdminMenu.get_menu(app_list=app_list)
-
-        permissions = cls._get_user_permissions(user=request.user)
-        return AdminMenu.filter_by_permissions(menu_tree=menu_tree, permissions=permissions)
+        return AdminMenu.get_menu(app_list=app_list, user=request.user)

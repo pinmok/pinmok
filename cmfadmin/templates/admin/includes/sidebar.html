@@ -1,4 +1,4 @@
-{% load i18n static icons %}
+{% load i18n static icons media %}
 
 <aside class="navbar navbar-vertical navbar-expand-lg">
     <div class="container-fluid">
@@ -11,10 +11,13 @@
         <!-- BEGIN NAVBAR LOGO -->
         <div class="navbar-brand navbar-brand-autodark" style="font-size: 1rem">
             <a href="{% url 'admin:index' %}" class="d-flex align-items-center text-decoration-none" aria-label="Tabler">
-                <!-- TODO: 修改后台LOGO为动态 -->
-                <svg width="28" height="28">
-                    <use href="{% static 'admin/svg/crazy_logo.svg' %}"></use>
-                </svg>
+                {% if config.site_logo %}
+                    <img src="{% media_url config.site_logo %}" alt="Logo" width="28" height="28">
+                {% else %}
+                    <svg width="28" height="28">
+                        <use href="{% static 'admin/svg/crazy_logo.svg' %}"></use>
+                    </svg>
+                {% endif %}
                 <span class="ms-2 text-body">
                     {% block branding %}
                         {{ site_header }}
@@ -28,7 +31,7 @@
             <!-- BEGIN ICON GROUP  -->
             <div class="d-flex justify-content-center gap-3">
                 <!-- Jump to home -->
-                <a href="{{ site_url }}" title="{% translate 'View site' %}" class="text-primary" target="_blank"
+                <a href="/" title="{% translate 'View site' %}" class="text-primary" target="_blank"
                    data-bs-toggle="tooltip" data-bs-placement="bottom">
                     {% sprite 'tabler-home' 'icon' %}
                 </a>
@@ -45,7 +48,6 @@
             <!-- END ICON GROUP  -->
 
             <!-- BEGIN NAVBAR MENU -->
-            <!-- TODO 考虑是否使用菜单搜索功能，因为Django带了。 -->
             {% if admin_menu %}
                 <ul class="navbar-nav pt-lg-1" id="sidebar-menu">
                     <!-- BEGIN MENU ITEM -->
