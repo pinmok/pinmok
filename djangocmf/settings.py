@@ -125,3 +125,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = globals().get('MEDIA_URL', '/media/')
 MEDIA_ROOT = globals().get('MEDIA_ROOT', BASE_DIR / 'media')
+
+LOCALE_PATHS = [BASE_DIR / 'locale']

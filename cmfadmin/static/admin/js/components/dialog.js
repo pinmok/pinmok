@@ -18,13 +18,6 @@ class Dialog {
         input: typeof gettext === 'function' ? gettext('Input') : 'Input'
     };
 
-    // SVG icons
-    static ICONS = {
-        success: `{% sprite 'tabler-check' 'icon mb-2 text-success icon-lg' %}`,
-        danger: `{% sprite 'tabler-alert-octagon' 'icon mb-2 text-danger icon-lg' %}`,
-        warning: `{% sprite 'tabler-alert-triangle' 'icon mb-2 text-warning icon-lg' %}`,
-        info: `{% sprite 'tabler-info-circle' 'icon mb-2 text-info icon-lg' %}`
-    };
 
     // Helper: get type object by key
     static _getType(type) {
@@ -49,7 +42,7 @@ class Dialog {
             // Set top status bar color
             tpl.querySelector('#dialogStatus').className = `modal-status bg-${t.color}`;
             // Set icon
-            tpl.querySelector('#dialogIcon').innerHTML = Dialog.ICONS[t.key];
+            tpl.querySelector('#dialogIcon').innerHTML = DIALOG_ICONS[t.key];
             // Set title (translated)
             tpl.querySelector('#dialogTitle').textContent = title ? title : (typeof gettext === 'function' ? gettext(t.defaultTitle) : t.defaultTitle);
             // Set message content

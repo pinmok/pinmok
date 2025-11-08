@@ -26,5 +26,13 @@
         </div>
     </div>
 </div>
-
+<script>
+    // SVG icons
+    const DIALOG_ICONS = {
+        success: `{% sprite 'tabler-check' 'icon mb-2 text-success icon-lg' %}`,
+        danger: `{% sprite 'tabler-alert-octagon' 'icon mb-2 text-danger icon-lg' %}`,
+        warning: `{% sprite 'tabler-alert-triangle' 'icon mb-2 text-warning icon-lg' %}`,
+        info: `{% sprite 'tabler-info-circle' 'icon mb-2 text-info icon-lg' %}`
+    };
+</script>
 <script src="{% static 'admin/js/components/dialog.js' %}"></script>

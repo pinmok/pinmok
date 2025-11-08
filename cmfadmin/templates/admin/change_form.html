@@ -19,8 +19,11 @@
 {% if not is_popup %}
     {% block breadcrumbs %}
         <li class="breadcrumb-item active">
-            {% if add %}{% blocktranslate with name=opts.verbose_name %}Add {{ name }}{% endblocktranslate %}{% else %}
-                {{ original|truncatewords:"18" }}{% endif %}
+            {% if add %}
+                {% blocktranslate trimmed with name=opts.verbose_name %}Add {{ name }}{% endblocktranslate %}
+            {% else %}
+                {{ original|truncatewords:"18" }}
+            {% endif %}
         </li>
     {% endblock %}
 {% endif %}
@@ -52,8 +55,9 @@
     {% if errors %}
         <div class="alert alert-danger">
             <div class="alert-icon">{% sprite 'tabler-alert-circle' 'icon alert-icon' %}</div>
-            {% blocktranslate count counter=errors|length %}Please correct the error below.{% plural %}Please correct the
-                errors below.{% endblocktranslate %}
+            {% blocktranslate trimmed count counter=errors|length %}
+                Please correct the error below.{% plural %}Please correct the errors below.
+            {% endblocktranslate %}
             {{ adminform.form.non_field_errors }}
             {% for fieldset in adminform %}
                 {% for line in fieldset %}

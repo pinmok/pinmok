@@ -47,10 +47,11 @@ class UploadResult:
     """Result object returned after successful file upload"""
     path: str  # Relative path, e.g., '2025/07/22/file.png'
     filename: str  # Final saved filename
-    size: int  # File size in bytes
+    size: int | str  # File size in bytes
     mime_type: str  # MIME type of the file
     original_name: str  # Original uploaded filename
     hash: str | None = None  # Optional: hash for deduplication or reference
+    create_at: datetime = None
     media_path: str = field(init=False)
 
     def __post_init__(self):

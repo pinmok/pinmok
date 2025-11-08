@@ -3,7 +3,7 @@
 <div class="card my-2">
     <details data-filter-title="{{ title }}" open>
         <summary class="card-header">
-            {% blocktranslate with filter_title=title %} By {{ filter_title }} {% endblocktranslate %}
+            {% blocktranslate trimmed with filter_title=title %} By {{ filter_title }} {% endblocktranslate %}
         </summary>
         <div class="card-body">
             <ul class="list-unstyled">

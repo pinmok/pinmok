@@ -25,7 +25,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views import View
 
 from cmfadmin.constants import CUSTOM_SPRITE_FILE, UPLOAD_FILE_CONFIG
-from cmfadmin.enums import ConfigCategory, MenuSyncMode, TargetChoices, FileType, ErrorCode
+from cmfadmin.enums import ConfigCategory, TargetChoices, FileType, ErrorCode, MenuSyncMode
 from cmfadmin.forms import NavItemForm
 from cmfadmin.libs import SpriteManager
 from cmfadmin.libs.sprite import SpriteError
@@ -172,14 +172,6 @@ class SiteInfoView(ConfigView):
         return super().post(request, *args, **kwargs)
 
 
-class FileSettingView(ConfigView):
-    category = ConfigCategory.FILE
-    template_name = 'config/files.html'
-    extra_context = {
-        'title': ConfigCategory.FILE.label,
-    }
-
-
 class UploadSettingView(ConfigView):
     category = ConfigCategory.UPLOAD
     template_name = 'config/upload_setting.html'
@@ -198,6 +190,7 @@ class UploadSettingView(ConfigView):
             item = ft.copy()
             item['size_value'] = config_data.get(ft['size_key'], ft['default_size'])
             item['type_value'] = config_data.get(ft['type_key'], ','.join(ft['default_type'])).split(',')
+            item['key_value'] = _(key)
             upload_file_config[key] = item
 
         # Pass as dynamic context (avoid mutating class-level dict)
@@ -313,6 +306,20 @@ class EmailConfigView(ConfigView):
                 return api_response(ErrorCode.ERROR, _('Failed to send email.'))
         except Exception as e:
             return api_response(ErrorCode.SERVER_ERROR, _('Error while sending email: ') + str(e))
+
+
+class FileManagementView(PermissionRequiredMixin, View):
+    superuser_only = True
+    template_name = 'config/files.html'
+    extra_context = {
+        'title': ConfigCategory.FILE.label,
+    }
+
+    def get(self, request, *args, **kwargs):
+        current_page = request.GET.get('page', 1)
+        context = UploadService.list(current_page)
+        context.update(self.extra_context)
+        return render(request, self.template_name, context)
 
 
 class NavItemView(PermissionRequiredMixin, View):
@@ -625,15 +632,6 @@ class UserProfile(View):
         return render(request, self.template_name, {'user': request.user})
 
 
-@permission_required(superuser_only=True)
-def sync_menu(request):
-    """
-    Sync all admin menus (superuser only).
-    """
-    result = AdminMenuManager.synchronize_menu(MenuSyncMode.SYNC_ALL, request.user)
-    return render(request, 'config/sync_menu.html', {'result': result})
-
-
 @permission_required(f"{NavItem._meta.app_label}.view_{NavItem._meta.model_name}")
 def nav_items_edit(request, pk):
     nav = Nav.objects.get(pk=pk)
@@ -647,15 +645,10 @@ def nav_items_edit(request, pk):
     return render(request, 'config/navigation.html', context)
 
 
-CMFADMIN_URLS = [
-    ('sync_menu', sync_menu, 'sync_menu'),
-    ('cmfadmin/site/', SiteInfoView.as_view(), 'site_config'),
-    ('cmfadmin/email/', EmailConfigView.as_view(), 'email_config'),
-    ('cmfadmin/icons/', SpriteManagerView.as_view(), 'icons_manage'),
-    ('cmfadmin/nav/<int:pk>/', nav_items_edit, 'nav_items_edit'),
-    ('cmfadmin/nav/navitem/<int:nav_id>/<int:nav_item_id>/', NavItemView.as_view(), 'navitem'),
-    ('cmfadmin/files', FileSettingView.as_view(), 'file_setting'),
-    ('cmfadmin/upload', UploadSettingView.as_view(), 'upload'),
-    ('cmfadmin/upload_file', UploadFileView.as_view(), 'upload_file'),  # File upload URL, used by AJAX
-    ('profile/', UserProfile.as_view(), 'profile'),
-]
+@permission_required(superuser_only=True)
+def sync_menu(request):
+    """
+    Sync all admin menus (superuser only).
+    """
+    result = AdminMenuManager.synchronize_menu(MenuSyncMode.SYNC_ALL, request.user)
+    return render(request, 'config/sync_menu.html', {'result': result})

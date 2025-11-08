@@ -13,7 +13,9 @@ Created:
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest
+from django.utils.translation import gettext_lazy as _
 
 from cmfadmin import constants
 from cmfadmin import site
@@ -75,21 +77,23 @@ class AdminMenuManager:
             list[dict]: Breadcrumb items with 'title' and 'url'.
         """
         path = []
-        current_url = request.path
+        current_url = request.path.rstrip('/')
 
         def search(bread_node: MenuNode, trail: list):
             new_trail = trail + [bread_node]
-            if bread_node.url and current_url.startswith(bread_node.url):
-                nonlocal path
-                if len(new_trail) > len(path):
-                    path = new_trail
+            if bread_node.url:
+                node_url = bread_node.url.rstrip('/')
+                if current_url == node_url or current_url.startswith(f"{node_url}/"):
+                    nonlocal path
+                    if len(new_trail) > len(path):
+                        path = new_trail
             for child in bread_node.children:
                 search(child, new_trail)
 
         for item in menu_tree:
             search(item, [])
 
-        breadcrumbs = [{'title': node.title, 'url': node.url} for node in path]
+        breadcrumbs = [{'title': _(node.title), 'url': node.url} for node in path]
         return breadcrumbs
 
     @classmethod
@@ -109,7 +113,7 @@ class AdminMenuManager:
         """
 
         if not user.is_superuser:
-            raise PermissionError('Only superusers are allowed to perform this action.')
+            raise PermissionDenied(_('Only superusers are allowed to perform this action.'))
 
         cls._clear_admin_menu_cache()
         return MenuSynchronizer.synchronize_menu(app_label=app_label)
@@ -127,7 +131,7 @@ class AdminMenuManager:
             request(HttpRequest): The current HTTP request.
 
         Returns:
-            list[dict]: The final filtered admin menu for the user.
+            list[MenuNode]: The final filtered admin menu for the user.
         """
         app_list = site.get_app_list(request)
         return AdminMenu.get_menu(app_list=app_list, user=request.user)

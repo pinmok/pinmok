@@ -220,3 +220,39 @@ function goBackOrHome(frontendHome = "/", adminHome = "/admin") {
         window.location.href = frontendHome;
     }
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+// Delete file button
+    document.querySelectorAll('.delete-file-btn').forEach(deleteEl => {
+        deleteEl.addEventListener('click', async function () {
+            const filePath = deleteEl.dataset.path;
+            if (!filePath) return;
+
+            if (!await Dialog.warning(gettext('Are you sure you want to delete this file?'), gettext('Confirm to delete'))) return;
+
+            const previewId = deleteEl.dataset.preview;
+            const inputId = deleteEl.dataset.input;
+
+            if (previewId) {
+                const imgEl = document.querySelector(previewId);
+                if (imgEl) imgEl.src = window.DEFAULT_IMG;
+            }
+
+            if (inputId) {
+                const inputEl = document.querySelector(inputId);
+                if (inputEl) inputEl.value = "";
+            }
+
+            FileManager.delete(filePath, {
+                btn: deleteEl,
+                onSuccess: () => {
+                    // Optional: trigger event for page-level refresh or other logic
+                    document.dispatchEvent(new CustomEvent('fileDeleted', {detail: {filePath}}));
+                },
+                onError: (err) => {
+                    showToast(err, ToastType.ERROR);
+                }
+            });
+        });
+    });
+});

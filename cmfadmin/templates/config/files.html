@@ -1,5 +1,5 @@
 {% extends 'config/config_base.html' %}
-{% load i18n %}
+{% load i18n media icons %}
 
 {% block page_title %}{% translate 'Manage Uploaded Files' %}{% endblock %}
 
@@ -8,24 +8,68 @@
         <table class="table table-vcenter card-table">
             <thead>
             <tr>
-                <th>Name</th>
-                <th>Title</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th class="w-1"></th>
+                <th></th>
+                <th>{% translate 'Filename' %}</th>
+                <th>{% translate 'Size' %}</th>
+                <th>{% translate 'Original Name' %}</th>
+                <th>{% translate 'Upload Time' %}</th>
+                <th class="w-1">{% translate 'Action' %}</th>
             </tr>
             </thead>
             <tbody>
-            <tr>
-                <td>Paweł Kuna</td>
-                <td class="text-secondary">UI Designer, Training</td>
-                <td class="text-secondary"><a href="#" class="text-reset">paweluna@howstuffworks.com</a></td>
-                <td class="text-secondary">User</td>
-                <td>
-                    <a href="#">Edit</a>
-                </td>
-            </tr>
+            {% for file in files %}
+                <tr>
+                    <td><img src="{% media_url file.path %}" class="avatar" alt=""></td>
+                    <td>{{ file.filename }}</td>
+                    <td class="text-secondary">{{ file.size }}</td>
+                    <td class="text-secondary">{{ file.original_name }}</td>
+                    <td class="text-secondary">{{ file.create_at }}</td>
+                    <td>
+                        <button type="button" class="btn btn-ghost-danger delete-file-btn"
+                                data-path="{{ file.path }}">
+                            {% translate 'Delete' %}
+                        </button>
+                    </td>
+                </tr>
+            {% endfor %}
             </tbody>
         </table>
+        {% if page.paginator.num_pages > 1 %}
+            <div class="card-footer">
+                <ul class="pagination">
+                    {% if page.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page.previous_page_number }}">
+                                {% sprite 'tabler-chevron-left' 'icon' %}
+                            </a>
+                        </li>
+                    {% endif %}
+                    {% for num in elided_range %}
+                        {% if num == '…' %}
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+                        {% elif num == page.number %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% else %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page.next_page_number }}">
+                                {% sprite 'tabler-chevron-right' 'icon' %}
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        {% endif %}
     </div>
+{% endblock %}
+{% block scripts %}
+    <script>
+        document.addEventListener('fileDeleted', e => {
+            // Full page refresh
+            location.reload();
+        });
+    </script>
 {% endblock %}

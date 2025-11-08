@@ -22,7 +22,7 @@ from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 
 import djangocmf
-from cmfadmin.options import CMFModelAdmin
+from cmfadmin import CMFModelAdmin
 from cmfadmin.utils.helper import get_system_info, get_disk_info
 
 
@@ -67,18 +67,31 @@ class CMFAdminSite(AdminSite):
         Each view is wrapped with self.admin_view() to apply admin-specific permissions,
         CSRF protection, and exception handling.
         """
-        from cmfadmin.views import CMFADMIN_URLS
+        from cmfadmin.views import (
+            UserProfile,
+            SiteInfoView,
+            EmailConfigView,
+            SpriteManagerView,
+            nav_items_edit,
+            NavItemView,
+            FileManagementView,
+            UploadSettingView,
+            UploadFileView,
+            sync_menu
+        )
 
-        custom_urls = []
-
-        # Load custom admin views from cmfadmin_urls (a list of (route, view, name) tuples)
-        for route, view, name in CMFADMIN_URLS:
-            # Ensure the route ends with a trailing slash for consistency
-            if not route.endswith('/'):
-                route = f'{route}/'
-
-            # Wrap each view with admin_view() to enforce admin permissions and context
-            custom_urls.append(path(route, self.admin_view(view), name=name))
+        custom_urls = [
+            path('sync-menu/', self.admin_view(sync_menu), name='sync_menu'),
+            path('profile/', self.admin_view(UserProfile.as_view()), name='profile'),
+            path('cmfadmin/site/', self.admin_view(SiteInfoView.as_view()), name='site_config'),
+            path('cmfadmin/email/', self.admin_view(EmailConfigView.as_view()), name='email_config'),
+            path('cmfadmin/icons/', self.admin_view(SpriteManagerView.as_view()), name='icons_manage'),
+            path('cmfadmin/nav/<int:pk>/', self.admin_view(nav_items_edit), name='nav_items_edit'),
+            path('cmfadmin/nav/navitem/<int:nav_id>/<int:nav_item_id>/', self.admin_view(NavItemView.as_view()), name='navitem'),
+            path('cmfadmin/files/', self.admin_view(FileManagementView.as_view()), name='file_management'),
+            path('cmfadmin/upload/', self.admin_view(UploadSettingView.as_view()), name='upload'),
+            path('cmfadmin/upload-file/', self.admin_view(UploadFileView.as_view()), name='upload_file'),  # File upload URL, used by AJAX
+        ]
 
         return custom_urls + super().get_urls()
 

@@ -263,29 +263,4 @@ document.addEventListener('DOMContentLoaded', function () {
             onError: err => showToast(err, ToastType.ERROR)
         });
     });
-
-    // Delete file button
-    document.querySelectorAll('.delete-file-btn').forEach(btn => {
-        btn.addEventListener('click', async function () {
-            const filePath = btn.dataset.path;
-            if (!filePath) return;
-
-            if (!await Dialog.warning(gettext('Are you sure you want to delete this file?'), gettext('Confirm to delete'))) return;
-
-            const previewId = btn.dataset.preview;
-            const inputId = btn.dataset.input;
-
-            if (previewId) {
-                const imgEl = document.querySelector(previewId);
-                if (imgEl) imgEl.src = window.DEFAULT_IMG;
-            }
-
-            if (inputId) {
-                const inputEl = document.querySelector(inputId);
-                if (inputEl) inputEl.value = "";
-            }
-
-            FileManager.delete(filePath, {btn});
-        });
-    });
 });

@@ -13,10 +13,11 @@ Created:
 
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
+from django.core.paginator import Paginator
 
 from cmfadmin.constants import UPLOAD_FILE_CONFIG
 from cmfadmin.enums import FileType
-from cmfadmin.libs.upload import Upload, UploadResult
+from cmfadmin.libs.upload import UploadResult, Upload
 from cmfadmin.models import UploadFile
 from cmfadmin.service.config import ConfigService
 from cmfadmin.utils.tools import int_to_bytes
@@ -112,3 +113,53 @@ class UploadService:
             Upload.delete(file_path)
             return True
         return False
+
+    @staticmethod
+    def list(page: int = 1, page_size: int = 20) -> dict:
+        """
+        List uploaded files, paginated.
+        Returns a list of UploadResult objects.
+        """
+        qs = UploadFile.objects.all().order_by('-created_at')
+        paginator = Paginator(qs, page_size)
+        page_obj = paginator.get_page(page)
+
+        results = [
+            UploadResult(
+                path=f.path,
+                filename=f.filename,
+                size=int_to_bytes(f.size),
+                mime_type=f.mime_type,
+                original_name=f.original_name,
+                hash=f.hash,
+                create_at=f.created_at
+            )
+            for f in page_obj.object_list
+        ]
+
+        return {
+            "page": page_obj,
+            "elided_range": page_obj.paginator.get_elided_page_range(number=page_obj.number),
+            "files": [r.to_dict() for r in results],
+        }
+
+    @staticmethod
+    def get(file_id: int) -> UploadResult | None:
+        """
+        Get a single uploaded file by ID.
+        Returns UploadResult if found, else None.
+        """
+        try:
+            f = UploadFile.objects.get(id=file_id)
+        except UploadFile.DoesNotExist:
+            return None
+
+        return UploadResult(
+            path=f.path,
+            filename=f.filename,
+            size=f.size,
+            mime_type=f.mime_type,
+            original_name=f.original_name,
+            hash=f.hash,
+            create_at=f.created_at
+        )

@@ -45,7 +45,7 @@
                             <label class="col-2 col-form-label">{% translate 'Site logo' %}</label>
                             <div class="col-auto">
                                 <img src="{% if config.site_logo %}{% media_url config.site_logo %}{% else %}
-                                {% static 'admin/svg/photo.svg' %}{% endif %}"
+                                {% static 'admin/svg/photo-up.svg' %}{% endif %}"
                                      class="logo-img" id="img-logo" alt="{% translate 'Site logo' %}">
                             </div>
                             <div class="col-auto">
@@ -129,7 +129,7 @@
                             <label class="col-2 col-form-label">{% translate 'WeChat QRCode' %}</label>
                             <div class="col-auto">
                                 <img src="{% if config.wechat_qrcode %}{% media_url config.wechat_qrcode %}{% else %}
-                                {% static 'admin/svg/photo.svg' %}{% endif %}"
+                                {% static 'admin/svg/photo-up.svg' %}{% endif %}"
                                      class="logo-img" id="qrcode" alt="{% translate 'WeChat QRCode' %}">
                             </div>
                             <div class="col-auto">

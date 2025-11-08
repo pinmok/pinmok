@@ -20,8 +20,8 @@
                 {% for key, ft in upload_file_config.items %}
                     <div class="mb-3 row">
                         <label class="col-2 col-form-label text-end" for="{{ ft.size_key }}">
-                            {% blocktranslate with file_type_name=key %}
-                                Max {{ key }} file size
+                            {% blocktranslate trimmed with file_type_name=ft.key_value %}
+                                Max {{ file_type_name }} file size
                             {% endblocktranslate %}
                         </label>
                         <div class="col-md-2 col-sm-9">

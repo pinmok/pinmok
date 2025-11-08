@@ -48,22 +48,20 @@
         <div class="card-header">
             <div class="card-stamp">
                 <div class="card-stamp-icon bg-yellow">
-                    {% sprite 'tabler-plant' 'icon icon-tabler icons-tabler-outline icon-tabler-filters' %}
+                    {% sprite 'tabler-table' 'icon icon-tabler icons-tabler-outline icon-tabler-filters' %}
                 </div>
             </div>
             <div class="row w-full align-items-center">
                 <div class="col-8">
-                    {# [search_form.html] Search and object tools #}
-                    {% block search %}{% search_form cl %}{% endblock %}
+                    {% block search %} {% search_form cl %} {% endblock %}
                     {% block date_hierarchy %}{% if cl.date_hierarchy %}{% date_hierarchy cl %}{% endif %}{% endblock %}
                 </div>
-                {# Form errors alert #}
                 {% if cl.formset and cl.formset.errors %}
                     <div class="alert alert-danger mt-2">
                         <div class="alert-icon">{% sprite 'tabler-alert-circle' 'icon alert-icon' %}</div>
-                        {% blocktranslate count counter=cl.formset.total_error_count %}Please correct the error below.{% plural %}Please
-                            correct
-                            the errors below.{% endblocktranslate %}
+                        {% blocktranslate trimmed count counter=cl.formset.total_error_count %}
+                            Please correct the error below.{% plural %}Please correct the errors below.
+                        {% endblocktranslate %}
                         {{ cl.formset.non_form_errors }}
                     </div>
                 {% endif %}

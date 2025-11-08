@@ -30,7 +30,7 @@
                             {% if form.errors and not form.non_field_errors %}
                                 <div class="card-header">
                                     <p class="alert alert-danger">
-                                        {% blocktranslate count counter=form.errors.items|length %}
+                                        {% blocktranslate trimmed count counter=form.errors.items|length %}
                                             Please correct the error below.
                                         {% plural %}
                                             Please correct the errors below.

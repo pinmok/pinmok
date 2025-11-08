@@ -14,7 +14,7 @@
             <h2 class="page-title">
                 {% if result.total_created > 0 %}
                     <span class="text-success">
-                        {% blocktranslate with count=result.total_created %}
+                        {% blocktranslate trimmed with count=result.total_created %}
                             Successfully synchronized <strong>{{ count }}</strong> menu items.
                         {% endblocktranslate %}
                     </span>

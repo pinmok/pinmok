@@ -263,4 +263,5 @@ class UploadFile(models.Model):
             mime_type=self.mime_type,
             original_name=self.original_name,
             hash=self.hash,
+            create_at=self.created_at,
         )

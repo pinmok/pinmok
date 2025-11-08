@@ -585,9 +585,13 @@ class PermissionRequiredMixin(DjangoPermissionMixin):
             permission_required = ["app_label.codename", "menu_code"]
     """
     request: HttpRequest  # type hint for IDE
+    superuser_only: bool = False
 
     def has_permission(self) -> bool:
         """Core permission check logic."""
+        if self.superuser_only:
+            return self.request.user.is_superuser
+        
         if not self.permission_required:
             return True  # Allow by default if not specified
 

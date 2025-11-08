@@ -18,11 +18,7 @@
                         <use href="{% static 'admin/svg/crazy_logo.svg' %}"></use>
                     </svg>
                 {% endif %}
-                <span class="ms-2 text-body">
-                    {% block branding %}
-                        {{ site_header }}
-                    {% endblock %}
-                </span>
+                <span class="ms-2 text-body">{{ site_header }}</span>
             </a>
         </div>
         <!-- END NAVBAR LOGO -->
@@ -146,9 +142,9 @@
             <div class="modal-status bg-danger"></div>
             <div class="modal-body text-center py-4">
                 {% sprite 'tabler-alert-triangle' 'icon mb-2 text-danger icon-lg' %}
-                <h3 class="text-uppercase">{% translate 'Warning!' %}</h3>
+                <h3 class="text-uppercase">{% translate 'Warning' %}</h3>
                 <div class="text-secondary text-start">
-                    {% blocktranslate %}
+                    {% blocktranslate trimmed %}
                         Synchronizing the menu will reload the menu configuration and reset all menu items. This action cannot be undone!
                         Please proceed with caution if you have made any adjustments to the menus!
                     {% endblocktranslate %}
