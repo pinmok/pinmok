@@ -14,8 +14,6 @@ Created:
 from dataclasses import field, dataclass
 from typing import TypeVar, Generic, Callable, Any, Mapping
 
-from django.utils.translation import gettext_lazy as _
-
 # Generic type for TreeNode subclasses
 T = TypeVar("T", bound="TreeNode[Any]")
 
@@ -43,9 +41,7 @@ class TreeNode(Generic[T]):
     def add_child(self, child: T) -> None:
         """Add a single child node to this node."""
         if child.parent_id != self.id:
-            raise ValueError(
-                f"Child node {child.id} parent_id mismatch: expected {self.id}, got {child.parent_id}"
-            )
+            raise ValueError(f"Child node {child.id} parent_id mismatch: expected {self.id}, got {child.parent_id}")
         self.children.append(child)
 
     def add_children(self, *children: T) -> None:
@@ -190,7 +186,7 @@ class TreeNode(Generic[T]):
             ValueError: If both 'include' and 'exclude' are provided.
         """
         if include and exclude:
-            raise ValueError(_("Cannot specify both 'include' and 'exclude'."))
+            raise ValueError("Cannot specify both 'include' and 'exclude'.")
 
         field_names = self.__annotations__.keys()
 

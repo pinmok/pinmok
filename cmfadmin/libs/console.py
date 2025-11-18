@@ -39,7 +39,7 @@ class Console:
         print(cls._format("INFO", cls.CYAN, msg))
 
     @classmethod
-    def warn(cls, msg: str):
+    def warning(cls, msg: str):
         print(cls._format("WARNING", cls.YELLOW, msg))
 
     @classmethod

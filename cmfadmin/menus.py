@@ -15,7 +15,7 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext as _
 
 from cmfadmin import constants
 from cmfadmin import site
@@ -113,7 +113,7 @@ class AdminMenuManager:
         """
 
         if not user.is_superuser:
-            raise PermissionDenied(_('Only superusers are allowed to perform this action.'))
+            raise PermissionDenied('Only superusers are allowed to perform this action.')
 
         cls._clear_admin_menu_cache()
         return MenuSynchronizer.synchronize_menu(app_label=app_label)

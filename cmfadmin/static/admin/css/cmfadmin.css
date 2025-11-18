@@ -5,3 +5,11 @@ body {
 .logo-img {
     height: 4rem;
 }
+
+th.action-checkbox-column {
+    width: 1rem;
+}
+
+th.column-sort_order {
+    width: 8rem;
+}

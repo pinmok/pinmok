@@ -24,7 +24,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.http import HttpRequest
 from django.utils.functional import Promise
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext as _
 
 from cmfadmin.enums import PermissionSource, MenuPermissions
 from cmfadmin.libs import TreeNode
@@ -104,15 +104,15 @@ class PermissionRegistry:
 
         codes = [p.get("code") for p in permissions]
         if not all(codes):
-            raise ValidationError(_("Each permission must have a non-empty 'code'."))
+            raise ValidationError("Each permission must have a non-empty 'code'.")
         if len(set(codes)) != len(codes):
-            raise ValidationError(_("Duplicate permission codes in input."))
+            raise ValidationError("Duplicate permission codes in input.")
 
         # Optional: check against already registered codes
         existing_codes = {p["code"] for p in cls._registry}
         duplicates = set(codes) & existing_codes
         if duplicates:
-            raise ValidationError(_("Duplicate codes already registered: %(codes)s") % {"codes": ", ".join(duplicates)})
+            raise ValidationError(f"Duplicate codes already registered: {', '.join(duplicates)}")
 
         # Add to registry
         cls._registry.extend(permissions)
@@ -134,7 +134,7 @@ class PermissionRegistry:
             attr_name: attribute or method name that returns the custom permission queryset
         """
         if not model_class or not attr_name:
-            raise ValidationError(_("Both model_class and attr_name are required."))
+            raise ValidationError("Both model_class and attr_name are required.")
         cls._source_map[model_class] = attr_name
 
     @classmethod
@@ -432,7 +432,7 @@ class PermissionService:
         # Validate that the field exists
         if not hasattr(user_or_group, field_name):
             raise AttributeError(
-                _(f"Model '{user_or_group.__class__.__name__}' must define a ManyToMany field '{field_name}'")
+                f"Model '{user_or_group.__class__.__name__}' must define a ManyToMany field '{field_name}'"
             )
 
         manager = getattr(user_or_group, field_name)
@@ -591,7 +591,7 @@ class PermissionRequiredMixin(DjangoPermissionMixin):
         """Core permission check logic."""
         if self.superuser_only:
             return self.request.user.is_superuser
-        
+
         if not self.permission_required:
             return True  # Allow by default if not specified
 

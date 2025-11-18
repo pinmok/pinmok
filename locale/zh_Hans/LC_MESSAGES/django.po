@@ -1,1007 +1,968 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# DjangoCMF translations.
+# Copyright (C) 2025 DjangoCMF
+# This file is distributed under the same license as the DjangoCMF package.
+# 惠达浪 <crazys@126.com>, 2025.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: DjangoCMF 1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-11-08 13:03+0800\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2025-11-17 00:54+0800\n"
+"Last-Translator: 惠达浪 <crazys@126.com>\n"
+"Language-Team: DjangoCMF Team\n"
+"Language: zh-cn\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-msgid "\"Test\" String"
-msgstr ""
-
 #: .\cmfadmin\admin.py:96
 msgid "Edit Menu"
-msgstr ""
+msgstr "编辑菜单"
 
 #: .\cmfadmin\apps.py:20
 msgid "CMF Admin"
-msgstr ""
+msgstr "CMF 管理"
 
 #: .\cmfadmin\constants.py:93
 msgid "Success"
-msgstr ""
+msgstr "成功"
 
 #: .\cmfadmin\constants.py:94
 msgid "Error"
-msgstr ""
+msgstr "错误"
 
 #: .\cmfadmin\constants.py:95
 msgid "Bad request."
-msgstr ""
+msgstr "错误请求。"
 
 #: .\cmfadmin\constants.py:96
 msgid "Validation failed."
-msgstr ""
+msgstr "验证失败。"
 
 #: .\cmfadmin\constants.py:97
 msgid "Resource not found."
-msgstr ""
+msgstr "资源未找到。"
 
 #: .\cmfadmin\constants.py:98
 msgid "Permission denied."
-msgstr ""
+msgstr "权限被拒绝。"
 
 #: .\cmfadmin\constants.py:99
 msgid "Internal server error."
-msgstr ""
+msgstr "服务器内部错误。"
 
 #: .\cmfadmin\libs\sprite.py:86
 #, python-format
 msgid "Failed to save sprite file: %s"
-msgstr ""
+msgstr "保存精灵图文件失败: %s"
 
 #: .\cmfadmin\libs\sprite.py:131
 msgid "File already exists"
-msgstr ""
+msgstr "文件已经存在"
 
 #: .\cmfadmin\libs\sprite.py:144
 #, python-format
 msgid "symbol_id \"%(symbol_id)s\" already exists"
-msgstr ""
+msgstr "symbol_id \"%(symbol_id)s\" 已存在"
 
 #: .\cmfadmin\libs\sprite.py:157
 #, python-format
 msgid "Failed to add symbol: %s"
-msgstr ""
+msgstr "添加符号失败: %s"
 
 #: .\cmfadmin\libs\sprite.py:165
 #, python-format
 msgid "symbol_id '%(symbol_id)s' not found, cannot delete"
-msgstr ""
+msgstr "未找到symbol_id '%(symbol_id)s'，无法删除"
 
 #: .\cmfadmin\libs\sprite.py:171
 #, python-format
 msgid "Failed to remove symbol: %s"
-msgstr ""
+msgstr "移除符号失败: %s"
 
 #: .\cmfadmin\libs\tree.py:193
 msgid "Cannot specify both 'include' and 'exclude'."
-msgstr ""
+msgstr "不能同时指定 'include' 和 'exclude'。"
 
 #: .\cmfadmin\libs\upload.py:38
 msgid "By Date: YYYY/MM/DD — For frequent uploads"
-msgstr ""
+msgstr "按日期: YYYY/MM/DD — 适合频繁上传"
 
 #: .\cmfadmin\libs\upload.py:39
 msgid "By Month: YYYY/MM — For blogs or infrequent uploads"
-msgstr ""
+msgstr "按月份: YYYY/MM — 适合博客或不频繁上传"
 
 #: .\cmfadmin\libs\upload.py:40
 msgid "By Count: 1000 files/folder — For large datasets"
-msgstr ""
+msgstr "按数量: 每文件夹 1000 个文件 — 适合大数据集"
 
 #: .\cmfadmin\libs\upload.py:41
 msgid "Custom: Reserved for advanced rules"
-msgstr ""
+msgstr "自定义: 预留给高级规则"
 
 #: .\cmfadmin\libs\upload.py:112
 msgid "Custom path rule requires a path"
-msgstr ""
+msgstr "自定义路径规则需要指定路径"
 
 #: .\cmfadmin\menus.py:116
 msgid "Only superusers are allowed to perform this action."
-msgstr ""
+msgstr "只有超级管理员才能执行此操作。"
 
 #: .\cmfadmin\models.py:31
 msgid "Stable hash used to uniquely identify this menu item, based on URL and parent id."
-msgstr ""
+msgstr "基于 URL 和父级 ID计算出的稳定哈希值，用于唯一标识此菜单项。"
 
 #: .\cmfadmin\models.py:32 .\cmfadmin\models.py:134 .\cmfadmin\models.py:159
 msgid "Title"
-msgstr ""
+msgstr "标题"
 
 #: .\cmfadmin\models.py:33
 msgid "Menu title displayed in the admin."
-msgstr ""
+msgstr "在管理后台显示的菜单标题。"
 
 #: .\cmfadmin\models.py:35
 msgid "URL or named route for the menu item."
-msgstr ""
+msgstr "菜单项的 URL 或命名路由。"
 
 #: .\cmfadmin\models.py:36 .\cmfadmin\templates\config\navitem_form.html:49
 msgid "Icon"
-msgstr ""
+msgstr "图标"
 
 #: .\cmfadmin\models.py:37
 msgid "Icon class for the menu item."
-msgstr ""
+msgstr "菜单项的图标类。"
 
 #: .\cmfadmin\models.py:39 .\cmfadmin\templates\config\navitem_form.html:26
 msgid "Parent Menu"
-msgstr ""
+msgstr "父级菜单"
 
 #: .\cmfadmin\models.py:40
 msgid "Parent menu for hierarchical structure."
-msgstr ""
+msgstr "用于层级结构的父级菜单。"
 
 #: .\cmfadmin\models.py:42
 msgid "Application label associated with this menu item."
-msgstr ""
+msgstr "与该菜单项关联的应用标签。"
 
 #: .\cmfadmin\models.py:43 .\cmfadmin\models.py:142 .\cmfadmin\models.py:197
 #: .\cmfadmin\templates\config\navitem_form.html:53
 msgid "Sort Order"
-msgstr ""
+msgstr "排序顺序"
 
 #: .\cmfadmin\models.py:44
 msgid "Order for menu sorting."
-msgstr ""
+msgstr "菜单排序顺序。"
 
 #: .\cmfadmin\models.py:45
 msgid "Active"
-msgstr ""
+msgstr "激活"
 
 #: .\cmfadmin\models.py:46
 msgid "Whether this menu is active and visible."
-msgstr ""
+msgstr "指示此菜单是否激活和可见。"
 
 #: .\cmfadmin\models.py:47 .\cmfadmin\templates\config\navitem_form.html:62
 msgid "Visible"
-msgstr ""
+msgstr "可见"
 
 #: .\cmfadmin\models.py:48
 msgid "Whether this menu is visible."
-msgstr ""
+msgstr "指示此菜单是否可见。"
 
 #: .\cmfadmin\models.py:49 .\cmfadmin\models.py:112
 msgid "Remark"
-msgstr ""
+msgstr "备注"
 
 #: .\cmfadmin\models.py:50
 msgid "Additional notes or comments about this menu item."
-msgstr ""
+msgstr "关于该菜单项的附加说明或备注。"
 
 #: .\cmfadmin\models.py:51 .\cmfadmin\models.py:116 .\cmfadmin\models.py:168
 #: .\cmfadmin\models.py:203
 msgid "Updated At"
-msgstr ""
+msgstr "更新时间"
 
 #: .\cmfadmin\models.py:52
 msgid "Time when this menu item was last updated."
-msgstr ""
+msgstr "该菜单项的最后更新时间。"
 
 #: .\cmfadmin\models.py:56
 msgid "Admin Menu"
-msgstr ""
-
-#: .\cmfadmin\models.py:57
-msgid "Admin Menus"
-msgstr ""
+msgid_plural "Admin Menus"
+msgstr[0] "管理菜单"
+msgstr[1] "管理菜单"
 
 #: .\cmfadmin\models.py:76
 msgid "Menu Permission"
-msgstr ""
-
-#: .\cmfadmin\models.py:77
-msgid "Menu Permissions"
-msgstr ""
+msgid_plural "Menu Permissions"
+msgstr[0] "菜单权限"
+msgstr[1] "菜单权限"
 
 #: .\cmfadmin\models.py:109
 msgid "Category"
-msgstr ""
+msgstr "分类"
 
 #: .\cmfadmin\models.py:109
 msgid "Configuration category."
-msgstr ""
+msgstr "配置分类。"
 
 #: .\cmfadmin\models.py:110
 msgid "Key"
-msgstr ""
+msgstr "键"
 
 #: .\cmfadmin\models.py:110
 msgid "Unique configuration key."
-msgstr ""
+msgstr "配置的唯一键。"
 
 #: .\cmfadmin\models.py:111
 msgid "Value"
-msgstr ""
+msgstr "值"
 
 #: .\cmfadmin\models.py:111
 msgid "Configuration value."
-msgstr ""
+msgstr "配置值。"
 
 #: .\cmfadmin\models.py:113
 msgid "Additional notes about this configuration item."
-msgstr ""
+msgstr "关于该配置项的附加说明。"
 
 #: .\cmfadmin\models.py:114 .\cmfadmin\models.py:166 .\cmfadmin\models.py:201
 #: .\cmfadmin\models.py:233
 msgid "Created At"
-msgstr ""
+msgstr "创建时间"
 
 #: .\cmfadmin\models.py:115
 msgid "Time when this configuration was created."
-msgstr ""
+msgstr "该配置的创建时间。"
 
 #: .\cmfadmin\models.py:117
 msgid "Time when this configuration was last updated."
-msgstr ""
+msgstr "该配置的最后更新时间。"
 
 #: .\cmfadmin\models.py:123
 msgid "Configuration Item"
-msgstr ""
-
-#: .\cmfadmin\models.py:124
-msgid "Configuration Items"
-msgstr ""
+msgid_plural "Configuration Items"
+msgstr[0] "配置项"
+msgstr[1] "配置项"
 
 #: .\cmfadmin\models.py:135
 msgid "The title for the external link."
-msgstr ""
+msgstr "友情链接标题。"
 
 #: .\cmfadmin\models.py:137
 msgid "The URL for the external link."
-msgstr ""
+msgstr "友情链接 URL。"
 
 #: .\cmfadmin\models.py:139
 msgid "The image associated with the external link."
-msgstr ""
+msgstr "与友情链接相关联的图片。"
 
-#: .\cmfadmin\models.py:140
-#: .\cmfadmin\templates\admin\auth\user\profile.html:68
+#: .\cmfadmin\models.py:140 .\cmfadmin\templates\admin\auth\user\profile.html:68
 msgid "Status"
-msgstr ""
+msgstr "状态"
 
 #: .\cmfadmin\models.py:141
 msgid "Indicates whether this link is active."
-msgstr ""
+msgstr "指示此链接是否处于激活状态。"
 
 #: .\cmfadmin\models.py:143
 msgid "Determines the display order of the link."
-msgstr ""
+msgstr "决定链接的显示顺序。"
 
 #: .\cmfadmin\models.py:147
 msgid "External Link"
-msgstr ""
+msgstr "友情链接"
 
 #: .\cmfadmin\models.py:148
 msgid "External Links"
-msgstr ""
+msgstr "友情链接"
 
 #: .\cmfadmin\models.py:160
 msgid "The title for the navigation."
-msgstr ""
+msgstr "导航标题。"
 
 #: .\cmfadmin\models.py:161
 msgid "Slug"
-msgstr ""
+msgstr "别名/短标识"
 
 #: .\cmfadmin\models.py:162
-msgid "A short unique identifier used in URLs and templates. Only letters, numbers,"
+msgid ""
+"A short unique identifier used in URLs and templates. Only letters, numbers,"
 " hyphens, and underscores are allowed."
-msgstr ""
+msgstr "用于 URL 和模板的短唯一标识符。仅允许字母、数字、连字符和下划线。"
 
 #: .\cmfadmin\models.py:164
 msgid "Is Active"
-msgstr ""
+msgstr "是否激活"
 
 #: .\cmfadmin\models.py:165
 msgid "Whether this navigation is active."
-msgstr ""
+msgstr "指示此导航是否处于激活状态。"
 
 #: .\cmfadmin\models.py:167
 msgid "Time when this navigation was created."
-msgstr ""
+msgstr "此导航的创建时间。"
 
 #: .\cmfadmin\models.py:169
 msgid "Time when this navigation was last updated."
-msgstr ""
+msgstr "此导航的最后更新时间。"
 
 #: .\cmfadmin\models.py:172 .\cmfadmin\models.py:186
 msgid "Navigation"
-msgstr ""
+msgstr "导航"
 
 #: .\cmfadmin\models.py:173
 msgid "Navigations"
-msgstr ""
+msgstr "导航列表"
 
 #: .\cmfadmin\models.py:186
 msgid "Navigation container."
-msgstr ""
+msgstr "导航容器。"
 
 #: .\cmfadmin\models.py:188
 msgid "Parent Item"
-msgstr ""
+msgstr "父级项"
 
 #: .\cmfadmin\models.py:188
 msgid "Parent item for hierarchical structure."
-msgstr ""
+msgstr "用于层级结构的父级项。"
 
 #: .\cmfadmin\models.py:189 .\cmfadmin\templates\config\navigation.html:20
 #: .\cmfadmin\templates\config\navitem_form.html:22
 msgid "Name"
-msgstr ""
+msgstr "名称"
 
 #: .\cmfadmin\models.py:190
 msgid "Name of the navigation item."
-msgstr ""
+msgstr "导航项的名称。"
 
 #: .\cmfadmin\models.py:192
 msgid "URL for this navigation item."
-msgstr ""
+msgstr "导航项的 URL。"
 
 #: .\cmfadmin\models.py:193
 msgid "Icon Class"
-msgstr ""
+msgstr "图标类"
 
 #: .\cmfadmin\models.py:194
 msgid "Icon class for this navigation item."
-msgstr ""
+msgstr "导航项的图标类名。"
 
 #: .\cmfadmin\models.py:196 .\cmfadmin\templates\config\navitem_form.html:41
 msgid "Target"
-msgstr ""
+msgstr "打开方式"
 
 #: .\cmfadmin\models.py:196
 msgid "Target behavior when opening the link."
-msgstr ""
+msgstr "打开链接时的目标行为。"
 
 #: .\cmfadmin\models.py:198
 msgid "Order for navigation item sorting."
-msgstr ""
+msgstr "导航项排序顺序。"
 
-#: .\cmfadmin\models.py:199 .\cmfadmin\templates\config\navitem_form.html:58
+#: .\cmfadmin\models.py:199
+#: .\cmfadmin\templates\config\navitem_form.html:58
 msgid "Is Visible"
-msgstr ""
+msgstr "是否可见"
 
 #: .\cmfadmin\models.py:200
 msgid "Whether this item is visible."
-msgstr ""
+msgstr "指示此项是否可见。"
 
 #: .\cmfadmin\models.py:202
 msgid "Time when this navigation item was created."
-msgstr ""
+msgstr "该导航项的创建时间。"
 
 #: .\cmfadmin\models.py:204
 msgid "Time when this navigation item was last updated."
-msgstr ""
+msgstr "该导航项的最后更新时间。"
 
 #: .\cmfadmin\models.py:207
 msgid "Navigation Item"
-msgstr ""
-
-#: .\cmfadmin\models.py:208
-msgid "Navigation Items"
-msgstr ""
+msgid_plural "Navigation Items"
+msgstr[0] "导航项"
+msgstr[1] "导航项"
 
 #: .\cmfadmin\models.py:220
 msgid "Uploader"
-msgstr ""
+msgstr "上传者"
 
 #: .\cmfadmin\models.py:220
 msgid "The user who uploaded the file (optional)."
-msgstr ""
+msgstr "上传该文件的用户（可选）。"
 
 #: .\cmfadmin\models.py:221 .\cmfadmin\templates\config\files.html:12
 msgid "Filename"
-msgstr ""
+msgstr "文件名"
 
 #: .\cmfadmin\models.py:222
 msgid "Saved file name including extension."
-msgstr ""
+msgstr "保存的文件名（包含扩展名）。"
 
 #: .\cmfadmin\models.py:223 .\cmfadmin\templates\config\files.html:14
 msgid "Original Name"
-msgstr ""
+msgstr "原始名称"
 
 #: .\cmfadmin\models.py:224
 msgid "Original file name before upload."
-msgstr ""
+msgstr "上传前的原始文件名。"
 
 #: .\cmfadmin\models.py:225
 msgid "Path"
-msgstr ""
+msgstr "路径"
 
 #: .\cmfadmin\models.py:226
 msgid "Relative path to the saved file."
-msgstr ""
+msgstr "保存文件的相对路径。"
 
 #: .\cmfadmin\models.py:227
 msgid "MIME Type"
-msgstr ""
+msgstr "MIME 类型"
 
 #: .\cmfadmin\models.py:228
 msgid "MIME type of the uploaded file."
-msgstr ""
+msgstr "上传文件的 MIME 类型。"
 
 #: .\cmfadmin\models.py:229 .\cmfadmin\templates\config\files.html:13
 msgid "Size"
-msgstr ""
+msgstr "大小"
 
 #: .\cmfadmin\models.py:230
 msgid "File size in bytes."
-msgstr ""
+msgstr "文件大小（字节）。"
 
 #: .\cmfadmin\models.py:231
 msgid "Hash"
-msgstr ""
+msgstr "哈希值"
 
 #: .\cmfadmin\models.py:232
 msgid "SHA-256 hash of the file content."
-msgstr ""
+msgstr "文件内容的 SHA-256 哈希值。"
 
 #: .\cmfadmin\models.py:234
 msgid "Upload timestamp."
-msgstr ""
+msgstr "上传时间戳。"
 
 #: .\cmfadmin\models.py:237
 msgid "Uploaded File"
-msgstr ""
-
-#: .\cmfadmin\models.py:238
-msgid "Uploaded Files"
-msgstr ""
-
-#: .\cmfadmin\service\authorization.py:107
-msgid "Each permission must have a non-empty 'code'."
-msgstr ""
-
-#: .\cmfadmin\service\authorization.py:109
-msgid "Duplicate permission codes in input."
-msgstr ""
-
-#: .\cmfadmin\service\authorization.py:115
-#, python-format
-msgid "Duplicate codes already registered: %(codes)s"
-msgstr ""
-
-#: .\cmfadmin\service\authorization.py:137
-msgid "Both model_class and attr_name are required."
-msgstr ""
+msgid_plural "Uploaded Files"
+msgstr[0] "上传文件"
+msgstr[1] "上传文件"
 
 #: .\cmfadmin\service\email.py:113
 msgid "This email template requires variables, but none were provided."
-msgstr ""
-
-#: .\cmfadmin\service\email.py:118
-msgid "Missing required template variables: "
-msgstr ""
+msgstr "此邮件模板需要变量，但未提供任何变量。"
 
 #: .\cmfadmin\templates\400.html:9
 msgid "Oops… Bad Request"
-msgstr ""
+msgstr "哎呀……错误的请求"
 
 #: .\cmfadmin\templates\400.html:12
 msgid "The server could not understand your request due to invalid syntax."
-msgstr ""
+msgstr "由于请求语法无效，服务器无法理解您的请求。"
 
 #: .\cmfadmin\templates\400.html:17 .\cmfadmin\templates\403.html:17
 #: .\cmfadmin\templates\404.html:173 .\cmfadmin\templates\500.html:17
 msgid "Take me back or home"
-msgstr ""
+msgstr "返回上一页或首页"
 
 #: .\cmfadmin\templates\403.html:9
 msgid "Oops… Permission denied"
-msgstr ""
+msgstr "哎呀……因为权限被拒绝"
 
 #: .\cmfadmin\templates\403.html:12
 msgid "We are sorry but you don’t have permission to visit this page."
-msgstr ""
+msgstr "抱歉，您没有权限访问此页面。"
 
 #: .\cmfadmin\templates\404.html:165 .\cmfadmin\templates\500.html:9
 msgid "Oops… You just found an error page"
-msgstr ""
+msgstr "哎呀……您遇到了一个错误页面"
 
 #: .\cmfadmin\templates\404.html:168
 msgid "We are sorry but the page you are looking for was not found."
-msgstr ""
+msgstr "抱歉，您访问的页面不存在。"
 
 #: .\cmfadmin\templates\500.html:12
 msgid "We are sorry but our server encountered an internal error"
-msgstr ""
+msgstr "抱歉，服务器遇到内部错误。"
 
 #: .\cmfadmin\templates\admin\auth\user\profile.html:8
 #: .\cmfadmin\templates\admin\base_site.html:62
 msgid "Profile"
-msgstr ""
+msgstr "用户资料"
 
 #: .\cmfadmin\templates\admin\auth\user\profile.html:44
 msgid "Base Profile"
-msgstr ""
+msgstr "基本资料"
 
 #: .\cmfadmin\templates\admin\auth\user\profile.html:47
 msgid "First Name"
-msgstr ""
+msgstr "名"
 
 #: .\cmfadmin\templates\admin\auth\user\profile.html:52
 msgid "Last Name"
-msgstr ""
+msgstr "姓"
 
 #: .\cmfadmin\templates\admin\auth\user\profile.html:63
 msgid "You can click the button below to go to the password change page."
-msgstr ""
+msgstr "您可以点击下方按钮前往密码修改页面。"
 
 #: .\cmfadmin\templates\admin\auth\user\profile.html:70
 msgid "Current user identity and status."
-msgstr ""
+msgstr "当前用户身份与状态。"
 
 #: .\cmfadmin\templates\admin\auth\user\profile.html:74
 msgid "Super user"
-msgstr ""
+msgstr "超级用户"
 
 #: .\cmfadmin\templates\admin\auth\user\profile.html:76
 msgid "Normal user"
-msgstr ""
+msgstr "普通用户"
 
 #: .\cmfadmin\templates\admin\auth\user\profile.html:79
 msgid "Is staff"
-msgstr ""
+msgstr "是否为员工"
 
 #: .\cmfadmin\templates\admin\auth\user\user_add.html:11
 msgid "After you’ve created a user, you’ll be able to edit more user options."
-msgstr ""
+msgstr "创建用户后，您将能够编辑更多用户选项。"
 
 #: .\cmfadmin\templates\admin\auth\user\user_change_form.html:15
 msgid "Groups"
-msgstr ""
+msgstr "用户组"
 
 #: .\cmfadmin\templates\admin\base_site.html:54
 msgid "Superuser"
-msgstr ""
+msgstr "超级用户"
 
 #: .\cmfadmin\templates\admin\base_site.html:56
 msgid "Staff"
-msgstr ""
+msgstr "员工"
 
 #: .\cmfadmin\templates\admin\change_form.html:4
 #: .\cmfadmin\templates\admin\change_list.html:4
 #: .\cmfadmin\templates\admin\login.html:4
 #: .\cmfadmin\templates\registration\password_change_form.html:6
 msgid "Error:"
-msgstr ""
+msgstr "错误："
 
 #: .\cmfadmin\templates\admin\delete_selected_confirmation.html:44
 #, python-format
 msgid ""
 "Are you sure you want to delete the selected %(objects_name)s? All the "
 "following objects and their related items will be deleted:"
-msgstr ""
+msgstr "确定要删除选中的 %(objects_name)s 吗？以下对象及其关联项都将被删除："
 
 #: .\cmfadmin\templates\admin\filter.html:6
 #, python-format
 msgid "By %(filter_title)s"
-msgstr ""
+msgstr "按 %(filter_title)s 筛选"
 
 #: .\cmfadmin\templates\admin\includes\footer.html:33
 msgid "Based on Tabler"
-msgstr ""
-
-#: .\cmfadmin\templates\admin\includes\sidebar.html:38
-msgid "Synchronize menu"
-msgstr ""
+msgstr "基于 Tabler 制作"
 
 #: .\cmfadmin\templates\admin\includes\sidebar.html:145
 msgid "Warning"
-msgstr ""
+msgstr "警告"
 
 #: .\cmfadmin\templates\admin\includes\sidebar.html:147
 msgid ""
 "Synchronizing the menu will reload the menu configuration and reset all menu"
 " items. This action cannot be undone! Please proceed with caution if you "
 "have made any adjustments to the menus!"
-msgstr ""
+msgstr "同步菜单操作将重新加载菜单配置，并重置所有菜单项。此操作无法撤销！如果您对菜单进行了调整，请谨慎操作！"
 
 #: .\cmfadmin\templates\admin\includes\sidebar.html:157
 #: .\cmfadmin\templates\component\cropper.html:68
 #: .\cmfadmin\templates\config\navigation.html:58
 msgid "Cancel"
-msgstr ""
+msgstr "取消"
 
 #: .\cmfadmin\templates\admin\includes\sidebar.html:160
 #: .\cmfadmin\templates\config\navigation.html:62
 msgid "Confirm"
-msgstr ""
+msgstr "确认"
 
 #: .\cmfadmin\templates\admin\index.html:9
 msgid "Dashboard"
-msgstr ""
+msgstr "仪表盘"
 
 #: .\cmfadmin\templates\admin\index.html:28
 msgid "System Information"
-msgstr ""
+msgstr "系统信息"
 
 #: .\cmfadmin\templates\admin\index.html:32
 msgid "Operating System"
-msgstr ""
+msgstr "操作系统"
 
 #: .\cmfadmin\templates\admin\index.html:48
 #: .\cmfadmin\templates\admin\index.html:52
 msgid "Database"
-msgstr ""
+msgstr "数据库"
 
 #: .\cmfadmin\templates\admin\index.html:72
 #, python-format
 msgid "Total storage: %(total)s, used: %(used_percent)s%%"
-msgstr ""
+msgstr "总容量：%(total)s，已使用：%(used_percent)s%%"
 
 #: .\cmfadmin\templates\admin\index.html:83
 msgid "Used"
-msgstr ""
+msgstr "已用"
 
 #: .\cmfadmin\templates\admin\index.html:88
 #: .\cmfadmin\templates\component\cropper.html:43
 msgid "Free"
-msgstr ""
+msgstr "可用"
 
 #: .\cmfadmin\templates\admin\login.html:65
 msgid "Forgotten your login credentials?"
-msgstr ""
+msgstr "忘记登录凭据？"
 
 #: .\cmfadmin\templates\component\cropper.html:10
 msgid "Crop Image"
-msgstr ""
+msgstr "裁剪图片"
 
 #: .\cmfadmin\templates\component\cropper.html:25
 msgid "Crop Ratio"
-msgstr ""
+msgstr "裁剪比例"
 
 #: .\cmfadmin\templates\component\cropper.html:48
 msgid "Rotate Left"
-msgstr ""
+msgstr "向左旋转"
 
 #: .\cmfadmin\templates\component\cropper.html:50
 msgid "Rotate Right"
-msgstr ""
+msgstr "向右旋转"
 
 #: .\cmfadmin\templates\component\cropper.html:52
 msgid "Flip H"
-msgstr ""
+msgstr "水平翻转"
 
 #: .\cmfadmin\templates\component\cropper.html:54
 msgid "Flip V"
-msgstr ""
+msgstr "垂直翻转"
 
 #: .\cmfadmin\templates\component\cropper.html:56
 msgid "Zoom In"
-msgstr ""
+msgstr "放大"
 
 #: .\cmfadmin\templates\component\cropper.html:58
 msgid "Zoom Out"
-msgstr ""
+msgstr "缩小"
 
 #: .\cmfadmin\templates\component\cropper.html:62
 msgid "Use Original Dimensions"
-msgstr ""
+msgstr "使用原始尺寸"
 
 #: .\cmfadmin\templates\component\cropper.html:71
 msgid "Confirm and Upload"
-msgstr ""
+msgstr "确认并上传"
 
 #: .\cmfadmin\templates\config\email_settings.html:4
 msgid "Email configuration Settings"
-msgstr ""
+msgstr "邮件配置设置"
 
 #: .\cmfadmin\templates\config\email_settings.html:12
 msgid "Base Settings"
-msgstr ""
+msgstr "基本设置"
 
 #: .\cmfadmin\templates\config\email_settings.html:16
 msgid "Email Template"
-msgstr ""
+msgstr "邮件模板"
 
 #: .\cmfadmin\templates\config\email_settings.html:20
 msgid "Test Email Sending"
-msgstr ""
+msgstr "测试邮件发送"
 
 #: .\cmfadmin\templates\config\email_settings.html:29
 msgid "From email address"
-msgstr ""
+msgstr "发件邮箱地址"
 
 #: .\cmfadmin\templates\config\email_settings.html:33
 msgid "The email address used as the sender for outgoing emails."
-msgstr ""
+msgstr "用于发送邮件的发件人邮箱地址。"
 
 #: .\cmfadmin\templates\config\email_settings.html:37
 msgid "SMTP host"
-msgstr ""
+msgstr "SMTP 主机"
 
 #: .\cmfadmin\templates\config\email_settings.html:41
 msgid "The address of your email server (SMTP)."
-msgstr ""
+msgstr "您的邮件服务器地址（SMTP）。"
 
 #: .\cmfadmin\templates\config\email_settings.html:45
 msgid "SMTP port"
-msgstr ""
+msgstr "SMTP 端口"
 
 #: .\cmfadmin\templates\config\email_settings.html:49
 msgid "Common ports: 587 (recommended), 465 (126/163/QQ Mail), 25, 2525."
-msgstr ""
+msgstr "常用端口：587（推荐）、465（126/163/QQ 邮箱）、25、2525。"
 
 #: .\cmfadmin\templates\config\email_settings.html:53
 msgid "SMTP username"
-msgstr ""
+msgstr "SMTP 用户名"
 
 #: .\cmfadmin\templates\config\email_settings.html:57
 msgid "The username for authenticating with your email server."
-msgstr ""
+msgstr "用于验证邮件服务器的用户名。"
 
 #: .\cmfadmin\templates\config\email_settings.html:61
 msgid "SMTP password"
-msgstr ""
+msgstr "SMTP 密码"
 
 #: .\cmfadmin\templates\config\email_settings.html:65
 #: .\cmfadmin\templates\config\email_settings.html:78
 msgid "The password for authenticating with your email server."
-msgstr ""
+msgstr "用于验证邮件服务器的密码。"
 
 #: .\cmfadmin\templates\config\email_settings.html:69
 msgid "Timeout"
-msgstr ""
+msgstr "超时时间"
 
 #: .\cmfadmin\templates\config\email_settings.html:74
 #: .\cmfadmin\templates\config\email_settings.html:76
 msgid "Seconds"
-msgstr ""
+msgstr "秒"
 
 #: .\cmfadmin\templates\config\email_settings.html:86
 msgid "Use SSL"
-msgstr ""
+msgstr "使用 SSL"
 
 #: .\cmfadmin\templates\config\email_settings.html:93
 msgid "Use TLS"
-msgstr ""
+msgstr "使用 TLS"
 
 #: .\cmfadmin\templates\config\email_settings.html:103
 msgid "Reset"
-msgstr ""
+msgstr "重置"
 
 #: .\cmfadmin\templates\config\email_settings.html:112
 msgid "From name"
-msgstr ""
+msgstr "发件人名称"
 
 #: .\cmfadmin\templates\config\email_settings.html:116
 msgid "The name displayed as the sender in the recipient's inbox."
-msgstr ""
+msgstr "在收件人收件箱中显示的发件人名称。"
 
 #: .\cmfadmin\templates\config\email_settings.html:120
 #: .\cmfadmin\templates\config\email_settings.html:161
 msgid "Subject"
-msgstr ""
+msgstr "主题"
 
 #: .\cmfadmin\templates\config\email_settings.html:124
 msgid "The subject line of the email."
-msgstr ""
+msgstr "邮件的主题。"
 
 #: .\cmfadmin\templates\config\email_settings.html:128
 #: .\cmfadmin\templates\config\email_settings.html:168
 msgid "Content"
-msgstr ""
+msgstr "内容"
 
 #: .\cmfadmin\templates\config\email_settings.html:131
 msgid "The email body content fully supports HTML formatting and layout. "
-msgstr ""
+msgstr "邮件正文内容完全支持HTML格式与布局。"
 
 #: .\cmfadmin\templates\config\email_settings.html:135
 msgid "Available variables"
-msgstr ""
+msgstr "可用变量"
 
 #: .\cmfadmin\templates\config\email_settings.html:139
 msgid "List of available variables you can use within this template."
-msgstr ""
+msgstr "可在此模板中使用的变量列表。"
 
 #: .\cmfadmin\templates\config\email_settings.html:154
 msgid "Recipient email"
-msgstr ""
+msgstr "收件邮箱"
 
 #: .\cmfadmin\templates\config\email_settings.html:157
 msgid "The email address used to receive test messages."
-msgstr ""
+msgstr "用于接收测试邮件的邮箱地址。"
 
 #: .\cmfadmin\templates\config\email_settings.html:164
 msgid "Subject of email."
-msgstr ""
+msgstr "邮件主题。"
 
 #: .\cmfadmin\templates\config\email_settings.html:172
 msgid "Applicable to plain email testing only."
-msgstr ""
+msgstr "仅适用于普通文本邮件测试。"
 
 #: .\cmfadmin\templates\config\email_settings.html:177
 msgid "Variables"
-msgstr ""
+msgstr "变量"
 
 #: .\cmfadmin\templates\config\email_settings.html:181
 msgid "Define template variables in JSON format."
-msgstr ""
+msgstr "以JSON格式定义模板变量。"
 
 #: .\cmfadmin\templates\config\email_settings.html:191
 msgid "Test Email"
-msgstr ""
+msgstr "测试邮件"
 
 #: .\cmfadmin\templates\config\email_settings.html:197
 msgid "Test Template"
-msgstr ""
+msgstr "测试模板"
 
 #: .\cmfadmin\templates\config\files.html:4
 msgid "Manage Uploaded Files"
-msgstr ""
+msgstr "管理已上传文件"
 
 #: .\cmfadmin\templates\config\files.html:15
 msgid "Upload Time"
-msgstr ""
+msgstr "上传时间"
 
 #: .\cmfadmin\templates\config\navigation.html:4
 #: .\cmfadmin\templates\config\navigation.html:31
 #: .\cmfadmin\templates\config\navitem_form.html:5
 #: .\cmfadmin\templates\config\sprite_manager.html:54 .\cmfadmin\views.py:347
 msgid "Edit"
-msgstr ""
+msgstr "编辑"
 
 #: .\cmfadmin\templates\config\navigation.html:8 .\cmfadmin\views.py:353
 msgid "Nav Item"
-msgstr ""
+msgstr "导航项"
 
 #: .\cmfadmin\templates\config\navigation.html:19
 msgid "Sort order"
-msgstr ""
+msgstr "排序"
 
 #: .\cmfadmin\templates\config\navitem_form.html:28
 msgid "Top Level"
-msgstr ""
+msgstr "顶级"
 
 #: .\cmfadmin\templates\config\navitem_form.html:63
 msgid "Invisible"
-msgstr ""
+msgstr "不可见"
 
 #: .\cmfadmin\templates\config\navitem_form.html:73
 msgid "Back"
-msgstr ""
+msgstr "返回"
 
 #: .\cmfadmin\templates\config\site_info.html:4
 msgid "Site Information Settings"
-msgstr ""
+msgstr "站点信息设置"
 
 #: .\cmfadmin\templates\config\site_info.html:13
 msgid "Site Information"
-msgstr ""
+msgstr "站点信息"
 
 #: .\cmfadmin\templates\config\site_info.html:17
 msgid "SEO Settings"
-msgstr ""
+msgstr "SEO设置"
 
 #: .\cmfadmin\templates\config\site_info.html:21
 msgid "Contact Information"
-msgstr ""
+msgstr "联系信息"
 
 #: .\cmfadmin\templates\config\site_info.html:29
 msgid "Site name"
-msgstr ""
-
-#: .\cmfadmin\templates\config\site_info.html:32
-msgid "CrazyCMF"
-msgstr ""
+msgstr "站点名称"
 
 #: .\cmfadmin\templates\config\site_info.html:33
 msgid "Site name will appear next to the logo in the top-left corner."
-msgstr ""
+msgstr "站点名称将显示在左上角Logo旁边。"
 
 #: .\cmfadmin\templates\config\site_info.html:37
 msgid "Site slogan"
-msgstr ""
+msgstr "站点标语"
 
 #: .\cmfadmin\templates\config\site_info.html:41
 msgid "A short tagline can be displayed near the site logo or page title."
-msgstr ""
+msgstr "可在站点Logo或页面标题旁显示简短标语。"
 
 #: .\cmfadmin\templates\config\site_info.html:45
 #: .\cmfadmin\templates\config\site_info.html:49
 msgid "Site logo"
-msgstr ""
+msgstr "站点Logo"
 
 #: .\cmfadmin\templates\config\site_info.html:59
 #: .\cmfadmin\templates\config\site_info.html:142
 msgid "Upload"
-msgstr ""
+msgstr "上传"
 
 #: .\cmfadmin\templates\config\site_info.html:64
 msgid "ICP filing number"
-msgstr ""
+msgstr "ICP备案号"
 
 #: .\cmfadmin\templates\config\site_info.html:67
 msgid "Leave this field blank if you don't have the number."
-msgstr ""
+msgstr "如无备案号，可留空。"
 
 #: .\cmfadmin\templates\config\site_info.html:71
 msgid "PNS filing number"
-msgstr ""
+msgstr "公网安备号"
 
 #: .\cmfadmin\templates\config\site_info.html:75
-msgid ""
-"Certificate of Public Network Security Filing, leave blank if not "
-"applicable."
-msgstr ""
+msgid "Certificate of Public Network Security Filing, leave blank if not applicable."
+msgstr "公安网备案号，没有请留空。"
 
 #: .\cmfadmin\templates\config\site_info.html:82
 msgid "SEO title"
-msgstr ""
+msgstr "SEO标题"
 
 #: .\cmfadmin\templates\config\site_info.html:86
 msgid "Title of SEO, maximum of 60 characters."
-msgstr ""
+msgstr "SEO标题，最长60个字符。"
 
 #: .\cmfadmin\templates\config\site_info.html:90
 msgid "Meta keywords"
-msgstr ""
+msgstr "Meta关键字"
 
 #: .\cmfadmin\templates\config\site_info.html:94
 msgid "Comma-separated keywords, recommended within 5-10 words."
-msgstr ""
+msgstr "以逗号分隔的关键字，建议5-10个。"
 
 #: .\cmfadmin\templates\config\site_info.html:98
 msgid "Meta description"
-msgstr ""
+msgstr "Meta描述"
 
 #: .\cmfadmin\templates\config\site_info.html:102
 msgid "Meta description, maximum of 160 characters."
-msgstr ""
+msgstr "Meta描述，最长160个字符。"
 
 #: .\cmfadmin\templates\config\site_info.html:108
 msgid "Service phone"
-msgstr ""
+msgstr "客服电话"
 
 #: .\cmfadmin\templates\config\site_info.html:115
 msgid "Service email"
-msgstr ""
+msgstr "客服邮箱"
 
 #: .\cmfadmin\templates\config\site_info.html:122
 msgid "Contact address"
-msgstr ""
+msgstr "联系地址"
 
 #: .\cmfadmin\templates\config\site_info.html:129
 #: .\cmfadmin\templates\config\site_info.html:133
 msgid "WeChat QRCode"
-msgstr ""
+msgstr "微信二维码"
 
 #: .\cmfadmin\templates\config\site_info.html:150
 msgid "Delete QRCode"
-msgstr ""
+msgstr "删除二维码"
 
 #: .\cmfadmin\templates\config\site_info.html:155
 msgid "Facebook link"
-msgstr ""
+msgstr "脸书链接"
 
 #: .\cmfadmin\templates\config\site_info.html:162
 msgid "X link"
-msgstr ""
+msgstr "X链接"
 
 #: .\cmfadmin\templates\config\site_info.html:168
 msgid "LinkedIn link"
-msgstr ""
+msgstr "领英链接"
 
-#: .\cmfadmin\templates\config\sprite_add.html:4
+#: .\cmfadmin\templates\config\sprite_add.html:6
+msgid "Edit SVG icon in sprite"
+msgstr "编辑精灵图中的SVG图标"
+
+#: .\cmfadmin\templates\config\sprite_add.html:8
 msgid "Add SVG icon to sprite"
-msgstr "添加SVG图标到精灵图"
+msgstr "向精灵图中添加SVG图标"
 
 #: .\cmfadmin\templates\config\sprite_add.html:11
 msgid "Symbol Name"
@@ -1087,7 +1048,7 @@ msgstr "用户在多文件上传时一次可上传的最大文件数，默认值
 #: .\cmfadmin\templates\config\upload_setting.html:23
 #, python-format
 msgid "Max %(file_type_name)s file size"
-msgstr "%(file_type_name)s 文件最大尺寸"
+msgstr "%(file_type_name)s文件最大尺寸"
 
 #: .\cmfadmin\templates\config\upload_setting.html:34
 msgid "Allowed file type"
@@ -1100,7 +1061,7 @@ msgstr "上传路径规则"
 #: .\cmfadmin\views.py:119
 #, python-format
 msgid "Failed to upload '%(name)s': %(error)s"
-msgstr "上传“%(name)s”失败：%(error)s"
+msgstr "上传 “%(name)s” 失败：%(error)s"
 
 #: .\cmfadmin\views.py:132
 #, python-format
@@ -1126,7 +1087,7 @@ msgstr "邮箱配置已重置。"
 
 #: .\cmfadmin\views.py:220
 msgid "Email base settings updated."
-msgstr "邮箱基本设置已更新。"
+msgstr "邮箱基础设置已更新。"
 
 #: .\cmfadmin\views.py:223
 msgid "Email template updated."
@@ -1134,7 +1095,7 @@ msgstr "邮箱模板已更新。"
 
 #: .\cmfadmin\views.py:229
 msgid "Invalid action."
-msgstr "无效操作。"
+msgstr "非法操作。"
 
 #: .\cmfadmin\views.py:231
 #, python-format
@@ -1174,9 +1135,7 @@ msgid "Node does not exist."
 msgstr "节点不存在。"
 
 #: .\cmfadmin\views.py:419
-msgid ""
-"This node has child items and cannot be deleted. Please delete child items "
-"first."
+msgid "This node has child items and cannot be deleted. Please delete child items first."
 msgstr "此节点包含子项，无法删除，请先删除子项。"
 
 #: .\cmfadmin\views.py:425 .\cmfadmin\views.py:543
@@ -1335,14 +1294,30 @@ msgstr "当前窗口"
 msgid "Blank Window"
 msgstr "新窗口"
 
+#: .\cmfadmin\enums.py:81
 msgid "audio"
 msgstr "音频"
 
+#: .\cmfadmin\enums.py:80
 msgid "video"
 msgstr "视频"
 
+#: .\cmfadmin\enums.py:79
 msgid "image"
 msgstr "图像"
 
+#: .\cmfadmin\enums.py:82
 msgid "document"
 msgstr "文档"
+
+#: .\cmfadmin\enums.py:83
+msgid "archive"
+msgstr "压缩文件"
+
+#: .\cmfadmin\templates\config\site_info.html:60
+msgid "After uploading the file, you need to click \"Save\" below for it to take effect."
+msgstr "上传文件之后，需要点击下方“保存”，才能生效。"
+
+#: .\cmfadmin\templates\admin\base_site.html:47
+msgid "Language"
+msgstr "语言"

@@ -20,7 +20,7 @@ from enum import StrEnum
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import UploadedFile
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext as _
 
 from cmfadmin.templatetags.media import media_url
 
@@ -109,7 +109,7 @@ class Upload:
                 return self._count_based_dir()
             case UploadPathRule.CUSTOM:
                 if not self.custom_path:
-                    raise ValueError(_('Custom path rule requires a path'))
+                    raise ValueError('Custom path rule requires a path')
                 return self.custom_path.strip('/')
 
     def save(self, file_obj: UploadedFile, file_hash: str) -> UploadResult:

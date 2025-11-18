@@ -1,5 +1,5 @@
 {% extends "admin/base.html" %}
-{% load i18n static icons %}
+{% load i18n static media %}
 
 {% block title %}{% if form.errors %}{% translate "Error:" %} {% endif %}{{ block.super }}{% endblock %}
 {% block sider_bar %}{% endblock %}
@@ -15,7 +15,9 @@
                             <!-- TODO 把内容改活 -->
                             <!-- BEGIN NAVBAR LOGO -->
                             <div aria-label="Tabler" class="navbar-brand navbar-brand-autodark">
-                                {% sprite 'crazy-logo' 'navbar-brand-image me-2' 32 %} {{ site_header }}
+                                <img src="{% static 'admin/svg/crazy_logo.svg' %}" alt="" class="navbar-brand-image">
+                                {% media_url config.site_logo %}
+                                {{ site_header }}
                             </div>
                             <!-- END NAVBAR LOGO -->
                         </div>
@@ -75,10 +77,7 @@
                     </div>
                 </div>
                 <div class="col-lg d-none d-lg-block">
-                    <svg class="img d-block mx-auto" xmlns="http://www.w3.org/2000/svg" height="400" fill="none"
-                         viewBox="0 0 800 600">
-                        <use href="{% static 'admin/svg/boy_with_key.svg' %}#boy-with-key"></use>
-                    </svg>
+                    <img src="{% static 'admin/svg/boy_with_key.svg' %}" alt="" class="img d-block mx-auto">
                 </div>
             </div>
         </div>

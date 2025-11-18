@@ -23,13 +23,7 @@
     <div class="row g-2 align-items-center">
         <div class="col">
             <!-- Page pre-title -->
-            <div class="page-pretitle">
-                {% for item in admin_breadcrumbs %}
-                    {% if forloop.last %}
-                        <span>{{ item.title }}</span>
-                    {% endif %}
-                {% endfor %}
-            </div>
+            <div class="page-pretitle">{{ opts.model_name }}</div>
             <h2 class="page-title">{{ title }}</h2>
         </div>
         <div class="col-auto ms-auto d-print-none">

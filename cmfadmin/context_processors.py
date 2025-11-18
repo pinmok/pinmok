@@ -10,8 +10,12 @@ Author:
 Created:
   2025-06-15
 """
+from django.conf import settings
+
 from cmfadmin import site
+from cmfadmin.enums import ConfigCategory
 from cmfadmin.menus import AdminMenuManager
+from cmfadmin.service.config import ConfigService
 
 
 def cmf_context(request):
@@ -24,9 +28,12 @@ def cmf_context(request):
             'admin_menu': menu_tree,
             'admin_breadcrumbs': breadcrumbs
         }
+    config = ConfigService.get_by_category(ConfigCategory.SITE)
 
     return {
         'site_header': site.site_header,
         'site_title': site.site_title,
+        'config': config,
+        'USE_I18N': settings.USE_I18N,
         **admin_context
     }

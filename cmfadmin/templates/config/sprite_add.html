@@ -1,7 +1,13 @@
 {% extends 'config/config_base.html' %}
 {% load i18n icons %}
 
-{% block page_title %}{% translate 'Add SVG icon to sprite' %}{% endblock %}
+{% block page_title %}
+    {% if action == 'edit' %}
+        {% translate 'Edit SVG icon in sprite' %}
+    {% else %}
+        {% translate 'Add SVG icon to sprite' %}
+    {% endif %}
+{% endblock %}
 
 {% block content %}
     <div class="card">

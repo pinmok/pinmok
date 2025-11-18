@@ -21,7 +21,7 @@ from django.core.exceptions import SuspiciousFileOperation, ValidationError
 from django.core.validators import validate_email
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext as _
 from django.views import View
 
 from cmfadmin.constants import CUSTOM_SPRITE_FILE, UPLOAD_FILE_CONFIG
@@ -443,7 +443,7 @@ class SpriteManagerView(PermissionRequiredMixin, View):
 
         # Prevent relative path traversal
         if '..' in os.path.normpath(custom_sprite_path).split(os.sep):
-            raise SuspiciousFileOperation(_("Relative path traversal is not allowed"))
+            raise SuspiciousFileOperation("Relative path traversal is not allowed")
 
         static_dir = get_static_dir()
         full_path = os.path.abspath(os.path.join(static_dir, custom_sprite_path))
@@ -459,9 +459,9 @@ class SpriteManagerView(PermissionRequiredMixin, View):
         symbol_id = request.GET.get('symbol_id')
 
         if action == 'add':
-            return render(request, self.add_template_name, {'title': _('Add Sprite Icon')})
+            return render(request, self.add_template_name, {'title': 'Add Sprite Icon'})
         elif action == 'edit':
-            context = {'title': _('Edit Sprite Icon'), 'symbol_id': symbol_id}
+            context = {'title': 'Edit Sprite Icon', 'symbol_id': symbol_id, 'action': action}
             return render(request, self.add_template_name, context)
 
         # Load system sprite file
@@ -485,7 +485,7 @@ class SpriteManagerView(PermissionRequiredMixin, View):
                 messages.warning(request, _("Failed to load custom sprite: %(error)s") % {"error": e})
 
         context = {
-            'title': _('Sprite Manager'),
+            'title': 'Sprite Manager',
             'icons': icons,
             'custom_icons': custom_icons,
         }

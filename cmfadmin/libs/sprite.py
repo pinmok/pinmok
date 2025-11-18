@@ -13,8 +13,6 @@ Created:
 import os
 from xml.etree import ElementTree as ET
 
-from django.utils.translation import gettext as _
-
 
 class SpriteError(Exception):
     """Custom exception for sprite operation errors."""
@@ -83,7 +81,7 @@ class SpriteManager:
             with open(self.sprite_file, 'w', encoding='utf-8') as f:
                 f.write(new_content)
         except Exception as e:
-            raise SpriteError(_('Failed to save sprite file: %s') % e)
+            raise SpriteError(f'Failed to save sprite file: {e}')
 
     def _find_symbol(self, symbol_id: str) -> ET.Element | None:
         """Find a <symbol> element by ID."""
@@ -128,7 +126,7 @@ class SpriteManager:
     def create(self):
         """Create an empty sprite file with base SVG root."""
         if os.path.exists(self.sprite_file):
-            raise SpriteError(_('File already exists'))
+            raise SpriteError('File already exists')
 
         try:
             with open(self.sprite_file, 'w', encoding='utf-8') as f:
@@ -141,7 +139,7 @@ class SpriteManager:
 
         # Search for existing <symbol> element by ID
         if self._find_symbol(symbol_id):
-            raise SpriteError(_('symbol_id "%(symbol_id)s" already exists') % {'symbol_id': symbol_id})
+            raise SpriteError(f'symbol_id "{symbol_id}" already exists')
 
         try:
             # Parse the new symbol XML string
@@ -154,7 +152,7 @@ class SpriteManager:
         except (ValueError, ET.ParseError) as e:
             raise SpriteError(str(e))
         except Exception as e:
-            raise SpriteError(_('Failed to add symbol: %s') % e)
+            raise SpriteError(f'Failed to add symbol: {e}')
 
     def remove(self, symbol_id: str):
         """Remove a <symbol> by its ID."""
@@ -162,13 +160,13 @@ class SpriteManager:
         # Search for existing <symbol> element by ID
         target_symbol = self._find_symbol(symbol_id)
         if not target_symbol:
-            raise SpriteError(_("symbol_id '%(symbol_id)s' not found, cannot delete") % {'symbol_id': symbol_id})
+            raise SpriteError(f"symbol_id '{symbol_id}' not found, cannot delete")
 
         try:
             self.root.remove(target_symbol)
             self._save_sprite()
         except Exception as e:
-            raise SpriteError(_('Failed to remove symbol: %s') % e)
+            raise SpriteError(f'Failed to remove symbol: {e}')
 
     def update(self, symbol_id: str, svg_str: str):
         """Update an existing <symbol> by its ID."""

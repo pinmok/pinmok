@@ -12,7 +12,7 @@ Created:
 """
 
 from django import template
-from django.conf import settings
+from django.core.files.storage import default_storage
 
 register = template.Library()
 
@@ -21,6 +21,6 @@ register = template.Library()
 def media_url(path: str) -> str:
     if not path:
         return ''
-    if path.startswith(('http://', 'https://', settings.MEDIA_URL)):
+    if path.startswith(('http://', 'https://')):
         return path
-    return f'{settings.MEDIA_URL.rstrip("/")}/{path.lstrip("/")}'
+    return default_storage.url(path)

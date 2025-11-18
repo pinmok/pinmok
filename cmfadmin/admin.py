@@ -16,7 +16,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import User, Group
 from django.urls import reverse
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from cmfadmin import site, CMFModelAdmin
@@ -74,18 +74,27 @@ class CmfGroupAdmin(CMFModelAdmin, GroupAdmin):
 
 
 class ExternalLinksAdmin(CMFModelAdmin):
-    list_display = ('sort_order', 'title', 'url_link', 'status')
+    list_display = ('sort_order', 'image_thumb', 'title', 'url_link', 'status')
     list_display_links = ('title',)
     list_editable = ('sort_order',)
 
     def url_link(self, obj):
         """Display the URL as a link that opens in a new tab in the list view"""
         if obj.url:
-            return mark_safe(f'<a href="{obj.url}" target="_blank">{obj.url}</a>')
+            return format_html('<a href="{}" target="_blank">{}</a>', obj.url, obj.url)
         return "-"
 
     url_link.short_description = 'url'
     url_link.admin_order_field = 'url'
+
+    def image_thumb(self, obj):
+        """Display the thumbnail image in admin list"""
+        if obj.image_url:
+            return format_html('<img src="{}" class="icon">', obj.image.url)
+        return "-"
+
+    image_thumb.short_description = _('Icon')
+    image_thumb.admin_order_field = 'image_url'
 
 
 class NavAdmin(CMFModelAdmin):
@@ -93,7 +102,7 @@ class NavAdmin(CMFModelAdmin):
 
     def edit_nav(self, obj):
         url = reverse('admin:nav_items_edit', args=[obj.pk])
-        return mark_safe(f'<a href="{url}">{_("Edit Menu")}</a>')
+        return format_html('<a href="{}">{}</a>', url, _('Edit Menu'))
 
     edit_nav.short_description = _('Action')
 

@@ -36,8 +36,50 @@
                                 </a>
                             </div>
                             <!-- END THEME MODE -->
-                        </div>
 
+                            <!-- BEGIN LANGUAGE -->
+                            {% url 'set_language' as set_language_url %}
+                            {% if USE_I18N and set_language_url %}
+                                {% get_current_language as LANGUAGE_CODE %}
+                                {% get_available_languages as LANGUAGES %}
+                                {% get_language_info for LANGUAGE_CODE as language_info %}
+                                {% get_language_info_list for LANGUAGES as languages %}
+                                <div class="nav-item dropdown d-none d-md-flex me-3">
+                                    <a href="javascript:void(0);" class="nav-link px-0 show" data-bs-toggle="dropdown"
+                                       aria-label="Show app menu" data-bs-auto-close="outside" aria-expanded="true">
+                                        {% sprite 'tabler-world' 'icon' %}
+                                    </a>
+                                    <div class="dropdown-menu dropdown-menu-arrow dropdown-menu-end dropdown-menu-card">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <div class="card-title">
+                                                    {% translate 'Language' %}: {{ language_info.name_local }}
+                                                </div>
+                                                <div class="card-actions">
+                                                    {% sprite 'tabler-language' 'icon' %}
+                                                </div>
+                                            </div>
+                                            <div class="card-body scroll-y p-2" style="max-height: 50vh">
+                                                <form action="{{ set_language_url }}" method="post">{% csrf_token %}
+                                                    <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                                                    <div class="row g-0">
+                                                        {% for language in languages %}
+                                                            <div class="col-sm-12 col-md-6">
+                                                                <button type="submit" name="language" value="{{ language.code }}"
+                                                                        class="btn btn-link{% if language.code == LANGUAGE_CODE %} active{% endif %}">
+                                                                    {{ language.name_local }}
+                                                                </button>
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <!-- END LANGUAGE -->
+                        </div>
                         <!-- BEGIN USER INFORMATION -->
                         <div class="nav-item dropdown">
                             <a href="#" class="nav-link d-flex lh-1 p-0 px-2" data-bs-toggle="dropdown" aria-label="Open user menu">
@@ -61,7 +103,8 @@
                             <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
                                 <a href="{% url 'admin:profile' %}" class="dropdown-item">{% translate 'Profile' %}</a>
                                 {% if user.has_usable_password %}
-                                    <a href="{% url 'admin:password_change' %}" class="dropdown-item">{% translate 'Change password' %}</a>
+                                    <a href="{% url 'admin:password_change' %}"
+                                       class="dropdown-item">{% translate 'Change password' %}</a>
                                 {% endif %}
                                 <div class="dropdown-divider"></div>
                                 <form id="logout-form" method="post" action="{% url 'admin:logout' %}">

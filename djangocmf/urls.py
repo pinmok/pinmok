@@ -16,12 +16,13 @@ Including another URLconf
 """
 from django.conf import settings
 from django.conf.urls.static import static
-from django.urls import path
+from django.urls import path, include
 
 from cmfadmin import site
 
 urlpatterns = [
     # Use the CrazyCMF admin site instead of the default admin.site
+    path('i18n/', include('django.conf.urls.i18n')),
     path('admin/', site.urls),
 ]
 

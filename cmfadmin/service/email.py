@@ -16,7 +16,6 @@ import re
 from django.core.cache import cache
 from django.core.mail import get_connection, EmailMessage
 from django.core.mail.backends.base import BaseEmailBackend
-from django.utils.translation import gettext_lazy as _
 
 from cmfadmin.backends import EmailConfig, EmailBackend
 from cmfadmin.enums import ConfigCategory
@@ -110,12 +109,12 @@ class EmailService:
         # Parse allowed variable names
         allowed_vars = [v.strip() for v in expected_vars.split(',') if v.strip()]
         if not template_params:
-            raise ValueError(_("This email template requires variables, but none were provided."))
+            raise ValueError("This email template requires variables, but none were provided.")
 
         # Check for missing variables
         missing = [var for var in allowed_vars if var not in template_params]
         if missing:
-            raise ValueError(_("Missing required template variables: ") + ", ".join(missing))
+            raise ValueError(f"Missing required template variables: {', '.join(missing)}")
 
         # Render subject/content with variables
         subject = self._render(subject_template, template_params)

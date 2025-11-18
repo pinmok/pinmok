@@ -137,6 +137,8 @@ class ExternalLink(models.Model):
                           help_text=_("The URL for the external link."))
     image_url = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Image"),
                                  help_text=_("The image associated with the external link."))
+    image = models.ImageField(upload_to='links/', blank=True, null=True, verbose_name=_("Image"),
+                              help_text=_("The image associated with the external link."))
     status = models.BooleanField(default=True, verbose_name=_("Status"),
                                  help_text=_("Indicates whether this link is active."))
     sort_order = models.IntegerField(default=DEFAULT_SORT_ORDER, verbose_name=_("Sort Order"),

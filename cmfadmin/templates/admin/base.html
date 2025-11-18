@@ -40,11 +40,13 @@
     window.APP_URLS = {
         uploadFile: "{% url 'admin:upload_file' %}"
     }
-    window.DEFAULT_IMG = "{% static 'admin/svg/photo.svg' %}"
+    window.DEFAULT_IMG = "{% static 'admin/svg/photo-up.svg' %}"
 </script>
 <script src="{% static 'admin/js/tabler.min.js' %}" defer></script>
 <script src="{% static 'admin/js/tabler-theme.min.js' %}" defer></script>
-<script src="{% url 'admin:jsi18n' %}"></script>
+{% if request.user.is_authenticated %}
+    <script src="{% url 'admin:jsi18n' %}"></script>
+{% endif %}
 <script src="{% static 'admin/js/admin.js' %}" defer></script>
 <script src="{% static 'admin/js/sidebar.js' %}" defer></script>
 
