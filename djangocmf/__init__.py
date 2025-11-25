@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 from django.utils.version import get_version
 
-name = 'CrazyCMF'
+name = 'DjangoCMF'
 
-VERSION = (0, 0, 1, 'alpha', 0)
+VERSION = (0, 1, 0, 'alpha', 0)
 
 __version__ = get_version(VERSION)
 version = __version__
