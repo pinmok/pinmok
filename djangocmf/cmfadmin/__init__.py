@@ -3,6 +3,8 @@
 """
 __init__.py module
 
+Description:
+  Framework-level administration backend for the CMF system.
 Author:
   惠达浪 <crazys@126.com>
 Created:

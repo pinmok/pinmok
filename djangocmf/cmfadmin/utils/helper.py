@@ -26,7 +26,7 @@ from django.utils.functional import Promise
 import djangocmf
 from djangocmf.cmfadmin.constants import API_DEFAULT_MESSAGES, API_HTTP_STATUS
 from djangocmf.cmfadmin.enums import ErrorCode
-from djangocmf.cmfadmin.utils.tools import int_to_bytes
+from djangocmf.core.utils.tools import int_to_bytes
 
 
 def get_system_info() -> dict[str, str]:

@@ -17,10 +17,10 @@ from django.core.paginator import Paginator
 
 from djangocmf.cmfadmin.constants import UPLOAD_FILE_CONFIG
 from djangocmf.cmfadmin.enums import FileType
-from djangocmf.cmfadmin.libs.upload import UploadResult, Upload
 from djangocmf.cmfadmin.models import UploadFile
 from djangocmf.cmfadmin.service.config import ConfigService
-from djangocmf.cmfadmin.utils.tools import int_to_bytes
+from djangocmf.core.libs.upload import UploadResult, Upload
+from djangocmf.core.utils.tools import int_to_bytes
 
 
 class UploadService:

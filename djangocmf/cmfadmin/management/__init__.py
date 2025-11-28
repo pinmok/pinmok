@@ -4,9 +4,9 @@
 __init__.py module
 
 Description:
-  Core shared libraries and foundational components.
+  
 Author:
   惠达浪 <crazys@126.com>
 Created:
-  2025-06-11
+  2025-11-25
 """

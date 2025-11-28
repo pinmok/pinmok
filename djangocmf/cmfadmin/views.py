@@ -28,9 +28,6 @@ from django.views import View
 from djangocmf.cmfadmin.constants import CUSTOM_SPRITE_FILE, UPLOAD_FILE_CONFIG
 from djangocmf.cmfadmin.enums import ConfigCategory, TargetChoices, FileType, ErrorCode, MenuSyncMode
 from djangocmf.cmfadmin.forms import NavItemForm
-from djangocmf.cmfadmin.libs import SpriteManager
-from djangocmf.cmfadmin.libs.sprite import SpriteError
-from djangocmf.cmfadmin.libs.upload import UploadPathRule
 from djangocmf.cmfadmin.menus import AdminMenuManager
 from djangocmf.cmfadmin.models import Nav, NavItem
 from djangocmf.cmfadmin.service.authorization import PermissionRequiredMixin, permission_required
@@ -39,11 +36,14 @@ from djangocmf.cmfadmin.service.email import EmailService
 from djangocmf.cmfadmin.service.navigation import NavService
 from djangocmf.cmfadmin.service.upload import UploadService
 from djangocmf.cmfadmin.utils.helper import get_static_dir, api_response
-from djangocmf.cmfadmin.utils.tools import to_compact_case
+from djangocmf.core.libs.sprite import SpriteManager, SpriteError
+from djangocmf.core.libs.upload import UploadPathRule
+from djangocmf.core.utils.tools import to_compact_case
 
 
 def license_page(request):
-    return render(request, 'license/license.html')
+    """Serve the License information page."""
+    return render(request, 'pages/license.html')
 
 
 class BaseAdminView(PermissionRequiredMixin, View):
@@ -71,7 +71,7 @@ class ConfigView(BaseAdminView):
     def __init_subclass__(cls, **kwargs):
         """ Generate permission_required based on category. """
         if getattr(cls, "category", None):
-            cls.feature_name = cls.category.label
+            cls.feature_name = cls.category.label  # noqa
         super().__init_subclass__(**kwargs)
 
     def _get_exclude_keys(self) -> list[str]:
@@ -475,9 +475,9 @@ class SpriteManagerView(BaseAdminView):
         symbol_id = request.GET.get('symbol_id')
 
         if action == 'add':
-            return render(request, self.add_template_name, {'title': 'Add Sprite Icon'})
+            return render(request, self.add_template_name, {'title': _('Add Sprite Icon')})
         elif action == 'edit':
-            context = {'title': 'Edit Sprite Icon', 'symbol_id': symbol_id, 'action': action}
+            context = {'title': _('Edit Sprite Icon'), 'symbol_id': symbol_id, 'action': action}
             return render(request, self.add_template_name, context)
 
         # Load system sprite file

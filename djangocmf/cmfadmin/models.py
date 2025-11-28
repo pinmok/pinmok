@@ -18,7 +18,7 @@ from django.utils.translation import gettext_lazy as _
 
 from djangocmf.cmfadmin.constants import DEFAULT_SORT_ORDER
 from djangocmf.cmfadmin.enums import ConfigCategory, TargetChoices, MimeType
-from djangocmf.cmfadmin.libs.upload import UploadResult
+from djangocmf.core.libs.upload import UploadResult
 
 User = get_user_model()
 
@@ -135,7 +135,7 @@ class ExternalLink(models.Model):
                              help_text=_("The title for the external link."))
     url = models.URLField(verbose_name=_("URL"), blank=True,
                           help_text=_("The URL for the external link."))
-    image_url = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Image"),
+    image_url = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Image URL"),
                                  help_text=_("The image associated with the external link."))
     image = models.ImageField(upload_to='links/', blank=True, null=True, verbose_name=_("Image"),
                               help_text=_("The image associated with the external link."))

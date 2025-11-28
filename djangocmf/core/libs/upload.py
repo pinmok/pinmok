@@ -22,8 +22,6 @@ from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import UploadedFile
 from django.utils.translation import gettext as _
 
-from djangocmf.cmfadmin.templatetags.media import media_url
-
 
 class UploadPathRule(StrEnum):
     """Defines strategies for organizing uploaded files"""
@@ -55,7 +53,7 @@ class UploadResult:
     media_path: str = field(init=False)
 
     def __post_init__(self):
-        self.media_path = media_url(self.path)
+        self.media_path = default_storage.url(self.path)
 
     def to_dict(self) -> dict:
         return asdict(self)

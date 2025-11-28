@@ -24,11 +24,11 @@ from django.templatetags.static import static
 
 from djangocmf.cmfadmin import constants
 from djangocmf.cmfadmin.enums import MenuSyncMode, MenuSource, MenuPermissions
-from djangocmf.cmfadmin.libs import TreeNode
 from djangocmf.cmfadmin.models import Menu, MenuPermission
 from djangocmf.cmfadmin.service.authorization import PermissionService
 from djangocmf.cmfadmin.utils.helper import get_model_fields, get_valid_app_labels
-from djangocmf.cmfadmin.utils.tools import to_snake_case, to_compact_case
+from djangocmf.core.libs.tree import TreeNode
+from djangocmf.core.utils.tools import to_snake_case, to_compact_case
 
 User = get_user_model()
 

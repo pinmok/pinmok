@@ -27,8 +27,8 @@ from django.utils.functional import Promise
 from django.utils.translation import gettext as _
 
 from djangocmf.cmfadmin.enums import PermissionSource, MenuPermissions
-from djangocmf.cmfadmin.libs import TreeNode
 from djangocmf.cmfadmin.models import MenuPermission, Menu
+from djangocmf.core.libs.tree import TreeNode
 
 User = get_user_model()
 

@@ -15,12 +15,8 @@
                     {% endif %}
                     <!-- END DOCUMENTATION -->
                     <li class="list-inline-item">
-                        <a href="{% url 'admin:license_page' %}" class="link-secondary">License</a>
-                    </li>
-                    <li class="list-inline-item">
-                        <!-- TODO 修改链接内容 -->
-                        <a href="#" target="_blank" class="link-secondary" rel="noopener">
-                            {% sprite 'tabler-heart' 'icon text-pink icon-inline' %} Sponsor
+                        <a href="{% url 'admin:license_page' %}" class="link-secondary">
+                            {% sprite 'tabler-license' 'icon text-cyan icon-inline' %} {% translate 'License' %}
                         </a>
                     </li>
                 </ul>

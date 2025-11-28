@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DjangoCMF 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-25 13:04+0800\n"
+"POT-Creation-Date: 2025-11-28 15:20+0800\n"
 "PO-Revision-Date: 2025-11-17 00:54+0800\n"
 "Last-Translator: 惠达浪 <crazys@126.com>\n"
 "Language-Team: DjangoCMF Team\n"
@@ -26,15 +26,6 @@ msgstr "图标"
 #: .\djangocmf\cmfadmin\admin.py:105
 msgid "Edit Menu"
 msgstr "编辑菜单"
-
-#: .\djangocmf\cmfadmin\admin.py:107
-#: .\djangocmf\cmfadmin\templates\admin\object_history.html:25
-#: .\djangocmf\cmfadmin\templates\config\files.html:16
-#: .\djangocmf\cmfadmin\templates\config\navigation.html:21
-#, fuzzy
-#| msgid "Active"
-msgid "Action"
-msgstr "激活"
 
 #: .\djangocmf\cmfadmin\constants.py:93
 msgid "Success"
@@ -94,11 +85,6 @@ msgstr "标题"
 #: .\djangocmf\cmfadmin\models.py:33
 msgid "Menu title displayed in the admin."
 msgstr "在管理后台显示的菜单标题。"
-
-#: .\djangocmf\cmfadmin\models.py:34 .\djangocmf\cmfadmin\models.py:136
-#: .\djangocmf\cmfadmin\models.py:193
-msgid "URL"
-msgstr ""
 
 #: .\djangocmf\cmfadmin\models.py:35
 msgid "URL or named route for the menu item."
@@ -166,30 +152,18 @@ msgid "Time when this menu item was last updated."
 msgstr "该菜单项的最后更新时间。"
 
 #: .\djangocmf\cmfadmin\models.py:56
-#, fuzzy
-#| msgid "Admin Menu"
-#| msgid_plural "Admin Menus"
 msgid "Admin Menu"
 msgstr "管理菜单"
 
 #: .\djangocmf\cmfadmin\models.py:57
-#, fuzzy
-#| msgid "Admin Menu"
-#| msgid_plural "Admin Menus"
 msgid "Admin Menus"
 msgstr "管理菜单"
 
 #: .\djangocmf\cmfadmin\models.py:76
-#, fuzzy
-#| msgid "Menu Permission"
-#| msgid_plural "Menu Permissions"
 msgid "Menu Permission"
 msgstr "菜单权限"
 
 #: .\djangocmf\cmfadmin\models.py:77
-#, fuzzy
-#| msgid "Menu Permission"
-#| msgid_plural "Menu Permissions"
 msgid "Menu Permissions"
 msgstr "菜单权限"
 
@@ -235,16 +209,10 @@ msgid "Time when this configuration was last updated."
 msgstr "该配置的最后更新时间。"
 
 #: .\djangocmf\cmfadmin\models.py:123
-#, fuzzy
-#| msgid "Configuration Item"
-#| msgid_plural "Configuration Items"
 msgid "Configuration Item"
 msgstr "配置项"
 
 #: .\djangocmf\cmfadmin\models.py:124
-#, fuzzy
-#| msgid "Configuration Item"
-#| msgid_plural "Configuration Items"
 msgid "Configuration Items"
 msgstr "配置项"
 
@@ -256,9 +224,11 @@ msgstr "友情链接标题。"
 msgid "The URL for the external link."
 msgstr "友情链接 URL。"
 
-#: .\djangocmf\cmfadmin\models.py:138 .\djangocmf\cmfadmin\models.py:140
-#, fuzzy
-#| msgid "image"
+#: .\djangocmf\cmfadmin\models.py:138
+msgid "Image URL"
+msgstr "图片URL"
+
+#: .\djangocmf\cmfadmin\models.py:140
 msgid "Image"
 msgstr "图像"
 
@@ -297,8 +267,8 @@ msgstr "别名/短标识"
 
 #: .\djangocmf\cmfadmin\models.py:164
 msgid ""
-"A short unique identifier used in URLs and templates. Only letters, numbers, "
-"hyphens, and underscores are allowed."
+"A short unique identifier used in URLs and templates. Only letters, numbers,"
+" hyphens, and underscores are allowed."
 msgstr "用于 URL 和模板的短唯一标识符。仅允许字母、数字、连字符和下划线。"
 
 #: .\djangocmf\cmfadmin\models.py:166
@@ -390,16 +360,10 @@ msgid "Time when this navigation item was last updated."
 msgstr "该导航项的最后更新时间。"
 
 #: .\djangocmf\cmfadmin\models.py:209
-#, fuzzy
-#| msgid "Navigation Item"
-#| msgid_plural "Navigation Items"
 msgid "Navigation Item"
 msgstr "导航项"
 
 #: .\djangocmf\cmfadmin\models.py:210
-#, fuzzy
-#| msgid "Navigation Item"
-#| msgid_plural "Navigation Items"
 msgid "Navigation Items"
 msgstr "导航项"
 
@@ -467,16 +431,10 @@ msgid "Upload timestamp."
 msgstr "上传时间戳。"
 
 #: .\djangocmf\cmfadmin\models.py:239
-#, fuzzy
-#| msgid "Uploaded File"
-#| msgid_plural "Uploaded Files"
 msgid "Uploaded File"
 msgstr "上传文件"
 
 #: .\djangocmf\cmfadmin\models.py:240
-#, fuzzy
-#| msgid "Uploaded File"
-#| msgid_plural "Uploaded Files"
 msgid "Uploaded Files"
 msgstr "上传文件"
 
@@ -516,27 +474,6 @@ msgstr "抱歉，您访问的页面不存在。"
 msgid "We are sorry but our server encountered an internal error"
 msgstr "抱歉，服务器遇到内部错误。"
 
-#: .\djangocmf\cmfadmin\templates\admin\actions.html:21
-msgid "Run the selected action"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\actions.html:22
-msgid "Go"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\actions.html:31
-msgid "Click here to select the objects across all pages"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\actions.html:32
-#, python-format
-msgid "Select all %(total_count)s %(module_name)s"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\actions.html:36
-msgid "Clear selection"
-msgstr ""
-
 #: .\djangocmf\cmfadmin\templates\admin\auth\user\profile.html:8
 #: .\djangocmf\cmfadmin\templates\admin\base_site.html:104
 msgid "Profile"
@@ -554,22 +491,9 @@ msgstr "名"
 msgid "Last Name"
 msgstr "姓"
 
-#: .\djangocmf\cmfadmin\templates\admin\auth\user\profile.html:57
-#, fuzzy
-#| msgid "Test Email"
-msgid "Email"
-msgstr "测试邮件"
-
 #: .\djangocmf\cmfadmin\templates\admin\auth\user\profile.html:63
 msgid "You can click the button below to go to the password change page."
 msgstr "您可以点击下方按钮前往密码修改页面。"
-
-#: .\djangocmf\cmfadmin\templates\admin\auth\user\profile.html:66
-#: .\djangocmf\cmfadmin\templates\admin\base_site.html:107
-#, fuzzy
-#| msgid "SMTP password"
-msgid "Change password"
-msgstr "SMTP 密码"
 
 #: .\djangocmf\cmfadmin\templates\admin\auth\user\profile.html:70
 msgid "Current user identity and status."
@@ -587,57 +511,13 @@ msgstr "普通用户"
 msgid "Is staff"
 msgstr "是否为员工"
 
-#: .\djangocmf\cmfadmin\templates\admin\auth\user\profile.html:84
-#: .\djangocmf\cmfadmin\templates\admin\pagination.html:6
-#: .\djangocmf\cmfadmin\templates\admin\submit_line.html:5
-#: .\djangocmf\cmfadmin\templates\config\email_settings.html:100
-#: .\djangocmf\cmfadmin\templates\config\email_settings.html:145
-#: .\djangocmf\cmfadmin\templates\config\navitem_form.html:71
-#: .\djangocmf\cmfadmin\templates\config\site_info.html:178
-#: .\djangocmf\cmfadmin\templates\config\upload_setting.html:63
-msgid "Save"
-msgstr ""
-
 #: .\djangocmf\cmfadmin\templates\admin\auth\user\user_add.html:11
 msgid "After you’ve created a user, you’ll be able to edit more user options."
 msgstr "创建用户后，您将能够编辑更多用户选项。"
 
-#: .\djangocmf\cmfadmin\templates\admin\auth\user\user_change_form.html:10
-#, fuzzy
-#| msgid "External Link"
-msgid "Personal info"
-msgstr "友情链接"
-
 #: .\djangocmf\cmfadmin\templates\admin\auth\user\user_change_form.html:15
 msgid "Groups"
 msgstr "用户组"
-
-#: .\djangocmf\cmfadmin\templates\admin\auth\user\user_change_form.html:20
-#, fuzzy
-#| msgctxt "license"
-#| msgid "Permissions"
-msgid "Permissions"
-msgstr "许可权限"
-
-#: .\djangocmf\cmfadmin\templates\admin\auth\user\user_change_form.html:49
-#, fuzzy
-#| msgid "SMTP password"
-msgid "Reset password"
-msgstr "SMTP 密码"
-
-#: .\djangocmf\cmfadmin\templates\admin\auth\user\user_change_form.html:50
-#, fuzzy
-#| msgid "SMTP password"
-msgid "Set password"
-msgstr "SMTP 密码"
-
-#: .\djangocmf\cmfadmin\templates\admin\base_site.html:28
-msgid "Toggle theme (current theme: light)"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\base_site.html:33
-msgid "Toggle theme (current theme: dark)"
-msgstr ""
 
 #: .\djangocmf\cmfadmin\templates\admin\base_site.html:56
 msgid "Language"
@@ -651,100 +531,12 @@ msgstr "超级用户"
 msgid "Staff"
 msgstr "员工"
 
-#: .\djangocmf\cmfadmin\templates\admin\base_site.html:112
-msgid "Log out"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\base_site.html:120
-msgid "Home"
-msgstr ""
-
 #: .\djangocmf\cmfadmin\templates\admin\change_form.html:4
 #: .\djangocmf\cmfadmin\templates\admin\change_list.html:4
 #: .\djangocmf\cmfadmin\templates\admin\login.html:4
 #: .\djangocmf\cmfadmin\templates\registration\password_change_form.html:6
 msgid "Error:"
 msgstr "错误："
-
-#: .\djangocmf\cmfadmin\templates\admin\change_form.html:23
-#: .\djangocmf\cmfadmin\templates\admin\change_list_object_tools.html:8
-#, python-format
-msgid "Add %(name)s"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\change_form.html:52
-#: .\djangocmf\cmfadmin\templates\admin\change_list.html:56
-#: .\djangocmf\cmfadmin\templates\admin\login.html:37
-#: .\djangocmf\cmfadmin\templates\registration\password_change_form.html:36
-msgid "Please correct the error below."
-msgid_plural "Please correct the errors below."
-msgstr[0] ""
-
-#: .\djangocmf\cmfadmin\templates\admin\change_form_object_tools.html:4
-#: .\djangocmf\cmfadmin\templates\admin\object_history.html:14
-msgid "History"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\change_form_object_tools.html:6
-msgid "View on site"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\change_list.html:79
-#: .\djangocmf\cmfadmin\templates\admin\change_list.html:103
-#: .\djangocmf\cmfadmin\templates\admin\change_list.html:134
-msgid "Filter"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\change_list.html:114
-msgid "Hide counts"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\change_list.html:118
-msgid "Show counts"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\change_list.html:124
-msgid "Clear all filters"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\change_list.html:134
-#: .\djangocmf\cmfadmin\templates\admin\submit_line.html:20
-#: .\djangocmf\cmfadmin\templates\component\dialog.html:7
-msgid "Close"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\change_list_results.html:38
-#, fuzzy
-#| msgid "Order for menu sorting."
-msgid "Remove from sorting"
-msgstr "菜单排序顺序。"
-
-#: .\djangocmf\cmfadmin\templates\admin\change_list_results.html:42
-#, python-format
-msgid "Sorting priority: %(priority_number)s"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\delete_selected_confirmation.html:20
-msgid "Delete multiple objects"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\delete_selected_confirmation.html:27
-#, python-format
-msgid ""
-"Deleting the selected %(objects_name)s would result in deleting related "
-"objects, but your account doesn't have permission to delete the following "
-"types of objects:"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\delete_selected_confirmation.html:36
-#, fuzzy, python-format
-#| msgid ""
-#| "Are you sure you want to delete the selected %(objects_name)s? All the "
-#| "following objects and their related items will be deleted:"
-msgid ""
-"Deleting the selected %(objects_name)s would require deleting the following "
-"protected related objects:"
-msgstr "确定要删除选中的 %(objects_name)s 吗？以下对象及其关联项都将被删除："
 
 #: .\djangocmf\cmfadmin\templates\admin\delete_selected_confirmation.html:44
 #, python-format
@@ -753,44 +545,14 @@ msgid ""
 "following objects and their related items will be deleted:"
 msgstr "确定要删除选中的 %(objects_name)s 吗？以下对象及其关联项都将被删除："
 
-#: .\djangocmf\cmfadmin\templates\admin\delete_selected_confirmation.html:57
-#, fuzzy
-#| msgid "Subject"
-msgid "Objects"
-msgstr "主题"
-
-#: .\djangocmf\cmfadmin\templates\admin\delete_selected_confirmation.html:74
-msgid "Yes, I’m sure"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\delete_selected_confirmation.html:75
-#, fuzzy
-#| msgid "Take me back or home"
-msgid "No, take me back"
-msgstr "返回上一页或首页"
-
 #: .\djangocmf\cmfadmin\templates\admin\filter.html:6
 #, python-format
 msgid "By %(filter_title)s"
 msgstr "按 %(filter_title)s 筛选"
 
-#: .\djangocmf\cmfadmin\templates\admin\includes\footer.html:12
-#, fuzzy
-#| msgid "document"
-msgid "Documentation"
-msgstr "文档"
-
 #: .\djangocmf\cmfadmin\templates\admin\includes\footer.html:36
 msgid "Based on Tabler"
 msgstr "基于 Tabler 制作"
-
-#: .\djangocmf\cmfadmin\templates\admin\includes\object_delete_summary.html:6
-msgid "Summary"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\includes\sidebar.html:30
-msgid "View site"
-msgstr ""
 
 #: .\djangocmf\cmfadmin\templates\admin\includes\sidebar.html:38
 #: .\djangocmf\cmfadmin\templates\config\sync_menu.html:3
@@ -805,12 +567,10 @@ msgstr "警告"
 
 #: .\djangocmf\cmfadmin\templates\admin\includes\sidebar.html:147
 msgid ""
-"Synchronizing the menu will reload the menu configuration and reset all menu "
-"items. This action cannot be undone! Please proceed with caution if you have "
-"made any adjustments to the menus!"
-msgstr ""
-"同步菜单操作将重新加载菜单配置，并重置所有菜单项。此操作无法撤销！如果您对菜"
-"单进行了调整，请谨慎操作！"
+"Synchronizing the menu will reload the menu configuration and reset all menu"
+" items. This action cannot be undone! Please proceed with caution if you "
+"have made any adjustments to the menus!"
+msgstr "同步菜单操作将重新加载菜单配置，并重置所有菜单项。此操作无法撤销！如果您对菜单进行了调整，请谨慎操作！"
 
 #: .\djangocmf\cmfadmin\templates\admin\includes\sidebar.html:157
 #: .\djangocmf\cmfadmin\templates\component\cropper.html:68
@@ -827,10 +587,6 @@ msgstr "确认"
 msgid "Dashboard"
 msgstr "仪表盘"
 
-#: .\djangocmf\cmfadmin\templates\admin\index.html:12
-msgid "Welcome,"
-msgstr ""
-
 #: .\djangocmf\cmfadmin\templates\admin\index.html:28
 msgid "System Information"
 msgstr "系统信息"
@@ -838,16 +594,6 @@ msgstr "系统信息"
 #: .\djangocmf\cmfadmin\templates\admin\index.html:32
 msgid "Operating System"
 msgstr "操作系统"
-
-#: .\djangocmf\cmfadmin\templates\admin\index.html:36
-#: .\djangocmf\cmfadmin\templates\admin\index.html:40
-#: .\djangocmf\cmfadmin\templates\admin\index.html:44
-#: .\djangocmf\cmfadmin\templates\admin\index.html:52
-#, fuzzy
-#| msgctxt "license"
-#| msgid "Permissions"
-msgid "version"
-msgstr "许可权限"
 
 #: .\djangocmf\cmfadmin\templates\admin\index.html:48
 #: .\djangocmf\cmfadmin\templates\admin\index.html:52
@@ -868,120 +614,9 @@ msgstr "已用"
 msgid "Free"
 msgstr "可用"
 
-#: .\djangocmf\cmfadmin\templates\admin\index.html:105
-#, fuzzy
-#| msgid "Recipient email"
-msgid "Recent actions"
-msgstr "收件邮箱"
-
-#: .\djangocmf\cmfadmin\templates\admin\index.html:106
-msgid "My actions"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\index.html:111
-msgid "None available"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\index.html:119
-msgid "Added:"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\index.html:121
-msgid "Changed:"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\index.html:123
-#, fuzzy
-#| msgid "Delete QRCode"
-msgid "Deleted:"
-msgstr "删除二维码"
-
-#: .\djangocmf\cmfadmin\templates\admin\index.html:130
-msgid "Unknown content"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\login.html:48
-#, python-format
-msgid ""
-"You are authenticated as %(username)s, but are not authorized to access this "
-"page. Would you like to login to a different account?"
-msgstr ""
-
 #: .\djangocmf\cmfadmin\templates\admin\login.html:76
 msgid "Forgotten your login credentials?"
 msgstr "忘记登录凭据？"
-
-#: .\djangocmf\cmfadmin\templates\admin\login.html:81
-msgid "Log in"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\object_history.html:23
-msgid "Date/time"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\object_history.html:24
-msgid "User"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\object_history.html:55
-msgid "entry"
-msgid_plural "entries"
-msgstr[0] ""
-
-#: .\djangocmf\cmfadmin\templates\admin\object_history.html:63
-msgid ""
-"This object doesn’t have a change history. It probably wasn’t added via this "
-"admin site."
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\pagination.html:5
-#: .\djangocmf\cmfadmin\templates\admin\search_form.html:26
-msgid "Show all"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\search_form.html:14
-#: .\djangocmf\cmfadmin\templates\config\sprite_manager.html:14
-#, fuzzy
-#| msgid "archive"
-msgid "Search"
-msgstr "压缩文件"
-
-#: .\djangocmf\cmfadmin\templates\admin\search_form.html:20
-#, python-format
-msgid "%(counter)s result"
-msgid_plural "%(counter)s results"
-msgstr[0] ""
-
-#: .\djangocmf\cmfadmin\templates\admin\search_form.html:24
-#, python-format
-msgid "%(full_result_count)s total"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\submit_line.html:8
-msgid "Save as new"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\submit_line.html:11
-#: .\djangocmf\cmfadmin\templates\config\navitem_form.html:72
-msgid "Save and add another"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\submit_line.html:15
-msgid "Save and continue editing"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\submit_line.html:15
-msgid "Save and view"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\admin\submit_line.html:24
-#: .\djangocmf\cmfadmin\templates\config\files.html:30
-#: .\djangocmf\cmfadmin\templates\config\navigation.html:33
-#: .\djangocmf\cmfadmin\templates\config\sprite_manager.html:58
-#, fuzzy
-#| msgid "Delete QRCode"
-msgid "Delete"
-msgstr "删除二维码"
 
 #: .\djangocmf\cmfadmin\templates\component\cropper.html:10
 msgid "Crop Image"
@@ -1084,10 +719,6 @@ msgstr "用于验证邮件服务器的密码。"
 msgid "Timeout"
 msgstr "超时时间"
 
-#: .\djangocmf\cmfadmin\templates\config\email_settings.html:72
-msgid "None"
-msgstr ""
-
 #: .\djangocmf\cmfadmin\templates\config\email_settings.html:74
 #: .\djangocmf\cmfadmin\templates\config\email_settings.html:76
 msgid "Seconds"
@@ -1183,28 +814,18 @@ msgstr "上传时间"
 #: .\djangocmf\cmfadmin\templates\config\navigation.html:31
 #: .\djangocmf\cmfadmin\templates\config\navitem_form.html:5
 #: .\djangocmf\cmfadmin\templates\config\sprite_manager.html:54
-#: .\djangocmf\cmfadmin\views.py:364
+#: .\djangocmf\cmfadmin\views.py:363
 msgid "Edit"
 msgstr "编辑"
 
 #: .\djangocmf\cmfadmin\templates\config\navigation.html:8
-#: .\djangocmf\cmfadmin\templates\config\sprite_manager.html:7
-#: .\djangocmf\cmfadmin\views.py:367
-msgid "Add"
-msgstr "添加"
-
-#: .\djangocmf\cmfadmin\templates\config\navigation.html:8
-#: .\djangocmf\cmfadmin\views.py:370
+#: .\djangocmf\cmfadmin\views.py:369
 msgid "Nav Item"
 msgstr "导航项"
 
 #: .\djangocmf\cmfadmin\templates\config\navigation.html:19
 msgid "Sort order"
 msgstr "排序"
-
-#: .\djangocmf\cmfadmin\templates\config\navigation.html:49
-msgid "Are you sure?"
-msgstr ""
 
 #: .\djangocmf\cmfadmin\templates\config\navitem_form.html:28
 msgid "Top Level"
@@ -1281,7 +902,8 @@ msgstr "公网安备号"
 
 #: .\djangocmf\cmfadmin\templates\config\site_info.html:76
 msgid ""
-"Certificate of Public Network Security Filing, leave blank if not applicable."
+"Certificate of Public Network Security Filing, leave blank if not "
+"applicable."
 msgstr "公安网备案号，没有请留空。"
 
 #: .\djangocmf\cmfadmin\templates\config\site_info.html:83
@@ -1439,23 +1061,24 @@ msgstr "上传路径规则"
 
 #: .\djangocmf\cmfadmin\templates\license\license.html:7
 msgid "License"
-msgstr ""
+msgstr "许可协议"
 
 #: .\djangocmf\cmfadmin\templates\license\license.html:18
 msgid "is available under MIT License."
-msgstr ""
+msgstr "以 MIT 许可协议发布。"
 
 #: .\djangocmf\cmfadmin\templates\license\license.html:60
 msgid "is licensed under the"
-msgstr ""
+msgstr "采用"
 
 #: .\djangocmf\cmfadmin\templates\license\license.html:66
 msgid ""
-"\n"
-"A short and simple permissive license requiring only copyright and license notice preservation. MIT-licensed\n"
-"works may be used for commercial purposes, modified, distributed, and included in larger works without\n"
-"obligation to disclose source code.\n"
-msgstr ""
+"A short and simple permissive license requiring only copyright and license "
+"notice preservation. MIT-licensed works may be used for commercial purposes,"
+" modified, distributed, and included in larger works without obligation to "
+"disclose source code."
+msgstr "一种简短且宽松的许可证，仅要求保留版权声明和许可声明。MIT 许可的作品可用于商业用途，可修改、分发，"
+"并可被包含在更大的作品中，无需公开源代码。"
 
 #: .\djangocmf\cmfadmin\templates\license\license.html:73
 msgctxt "license"
@@ -1463,296 +1086,279 @@ msgid "Permissions"
 msgstr "许可权限"
 
 #: .\djangocmf\cmfadmin\templates\license\license.html:75
-#, fuzzy
-#| msgid "Normal user"
 msgid "Commercial use"
-msgstr "普通用户"
+msgstr "商业使用权"
 
 #: .\djangocmf\cmfadmin\templates\license\license.html:76
 msgid "Modification"
-msgstr ""
+msgstr "修改权"
 
 #: .\djangocmf\cmfadmin\templates\license\license.html:77
 msgid "Distribution"
-msgstr ""
+msgstr "分发权"
 
 #: .\djangocmf\cmfadmin\templates\license\license.html:78
 msgid "Private use"
-msgstr ""
+msgstr "个人使用权"
 
 #: .\djangocmf\cmfadmin\templates\license\license.html:81
-#, fuzzy
-#| msgid "Navigations"
 msgid "Limitations"
-msgstr "导航列表"
+msgstr "使用限制"
 
 #: .\djangocmf\cmfadmin\templates\license\license.html:83
 msgid "Liability"
-msgstr ""
+msgstr "责任承担"
 
 #: .\djangocmf\cmfadmin\templates\license\license.html:84
 msgid "Warranty"
-msgstr ""
+msgstr "提供保证"
+
+#: .\djangocmf\cmfadmin\templates\license\license.html:87
+msgid "Conditions"
+msgstr "条件"
 
 #: .\djangocmf\cmfadmin\templates\license\license.html:91
 msgid "License and copyright notice"
-msgstr ""
+msgstr "保留原版权和许可证声明"
 
 #: .\djangocmf\cmfadmin\templates\license\license.html:96
 msgid "This is not legal advice."
-msgstr ""
+msgstr "仅供参考，并非法律建议。"
 
 #: .\djangocmf\cmfadmin\templates\license\license.html:98
 msgid "Learn more about the MIT License."
-msgstr ""
+msgstr "查看更多关于 MIT 许可证的信息。"
 
-#: .\djangocmf\cmfadmin\templates\registration\password_change_done.html:13
-msgid "Your password was changed."
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\registration\password_change_form.html:12
-msgid "Password change"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\registration\password_change_form.html:22
-#: .\djangocmf\cmfadmin\templates\registration\password_change_form.html:117
-msgid "Change my password"
-msgstr ""
-
-#: .\djangocmf\cmfadmin\templates\registration\password_change_form.html:45
-msgid ""
-"Please enter your old password, for security’s sake, and then enter your new "
-"password twice so we can verify you typed it in correctly."
-msgstr ""
-
-#: .\djangocmf\cmfadmin\views.py:135
+#: .\djangocmf\cmfadmin\views.py:134
 #, python-format
 msgid "Failed to upload '%(name)s': %(error)s"
 msgstr "上传 “%(name)s” 失败：%(error)s"
 
-#: .\djangocmf\cmfadmin\views.py:148
+#: .\djangocmf\cmfadmin\views.py:147
 #, python-format
 msgid "Failed to load configuration: %(error)s"
 msgstr "加载配置失败：%(error)s"
 
-#: .\djangocmf\cmfadmin\views.py:161
+#: .\djangocmf\cmfadmin\views.py:160
 msgid "Configuration updated successfully."
 msgstr "配置更新成功。"
 
-#: .\djangocmf\cmfadmin\views.py:163
+#: .\djangocmf\cmfadmin\views.py:162
 msgid "No valid data submitted."
 msgstr "未提交有效数据。"
 
-#: .\djangocmf\cmfadmin\views.py:165
+#: .\djangocmf\cmfadmin\views.py:164
 #, python-format
 msgid "Failed to save configuration: %(error)s"
 msgstr "保存配置失败：%(error)s"
 
-#: .\djangocmf\cmfadmin\views.py:234
+#: .\djangocmf\cmfadmin\views.py:233
 msgid "Email configuration has been reset."
 msgstr "邮箱配置已重置。"
 
-#: .\djangocmf\cmfadmin\views.py:237
+#: .\djangocmf\cmfadmin\views.py:236
 msgid "Email base settings updated."
 msgstr "邮箱基础设置已更新。"
 
-#: .\djangocmf\cmfadmin\views.py:240
+#: .\djangocmf\cmfadmin\views.py:239
 msgid "Email template updated."
 msgstr "邮箱模板已更新。"
 
-#: .\djangocmf\cmfadmin\views.py:246
+#: .\djangocmf\cmfadmin\views.py:245
 msgid "Invalid action."
 msgstr "非法操作。"
 
-#: .\djangocmf\cmfadmin\views.py:248
+#: .\djangocmf\cmfadmin\views.py:247
 #, python-format
 msgid "Failed to process request: %(error)s"
 msgstr "处理请求失败：%(error)s"
 
-#: .\djangocmf\cmfadmin\views.py:281 .\djangocmf\cmfadmin\views.py:304
+#: .\djangocmf\cmfadmin\views.py:280 .\djangocmf\cmfadmin\views.py:303
 msgid "Recipient address is required."
 msgstr "收件地址为必填项。"
 
-#: .\djangocmf\cmfadmin\views.py:286 .\djangocmf\cmfadmin\views.py:309
+#: .\djangocmf\cmfadmin\views.py:285 .\djangocmf\cmfadmin\views.py:308
 msgid "Invalid email address"
 msgstr "无效的邮箱地址"
 
-#: .\djangocmf\cmfadmin\views.py:292 .\djangocmf\cmfadmin\views.py:320
+#: .\djangocmf\cmfadmin\views.py:291 .\djangocmf\cmfadmin\views.py:319
 msgid "Successfully sent email."
 msgstr "邮件发送成功。"
 
-#: .\djangocmf\cmfadmin\views.py:294 .\djangocmf\cmfadmin\views.py:322
+#: .\djangocmf\cmfadmin\views.py:293 .\djangocmf\cmfadmin\views.py:321
 msgid "Failed to send email."
 msgstr "邮件发送失败。"
 
-#: .\djangocmf\cmfadmin\views.py:296 .\djangocmf\cmfadmin\views.py:324
+#: .\djangocmf\cmfadmin\views.py:295 .\djangocmf\cmfadmin\views.py:323
 msgid "Error while sending email: "
 msgstr "发送邮件时出错："
 
-#: .\djangocmf\cmfadmin\views.py:314
+#: .\djangocmf\cmfadmin\views.py:313
 msgid "Invalid JSON format for variables."
 msgstr "变量的JSON格式无效。"
 
-#: .\djangocmf\cmfadmin\views.py:425
+#: .\djangocmf\cmfadmin\views.py:424
 msgid "Missing navigation item ID."
 msgstr "缺少导航项ID。"
 
-#: .\djangocmf\cmfadmin\views.py:430
+#: .\djangocmf\cmfadmin\views.py:429
 msgid "Node does not exist."
 msgstr "节点不存在。"
 
-#: .\djangocmf\cmfadmin\views.py:436
+#: .\djangocmf\cmfadmin\views.py:435
 msgid ""
 "This node has child items and cannot be deleted. Please delete child items "
 "first."
 msgstr "此节点包含子项，无法删除，请先删除子项。"
 
-#: .\djangocmf\cmfadmin\views.py:442 .\djangocmf\cmfadmin\views.py:560
+#: .\djangocmf\cmfadmin\views.py:441 .\djangocmf\cmfadmin\views.py:559
 msgid "Deleted successfully."
 msgstr "删除成功。"
 
-#: .\djangocmf\cmfadmin\views.py:445
+#: .\djangocmf\cmfadmin\views.py:444
 msgid "Failed to delete item: "
 msgstr "删除项失败："
 
-#: .\djangocmf\cmfadmin\views.py:494
+#: .\djangocmf\cmfadmin\views.py:493
 #, python-format
 msgid "Failed to load system sprite: %(error)s"
 msgstr "加载系统精灵图失败：%(error)s"
 
-#: .\djangocmf\cmfadmin\views.py:501
+#: .\djangocmf\cmfadmin\views.py:500
 #, python-format
 msgid "Failed to load custom sprite: %(error)s"
 msgstr "加载自定义精灵图失败：%(error)s"
 
-#: .\djangocmf\cmfadmin\views.py:521
+#: .\djangocmf\cmfadmin\views.py:520
 msgid "Symbol ID and SVG code are required."
 msgstr "Symbol ID 和 SVG 代码是必填的。"
 
-#: .\djangocmf\cmfadmin\views.py:530
+#: .\djangocmf\cmfadmin\views.py:529
 #, python-format
 msgid "Icon '%(id)s' has been updated successfully."
 msgstr "图标 '%(id)s' 已成功更新。"
 
-#: .\djangocmf\cmfadmin\views.py:533
+#: .\djangocmf\cmfadmin\views.py:532
 #, python-format
 msgid "New icon '%(id)s' has been added successfully."
 msgstr "新图标 '%(id)s' 已成功添加。"
 
-#: .\djangocmf\cmfadmin\views.py:539 .\djangocmf\cmfadmin\views.py:563
+#: .\djangocmf\cmfadmin\views.py:538 .\djangocmf\cmfadmin\views.py:562
 #, python-format
 msgid "Error: %(error)s"
 msgstr "错误：%(error)s"
 
-#: .\djangocmf\cmfadmin\views.py:550
+#: .\djangocmf\cmfadmin\views.py:549
 msgid "Invalid JSON format."
 msgstr "无效的JSON格式。"
 
-#: .\djangocmf\cmfadmin\views.py:554
+#: .\djangocmf\cmfadmin\views.py:553
 msgid "Symbol ID is required."
 msgstr "需要 Symbol ID。"
 
-#: .\djangocmf\cmfadmin\views.py:561
+#: .\djangocmf\cmfadmin\views.py:560
 msgid "Symbol ID not found."
 msgstr "Symbol ID未找到。"
 
-#: .\djangocmf\cmfadmin\views.py:574
+#: .\djangocmf\cmfadmin\views.py:573
 msgid "Missing file or file_type"
 msgstr "缺少文件或文件类型"
 
-#: .\djangocmf\cmfadmin\views.py:579
+#: .\djangocmf\cmfadmin\views.py:578
 msgid "Invalid file_type"
 msgstr "无效的文件类型"
 
-#: .\djangocmf\cmfadmin\views.py:584
+#: .\djangocmf\cmfadmin\views.py:583
 msgid "Upload successful."
 msgstr "上传成功。"
 
-#: .\djangocmf\cmfadmin\views.py:586
+#: .\djangocmf\cmfadmin\views.py:585
 #, python-format
 msgid "Upload failed: %(error)s"
 msgstr "上传失败：%(error)s"
 
-#: .\djangocmf\cmfadmin\views.py:600
+#: .\djangocmf\cmfadmin\views.py:599
 msgid "Missing file path"
 msgstr "缺少文件路径"
 
-#: .\djangocmf\cmfadmin\views.py:604
+#: .\djangocmf\cmfadmin\views.py:603
 msgid "Delete successful."
 msgstr "删除成功。"
 
-#: .\djangocmf\cmfadmin\views.py:606
+#: .\djangocmf\cmfadmin\views.py:605
 msgid "File not found"
 msgstr "文件未找到"
 
-#: .\djangocmf\cmfadmin\views.py:608
+#: .\djangocmf\cmfadmin\views.py:607
 #, python-format
 msgid "Delete failed: %(error)s"
 msgstr "删除失败：%(error)s"
 
-#: .\djangocmf\cmfadmin\views.py:619
+#: .\djangocmf\cmfadmin\views.py:618
 msgid "User Profile"
 msgstr "用户资料"
 
-#: .\djangocmf\cmfadmin\views.py:639
+#: .\djangocmf\cmfadmin\views.py:638
 msgid "No changes detected."
 msgstr "未检测到更改。"
 
-#: .\djangocmf\cmfadmin\views.py:644
+#: .\djangocmf\cmfadmin\views.py:643
 msgid "Profile updated successfully."
 msgstr "资料更新成功。"
 
-#: .\djangocmf\cmfadmin\views.py:646
+#: .\djangocmf\cmfadmin\views.py:645
 #, python-format
 msgid "Failed to save profile: %(error)s"
 msgstr "保存资料失败：%(error)s"
 
+#: .\djangocmf\cmfadmin\views.py:477
 msgid "Add Sprite Icon"
 msgstr "添加精灵图标"
 
+#: .\djangocmf\cmfadmin\views.py:479
 msgid "Edit Sprite Icon"
 msgstr "编辑精灵图标"
 
 msgid "Sprite Manager"
 msgstr "精灵图标管理器"
 
-# .\cmfadmin\menus.py:27
+#: .\django\cmfadmin\menus.py:27
 msgid "Site Settings"
 msgstr "站点设置"
 
-# .\cmfadmin\enums.py:44
+#: .\django\cmfadmin\enums.py:44
 msgid "Email Settings"
 msgstr "邮件设置"
 
-# .\cmfadmin\enums.py:53
+#: .\django\cmfadmin\enums.py:53
 msgid "File Management"
 msgstr "文件管理"
 
-# .\cmfadmin\enums.py:51
+#: .\django\cmfadmin\enums.py:51
 msgid "Icons Management"
 msgstr "图标管理"
 
-# .\cmfadmin\enums.py:50
+#: .\django\cmfadmin\enums.py:50
 msgid "Upload Settings"
 msgstr "上传设置"
 
-# .\cmfadmin\enums.py:48
+#: .\django\cmfadmin\enums.py:48
 msgid "Template Management"
 msgstr "模板管理"
 
-# .\cmfadmin\enums.py:49
+#: .\django\cmfadmin\enums.py:49
 msgid "System Settings"
 msgstr "系统管理"
 
-# .\cmfadmin\enums.py:52
+#: .\django\cmfadmin\enums.py:52
 msgid "Log Management"
 msgstr "日志管理"
 
-# .\cmfadmin\enums.py:73
+#: .\django\cmfadmin\enums.py:73
 msgid "Self Window"
 msgstr "当前窗口"
 
-# .\cmfadmin\enums.py:74
+#: .\django\cmfadmin\enums.py:74
 msgid "Blank Window"
 msgstr "新窗口"
 
@@ -1761,3 +1367,12 @@ msgstr "音频"
 
 msgid "video"
 msgstr "视频"
+
+msgid "image"
+msgstr "图像"
+
+msgid "document"
+msgstr "文档"
+
+msgid "archive"
+msgstr "压缩"
