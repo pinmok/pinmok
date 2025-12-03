@@ -26,7 +26,7 @@ from django.http import HttpRequest
 from django.utils.functional import Promise
 from django.utils.translation import gettext as _
 
-from djangocmf.cmfadmin.enums import PermissionSource, MenuPermissions
+from djangocmf.cmfadmin.enums import PermissionSource
 from djangocmf.cmfadmin.models import MenuPermission, Menu
 from djangocmf.core.libs.tree import TreeNode
 
@@ -437,9 +437,9 @@ class PermissionService:
     @classmethod
     def save_custom_permissions(cls, user_or_group: User | Group, custom_ids: list) -> None:
         """
-                Save custom permissions for a User or Group.
-                Field/method name is determined via PermissionRegistry.get_source().
-                """
+        Save custom permissions for a User or Group.
+        Field/method name is determined via PermissionRegistry.get_source().
+        """
         if not custom_ids:
             # nothing to save
             source_attr = PermissionRegistry.get_source(type(user_or_group))
@@ -466,10 +466,6 @@ class PermissionService:
         """
         if not user or not user.is_active:
             return set()
-
-        # Superuser shortcut
-        if user.is_superuser:
-            return {MenuPermissions.ALL_PERMISSIONS}
 
         cache_key = f"{cls.CACHE_KEY_PREFIX}{user.pk}"
         cached = cache.get(cache_key)

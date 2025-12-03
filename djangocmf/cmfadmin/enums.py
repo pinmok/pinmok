@@ -20,11 +20,6 @@ class MenuSyncMode(StrEnum):
     SYNC_ALL = 'all'
 
 
-# Menu permission constants
-class MenuPermissions(StrEnum):
-    ALL_PERMISSIONS = '*'
-
-
 # Menu data sources
 class MenuSource(StrEnum):
     DATABASE = 'database'

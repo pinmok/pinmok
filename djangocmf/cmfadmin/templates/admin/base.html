@@ -26,6 +26,9 @@
     <!-- END CUSTOM FONT -->
 
     <link rel="stylesheet" href="{% static 'admin/css/cmfadmin.css' %}">
+    {% if request.user.is_authenticated %}
+        <script src="{% url 'admin:jsi18n' %}"></script>
+    {% endif %}
     {% block extrahead %}{% endblock %}
     {% block extrastyle %}{% endblock %}
 </head>
@@ -42,9 +45,6 @@
 </script>
 <script src="{% static 'admin/js/tabler.min.js' %}" defer></script>
 <script src="{% static 'admin/js/tabler-theme.min.js' %}" defer></script>
-{% if request.user.is_authenticated %}
-    <script src="{% url 'admin:jsi18n' %}"></script>
-{% endif %}
 <script src="{% static 'admin/js/admin.js' %}" defer></script>
 <script src="{% static 'admin/js/sidebar.js' %}" defer></script>
 

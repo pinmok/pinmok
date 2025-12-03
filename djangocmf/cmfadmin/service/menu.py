@@ -23,7 +23,7 @@ from django.db import transaction
 from django.templatetags.static import static
 
 from djangocmf.cmfadmin import constants
-from djangocmf.cmfadmin.enums import MenuSyncMode, MenuSource, MenuPermissions
+from djangocmf.cmfadmin.enums import MenuSyncMode, MenuSource
 from djangocmf.cmfadmin.models import Menu, MenuPermission
 from djangocmf.cmfadmin.service.authorization import PermissionService
 from djangocmf.cmfadmin.utils.helper import get_model_fields, get_valid_app_labels
@@ -585,14 +585,14 @@ class AdminMenu:
         """
         Filter menu nodes according to user's permissions.
         """
-        if user is None or not user.is_authenticated or not user.is_active:
+        if not user.is_authenticated or not user.is_active:
             return []
 
         # Get all permissions of current user
         user_permissions = PermissionService.get_user_permissions(user)
 
-        # If user has all permissions, skip filtering
-        if MenuPermissions.ALL_PERMISSIONS in user_permissions:
+        # If is superuser, skip filtering
+        if user.is_superuser:
             return menu_nodes
 
         # Result list

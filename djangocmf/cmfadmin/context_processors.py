@@ -32,7 +32,7 @@ def cmf_context(request):
     config = ConfigService.get_by_category(ConfigCategory.SITE)
 
     return {
-        'SOFTWARE_NAME': djangocmf.name,
+        'SOFTWARE_NAME': djangocmf.__name__,
         'site_header': site.site_header,
         'site_title': site.site_title,
         'config': config,
