@@ -10,9 +10,8 @@ Author:
 Created:
   2025-06-16
 """
-from django.utils.translation import gettext_lazy as _
 
-from djangocmf.cmfadmin.enums import MimeType, FileType, ErrorCode
+from djangocmf.cmfadmin.enums import MimeType, FileType
 
 # Variable name menus should be defined under in menus.py files
 ADMIN_MENU_VAR_NAME = "ADMIN_MENU"
@@ -76,25 +75,4 @@ UPLOAD_FILE_CONFIG = {
         'default_type': [MimeType.ZIP.value, MimeType.RAR.value],
         'mimes': [MimeType.ZIP, MimeType.RAR, MimeType.SEVEN_Z, MimeType.TAR, MimeType.GZIP]
     }
-}
-
-# Map code → HTTP status
-API_HTTP_STATUS = {
-    ErrorCode.SUCCESS: 200,
-    ErrorCode.BAD_REQUEST: 400,
-    ErrorCode.VALIDATION_ERROR: 422,
-    ErrorCode.NOT_FOUND: 404,
-    ErrorCode.PERMISSION_DENIED: 403,
-    ErrorCode.SERVER_ERROR: 500,
-}
-
-# Default messages
-API_DEFAULT_MESSAGES = {
-    ErrorCode.SUCCESS: _("Success"),
-    ErrorCode.ERROR: _("Error"),
-    ErrorCode.BAD_REQUEST: _("Bad request."),
-    ErrorCode.VALIDATION_ERROR: _("Validation failed."),
-    ErrorCode.NOT_FOUND: _("Resource not found."),
-    ErrorCode.PERMISSION_DENIED: _("Permission denied."),
-    ErrorCode.SERVER_ERROR: _("Internal server error."),
 }

@@ -13,10 +13,12 @@ Created:
 import json
 import os
 from json import JSONDecodeError
+from typing import cast
 
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.models import User
 from django.contrib.staticfiles import finders
 from django.core.exceptions import SuspiciousFileOperation, ValidationError
 from django.core.validators import validate_email
@@ -26,7 +28,7 @@ from django.utils.translation import gettext as _
 from django.views import View
 
 from djangocmf.cmfadmin.constants import CUSTOM_SPRITE_FILE, UPLOAD_FILE_CONFIG
-from djangocmf.cmfadmin.enums import ConfigCategory, TargetChoices, FileType, ErrorCode, MenuSyncMode
+from djangocmf.cmfadmin.enums import ConfigCategory, TargetChoices, FileType, MenuSyncMode
 from djangocmf.cmfadmin.forms import NavItemForm
 from djangocmf.cmfadmin.menus import AdminMenuManager
 from djangocmf.cmfadmin.models import Nav, NavItem
@@ -35,7 +37,9 @@ from djangocmf.cmfadmin.service.config import ConfigService
 from djangocmf.cmfadmin.service.email import EmailService
 from djangocmf.cmfadmin.service.navigation import NavService
 from djangocmf.cmfadmin.service.upload import UploadService
-from djangocmf.cmfadmin.utils.helper import get_static_dir, api_response
+from djangocmf.cmfadmin.utils.helper import get_static_dir
+from djangocmf.core import api
+from djangocmf.core.api import ErrorCode
 from djangocmf.core.libs.sprite import SpriteManager, SpriteError
 from djangocmf.core.libs.upload import UploadPathRule
 from djangocmf.core.utils.tools import to_compact_case
@@ -278,22 +282,22 @@ class EmailConfigView(ConfigView):
         content = data.get('test_content', '')
 
         if not to:
-            return api_response(ErrorCode.BAD_REQUEST, _('Recipient address is required.'))
+            return api.error(ErrorCode.BAD_REQUEST, _('Recipient address is required.'))
 
         try:
             validate_email(to)
         except ValidationError:
-            return api_response(ErrorCode.BAD_REQUEST, _('Invalid email address'))
+            return api.error(ErrorCode.BAD_REQUEST, _('Invalid email address'))
 
         try:
             email = EmailService()
             res = email.send(to, subject, content)
             if res > 0:
-                return api_response(ErrorCode.SUCCESS, _('Successfully sent email.'), {'has_send': res})
-            else:
-                return api_response(ErrorCode.ERROR, _('Failed to send email.'))
+                return api.success(_('Successfully sent email.'), {'has_send': res})
+
+            return api.error(ErrorCode.BAD_REQUEST, _('Failed to send email.'))
         except Exception as e:
-            return api_response(ErrorCode.SERVER_ERROR, _('Error while sending email: ') + str(e))
+            return api.error(ErrorCode.SERVER_ERROR, _('Error while sending email: ') + str(e))
 
     @staticmethod
     def _handle_test_template(data):
@@ -301,27 +305,27 @@ class EmailConfigView(ConfigView):
         raw_vars = data.get('test_variables', '').strip()
 
         if not to:
-            return api_response(ErrorCode.BAD_REQUEST, _('Recipient address is required.'))
+            return api.error(ErrorCode.BAD_REQUEST, _('Recipient address is required.'))
 
         try:
             validate_email(to)
         except ValidationError:
-            return api_response(ErrorCode.BAD_REQUEST, _('Invalid email address'))
+            return api.error(ErrorCode.BAD_REQUEST, _('Invalid email address'))
 
         try:
             variables = json.loads(raw_vars) if raw_vars else {}
         except JSONDecodeError:
-            return api_response(ErrorCode.BAD_REQUEST, _('Invalid JSON format for variables.'))
+            return api.error(ErrorCode.BAD_REQUEST, _('Invalid JSON format for variables.'))
 
         try:
             email = EmailService()
             res = email.send_with_template(to, variables)
             if res > 0:
-                return api_response(ErrorCode.SUCCESS, _('Successfully sent email.'), {'has_send': res})
+                return api.success(_('Successfully sent email.'), {'has_send': res})
             else:
-                return api_response(ErrorCode.ERROR, _('Failed to send email.'))
+                return api.error(ErrorCode.BAD_REQUEST, _('Failed to send email.'))
         except Exception as e:
-            return api_response(ErrorCode.SERVER_ERROR, _('Error while sending email: ') + str(e))
+            return api.error(ErrorCode.SERVER_ERROR, _('Error while sending email: ') + str(e))
 
 
 class FileManagementView(BaseAdminView):
@@ -422,16 +426,16 @@ class NavItemView(BaseAdminView):
         """
         nav_item_id = kwargs.get('nav_item_id')
         if not nav_item_id:
-            return api_response(ErrorCode.BAD_REQUEST, _('Missing navigation item ID.'))
+            return api.error(ErrorCode.BAD_REQUEST, _('Missing navigation item ID.'))
 
         try:
             nav_item = NavItem.objects.get(pk=nav_item_id)
         except NavItem.DoesNotExist:
-            return api_response(ErrorCode.NOT_FOUND, _('Node does not exist.'))
+            return api.error(ErrorCode.NOT_FOUND, _('Node does not exist.'))
 
         # Prevent deletion if children exist
         if nav_item.children.exists():
-            return api_response(
+            return api.error(
                 ErrorCode.BAD_REQUEST,
                 _('This node has child items and cannot be deleted. Please delete child items first.')
             )
@@ -439,10 +443,10 @@ class NavItemView(BaseAdminView):
         # Attempt to delete safely
         try:
             nav_item.delete()
-            return api_response(ErrorCode.SUCCESS, _('Deleted successfully.'))
+            return api.success(_('Deleted successfully.'))
         except Exception as e:
             # Catch any unexpected errors (e.g., DB constraints)
-            return api_response(ErrorCode.SERVER_ERROR, _('Failed to delete item: ') + str(e))
+            return api.error(ErrorCode.SERVER_ERROR, _('Failed to delete item: ') + str(e))
 
 
 class SpriteManagerView(BaseAdminView):
@@ -547,20 +551,20 @@ class SpriteManagerView(BaseAdminView):
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
-            return api_response(ErrorCode.BAD_REQUEST, _('Invalid JSON format.'))
+            return api.error(ErrorCode.BAD_REQUEST, _('Invalid JSON format.'))
 
         symbol_id = data.get('symbol_id', '')
         if not symbol_id:
-            return api_response(ErrorCode.BAD_REQUEST, _('Symbol ID is required.'))
+            return api.error(ErrorCode.BAD_REQUEST, _('Symbol ID is required.'))
 
         try:
             manager = SpriteManager(self._get_custom_sprite_file())
             if manager.has(symbol_id):
                 manager.remove(symbol_id)
-                return api_response(ErrorCode.SUCCESS, _('Deleted successfully.'))
-            return api_response(ErrorCode.NOT_FOUND, _('Symbol ID not found.'))
+                return api.success(_('Deleted successfully.'))
+            return api.error(ErrorCode.NOT_FOUND, _('Symbol ID not found.'))
         except SpriteError as e:
-            return api_response(ErrorCode.SERVER_ERROR, _('Error: %(error)s') % {'error': e})
+            return api.error(ErrorCode.SERVER_ERROR, _('Error: %(error)s') % {'error': e})
 
 
 class UploadFileView(View):
@@ -571,19 +575,19 @@ class UploadFileView(View):
         file_type_str = request.POST.get('file_type')
 
         if not uploaded_file or not file_type_str:
-            return api_response(ErrorCode.BAD_REQUEST, _('Missing file or file_type'))
+            return api.error(ErrorCode.BAD_REQUEST, _('Missing file or file_type'))
 
         try:
             file_type = FileType(file_type_str)
         except ValueError:
-            return api_response(ErrorCode.BAD_REQUEST, _('Invalid file_type'))
+            return api.error(ErrorCode.BAD_REQUEST, _('Invalid file_type'))
 
         try:
             uploader = UploadService()
             info = uploader.save(uploaded_file, file_type, request.user)
-            return api_response(ErrorCode.SUCCESS, _('Upload successful.'), info.to_dict())
+            return api.success(_('Upload successful.'), info.to_dict())
         except Exception as e:
-            return api_response(ErrorCode.SERVER_ERROR, _('Upload failed: %(error)s') % {"error": e})
+            return api.error(ErrorCode.SERVER_ERROR, _('Upload failed: %(error)s') % {"error": e})
 
     def delete(self, request, *args, **kwargs):
         """
@@ -597,15 +601,15 @@ class UploadFileView(View):
             file_path = request.GET.get('path')
 
         if not file_path:
-            return api_response(ErrorCode.BAD_REQUEST, _("Missing file path"))
+            return api.error(ErrorCode.BAD_REQUEST, _("Missing file path"))
 
         try:
             if UploadService.delete(file_path):
-                return api_response(ErrorCode.SUCCESS, _("Delete successful."))
+                return api.success(_("Delete successful."))
             else:
-                return api_response(ErrorCode.NOT_FOUND, _("File not found"))
+                return api.error(ErrorCode.NOT_FOUND, _("File not found"))
         except Exception as e:
-            return api_response(ErrorCode.SERVER_ERROR, _('Delete failed: %(error)s') % {"error": e})
+            return api.error(ErrorCode.SERVER_ERROR, _('Delete failed: %(error)s') % {"error": e})
 
 
 class UserProfile(View):
@@ -666,5 +670,6 @@ def sync_menu(request):
     """
     Sync all admin menus (superuser only).
     """
-    result = AdminMenuManager.synchronize_menu(MenuSyncMode.SYNC_ALL, request.user)
+    user: User = cast(User, request.user)
+    result = AdminMenuManager.synchronize_menu(MenuSyncMode.SYNC_ALL, user)
     return render(request, 'config/sync_menu.html', {'result': result})

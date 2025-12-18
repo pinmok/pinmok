@@ -105,7 +105,7 @@ class Config(models.Model):
     Configuration item storing key-value pairs by category with a defined type.
     Uniquely identified by (category, key).
     """
-    category = models.CharField(max_length=20, choices=ConfigCategory.choices,
+    category = models.CharField(max_length=20, choices=ConfigCategory,
                                 verbose_name=_("Category"), help_text=_("Configuration category."))
     key = models.CharField(max_length=64, verbose_name=_("Key"), help_text=_("Unique configuration key."))
     value = models.TextField(verbose_name=_("Value"), help_text=_("Configuration value."))
@@ -194,7 +194,7 @@ class NavItem(models.Model):
                            help_text=_("URL for this navigation item."))
     icon = models.CharField(max_length=100, blank=True, null=True, verbose_name=_("Icon Class"),
                             help_text=_("Icon class for this navigation item."))
-    target = models.CharField(max_length=10, choices=TargetChoices.choices, default=TargetChoices.SELF,
+    target = models.CharField(max_length=10, choices=TargetChoices, default=TargetChoices.SELF,
                               verbose_name=_("Target"), help_text=_("Target behavior when opening the link."))
     sort_order = models.IntegerField(default=DEFAULT_SORT_ORDER, verbose_name=_("Sort Order"),
                                      help_text=_("Order for navigation item sorting."))
@@ -226,7 +226,7 @@ class UploadFile(models.Model):
                                      help_text=_("Original file name before upload."))
     path = models.CharField(max_length=500, verbose_name=_("Path"),
                             help_text=_("Relative path to the saved file."))
-    mime_type = models.CharField(max_length=100, choices=MimeType.choices, verbose_name=_("MIME Type"),
+    mime_type = models.CharField(max_length=100, choices=MimeType, verbose_name=_("MIME Type"),
                                  help_text=_("MIME type of the uploaded file."))
     size = models.BigIntegerField(verbose_name=_("Size"),
                                   help_text=_("File size in bytes."))

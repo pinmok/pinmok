@@ -10,7 +10,7 @@ Author:
 Created:
   2025-06-15
 """
-from enum import StrEnum, Enum, IntEnum
+from enum import StrEnum, Enum
 
 from django.db import models
 
@@ -121,13 +121,3 @@ class MimeType(models.TextChoices):
     SEVEN_Z = 'application/x-7z-compressed', '7Z'
     TAR = 'application/x-tar', 'TAR'
     GZIP = 'application/gzip', 'GZ'
-
-
-class ErrorCode(IntEnum):
-    SUCCESS = 0
-    ERROR = 1
-    BAD_REQUEST = 40001
-    NOT_FOUND = 40404
-    PERMISSION_DENIED = 40301
-    VALIDATION_ERROR = 42201
-    SERVER_ERROR = 50001

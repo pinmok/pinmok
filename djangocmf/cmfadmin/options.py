@@ -29,7 +29,6 @@ class DjangoCmfModelAdmin(ModelAdmin):
 
     All admin classes must inherit from CMFModelAdmin to apply these overrides.
     """
-    # add_form_template = "admin/add_form.html"
     change_form_template = "admin/change_form.html"
     change_list_template = "admin/change_list.html"
     delete_confirmation_template = "admin/delete_confirmation.html"
