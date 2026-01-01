@@ -13,12 +13,10 @@ Created:
 import json
 import os
 from json import JSONDecodeError
-from typing import cast
 
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.models import User
 from django.contrib.staticfiles import finders
 from django.core.exceptions import SuspiciousFileOperation, ValidationError
 from django.core.validators import validate_email
@@ -206,7 +204,7 @@ class UploadSettingView(ConfigView):
 
         # Build dynamic upload_file_config
         upload_file_config = {}
-        for key, ft in UPLOAD_FILE_CONFIG.items():
+        for key, ft in UPLOAD_FILE_CONFIG.flat_nodes():
             item = ft.copy()
             item['size_value'] = config_data.get(ft['size_key'], ft['default_size'])
             item['type_value'] = config_data.get(ft['type_key'], ','.join(ft['default_type'])).split(',')
@@ -670,6 +668,5 @@ def sync_menu(request):
     """
     Sync all admin menus (superuser only).
     """
-    user: User = cast(User, request.user)
-    result = AdminMenuManager.synchronize_menu(MenuSyncMode.SYNC_ALL, user)
+    result = AdminMenuManager.synchronize_menu(MenuSyncMode.SYNC_ALL, request.user)
     return render(request, 'config/sync_menu.html', {'result': result})

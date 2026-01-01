@@ -30,6 +30,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'djangocmf.cmfadmin',
+    'djangocmf.content',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

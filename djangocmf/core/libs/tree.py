@@ -188,7 +188,15 @@ class TreeNode(Generic[T]):
         if include and exclude:
             raise ValueError("Cannot specify both 'include' and 'exclude'.")
 
-        field_names = self.__annotations__.keys()
+        # Determine serializable fields
+        if hasattr(self, "__annotations__") and self.__annotations__:
+            field_names = list(self.__annotations__.keys())
+        else:
+            # Fallback to instance attributes
+            field_names = [
+                k for k in self.__dict__.keys()
+                if not k.startswith("_") and k != "children"
+            ]
 
         # Filter fields based on include/exclude
         if include:

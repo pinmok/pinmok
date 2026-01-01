@@ -13,7 +13,7 @@ Created:
 from django.apps import AppConfig
 
 
-class DjangoCmfConfig(AppConfig):
+class CmfadminConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'djangocmf.cmfadmin'
     verbose_name = 'DjangoCMF'

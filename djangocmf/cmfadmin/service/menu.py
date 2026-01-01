@@ -18,19 +18,18 @@ from uuid import uuid4
 
 from django.apps import apps
 from django.conf import settings
-from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractUser
 from django.db import transaction
 from django.templatetags.static import static
 
 from djangocmf.cmfadmin import constants
-from djangocmf.cmfadmin.enums import MenuSyncMode, MenuSource
+from djangocmf.cmfadmin.constants import DEFAULT_SORT_ORDER
+from djangocmf.cmfadmin.enums import MenuSource, MenuSyncMode
 from djangocmf.cmfadmin.models import Menu, MenuPermission
 from djangocmf.cmfadmin.service.authorization import PermissionService
-from djangocmf.cmfadmin.utils.helper import get_model_fields, get_valid_app_labels
+from djangocmf.cmfadmin.utils.helper import get_valid_app_labels, get_model_fields
 from djangocmf.core.libs.tree import TreeNode
-from djangocmf.core.utils.tools import to_snake_case, to_compact_case
-
-User = get_user_model()
+from djangocmf.core.utils.tools import to_compact_case, to_snake_case
 
 
 @dataclass(kw_only=True)
@@ -53,7 +52,7 @@ class MenuNode(TreeNode["MenuNode"]):
     title: str
     url: str | None = None
     icon: str | None = None
-    sort_order: int = 10000
+    sort_order: int = DEFAULT_SORT_ORDER
     is_active: bool = True
     visible: bool = True
     remark: str | None = None
@@ -118,263 +117,140 @@ class AdminMenuImportError(Exception):
 
 class MenuSynchronizer:
     """
-    Synchronize backend admin menus defined in app-level menus.py files.
+    Menu synchronization service.
 
-    This class performs:
-        1. Scan all installed apps for menus.py files.
-        2. Parse menu definitions into a flat list of MenuItem instances.
-        3. Detect duplicates, conflicts or invalid structures.
-        4. Synchronize data into the database.
-
-    Currently, it uses global class-level attributes and is intended
-    for single-site projects. Future multi-site support may require redesign.
+    Responsibilities:
+    1. Fetch menu definitions from a single standard source.
+    2. Normalize MenuNode instances (app_label, id, parent_id, validity).
+    3. Persist menus into the database.
+    4. Generate permissions exactly as in legacy implementation.
     """
 
-    # Global temporary structures for one-time synchronization
-    id_map: dict = {}
-    items: list = []
-
-    valid_app_labels: set[str] = get_valid_app_labels()
-
     @classmethod
-    def _generate_id(cls, original_id: int | str | None = None) -> str:
+    def synchronize_menu(cls, app_label: str) -> dict:
         """
-        Generate a unique UUID-based ID.
-      N.,  If an original ID exists and has been generated before, reuse it.
-
-        Args:
-            original_id (str | None): Existing ID from input data.
-
-        Returns:
-            str: Generated or mapped unique ID.
-        """
-        if original_id and original_id in cls.id_map:
-            return cls.id_map[original_id]
-        new_id = str(uuid4().hex)
-        if original_id:
-            cls.id_map[original_id] = new_id
-        return new_id
-
-    @classmethod
-    def _parse_node(cls, menu_node: dict, app_label: str, p_id: str | None = None):
-        """
-        Recursively parse a menu node, converting IDs and preserving hierarchy.
-
-        Args:
-            menu_node (dict): The menu node to parse.
-            app_label (str): App label this menu belongs to.
-            p_id (str | None): Parent ID from recursion context.
-
-        Side Effects:
-            Appends MenuItem instances to the class-level 'items' list.
-        """
-        original_id = menu_node.get("id")
-        new_id = cls._generate_id(original_id=original_id)
-        menu_node["id"] = new_id
-
-        # Determine parent ID: prefer 'parent_id' field if exists, else use recursion context
-        parent_id = menu_node.get("parent_id")
-        new_parent_id = cls._generate_id(original_id=parent_id) if parent_id else p_id
-        menu_node["parent_id"] = new_parent_id
-
-        # Add additional tracking information
-        menu_node["app_label"] = app_label
-
-        # Build MenuItem node
-        item = MenuNode.build_node(data=menu_node)
-        cls.items.append(item)
-
-        for child in menu_node.get("children", []):
-            cls._parse_node(menu_node=child, app_label=app_label, p_id=new_id)
-
-    @classmethod
-    def _parse_custom_menu(cls, menu_data: list[dict], app_label: str = None) -> list[MenuNode]:
-        """
-        Parse menu data (tree or flat) into a flat list of MenuItem instances.
-        Supports mixed cases with or without 'parent_id' fields.
-
-        Args:
-            menu_data (list[dict]): Raw menu data in tree or flat format.
-            app_label (str): App label this menu belongs to.
-
-        Returns:
-            list[MenuNode]: Normalized flat list of MenuItem instances.
-        """
-        cls.id_map.clear()
-        cls.items.clear()
-
-        for node in menu_data:
-            cls._parse_node(menu_node=node, app_label=app_label)
-
-        return cls.items
-
-    @classmethod
-    def _get_sync_menus(cls, app_label: str) -> list[MenuNode]:
-        """
-        Scan installed apps and settings for admin menus of the specified app_label only.
-
-        Args:
-            app_label (str): The app label to scan for menus. This parameter is required
-                             to avoid accidental full synchronization.
-
-        Returns:
-            list[MenuNode]: A flat list of all MenuItem instances parsed for the app.
-        """
-        custom_menus: list[MenuNode] = []
-
-        # Scan the specified app's menus.py if exists
-        for app_config in apps.get_app_configs():
-            if app_config.label != app_label:
-                continue
-
-            try:
-                module = importlib.import_module(f"{app_config.name}.menus")
-            except ModuleNotFoundError:
-                # If no menus.py, just skip silently
-                continue
-
-            admin_menu = getattr(module, constants.ADMIN_MENU_VAR_NAME, None)
-            if not isinstance(admin_menu, list) or len(admin_menu) == 0:
-                continue
-
-            parsed_menu = cls._parse_custom_menu(menu_data=admin_menu, app_label=app_label)
-            custom_menus.extend(parsed_menu)
-
-        # Scan menus from settings.CMF_ADMIN_MENU['MENU_IMPORT_PATHS'] for this app_label only
-        config = getattr(settings, constants.ADMIN_MENU_SETTING_KEY, {})
-        menu_paths = config.get(constants.MENU_SETTINGS_KEY, [])
-
-        for item in menu_paths:
-            if not isinstance(item, dict):
-                raise AdminMenuImportError(f"Each menu config item must be a dict: {item}")
-
-            path = item.get(constants.PATH_KEY, '')
-            item_app_label = item.get(constants.APP_LABEL_KEY, '')
-
-            if not path or not item_app_label:
-                raise AdminMenuImportError(f"Menu config item must have 'path' and 'app_label': {item}")
-            elif item_app_label not in cls.valid_app_labels:
-                raise AdminMenuImportError(f"App label '{item_app_label}' is not a valid installed application name.")
-
-            if item_app_label != app_label:
-                # Skip entries not matching requested app_label
-                continue
-
-            try:
-                module_path, var_or_func = path.rsplit('.', 1)
-                module = importlib.import_module(module_path)
-                value = getattr(module, var_or_func)
-            except (ImportError, AttributeError) as e:
-                raise AdminMenuImportError(f"Cannot import menu from path '{path}': {e}")
-
-            if callable(value):
-                value = value()
-
-            if not isinstance(value, list):
-                raise AdminMenuImportError(f"Menu from '{path}' must be a list, got {type(value)}")
-
-            parsed_menu = cls._parse_custom_menu(menu_data=value, app_label=app_label)
-            custom_menus.extend(parsed_menu)
-
-        return custom_menus
-
-    @classmethod
-    def _get_sync_menus_all(cls) -> list[MenuNode]:
-        """
-        Scan all valid user apps and aggregate all menus into one list.
+        Entry point for menu synchronization.
         """
 
-        menus: list[MenuNode] = []
-
-        for label in cls.valid_app_labels:
-            try:
-                menus.extend(cls._get_sync_menus(app_label=label))
-            except AdminMenuImportError as e:
-                print(f"Warning: failed to sync menus for {label}: {e}")
-
-        return menus
-
-    @classmethod
-    def _generate_permissions(cls, menu_nodes: list[MenuNode], parent_code_map: dict[int, str]):
-        """
-        Generate permissions for a list of menu nodes.
-        Mixed scheme: default 'view' permission + custom permissions.
-        Updates parent_code_map in-place for recursion.
-        """
-        for src in menu_nodes:
-            # Skip root nodes
-            if src.parent_id is None:
-                continue
-
-            # Record safe id for children
-            parent_code_map[src.db_id] = to_snake_case(src.title)
-
-            # Generate default view permission
-            # build codename using app_label + compact title
-            app = getattr(src, "app_label", "")
-            safe_title = to_compact_case(src.title)
-            codename = f"view_{app}:{safe_title}" if app else f"view_{safe_title}"
-
-            # ensure uniqueness if collision still possible (rare)
-            parent_id = src.parent_id
-            while MenuPermission.objects.filter(codename=codename).exists() and parent_id:
-                parent_safe = to_compact_case(parent_code_map.get(parent_id, ""))
-                if parent_safe:  # only prepend if parent_safe is not empty
-                    codename = f"view_{app}_{parent_safe}_{safe_title}" if app else f"view_{parent_safe}_{safe_title}"
-                # Move up the tree
-                parent_node = next((p for p in menu_nodes if p.db_id == parent_id), None)
-                parent_id = getattr(parent_node, "parent_id", None) if parent_node else None
-
-            MenuPermission.objects.update_or_create(
-                codename=codename,  # use codename as lookup key
-                defaults={
-                    "menu_key": src.menu_key,  # update/overwrite menu_key as auxiliary info
-                    "name": f"Can view {src.title}"
-                }
+        # Determine target apps
+        valid_apps = get_valid_app_labels()
+        if app_label == MenuSyncMode.SYNC_ALL:
+            target_apps = valid_apps
+        elif app_label in valid_apps:
+            target_apps = {app_label}
+        else:
+            raise AdminMenuImportError(
+                f"Invalid app_label '{app_label}', must be one of installed apps."
             )
 
-            # Generate custom permissions if defined
-            if getattr(src, "permissions", None):
-                for perm in src.permissions:
-                    perm_code = perm.get("codename")
-                    if not perm_code:
-                        continue
-                    perm_name = perm.get("name", f"Can {perm_code} {src.title}")
-                    MenuPermission.objects.update_or_create(
-                        codename=perm_code,  # perm_code is already the business codename
-                        defaults={
-                            "menu_key": src.menu_key,
-                            "name": perm_name
-                        }
-                    )
+        total_created = 0
+        inserted_menus: list[MenuNode] = []
+
+        with transaction.atomic():
+            for app in target_apps:
+                # 1. Fetch menu definitions
+                nodes = cls._get_declarations(app)
+                if not nodes:
+                    continue
+
+                # 2. Clear old menus and permissions
+                cls._clear_app_menus(app)
+
+                # 3. Normalize nodes: assign UUIDs, remap parent_id, validate
+                normalized_nodes = cls._normalize_menu_nodes(nodes)
+
+                # 4. Persist menus and permissions
+                total_created += cls._insert_items(normalized_nodes, parent_db_id=None)
+
+                inserted_menus.extend(normalized_nodes)
+
+        return {
+            "total_created": total_created,
+            "menus": [
+                {"app_label": m.app_label, "title": m.title, "url": m.url}
+                for m in inserted_menus
+            ],
+        }
+
+    # ---------- helpers ----------
 
     @staticmethod
-    def _sanitize_menu(menu_nodes: list[MenuNode]) -> list[MenuNode]:
+    def _get_declarations(app_label: str) -> list[MenuNode]:
         """
-        Sanitize and fix parent-child relationships in a flat list of MenuItem instances.
+        Adapter method to fetch menu definitions.
 
-        This method ensures that each item's `parent_id` references a valid existing ID.
-        If a `parent_id` does not match any existing item ID, it is reset to `None`,
-        effectively promoting the item to a top-level menu.
+        Returns a list of MenuNode instances with minimal normalization:
+        - app_label added
+        """
+        try:
+            app_config = apps.get_app_config(app_label)
+        except LookupError:
+            return []
+
+        try:
+            module = importlib.import_module(f"{app_config.name}.menus")
+        except ModuleNotFoundError:
+            return []
+
+        raw_nodes = getattr(module, "admin_menu", [])
+        nodes: list[MenuNode] = []
+        for node in raw_nodes:
+            if isinstance(node, MenuNode):
+                node.app_label = app_label  # fill in app_label
+                nodes.append(node)
+        return nodes
+
+    @classmethod
+    def _normalize_menu_nodes(cls, nodes: list[MenuNode]) -> list[MenuNode]:
+        """
+        Normalize a list of MenuNode instances for database insertion.
+
+        This method performs the following operations:
+
+        1. Assign a new unique UUID to each node's `id`.
+           - Old IDs are mapped to new UUIDs using a local `id_map`.
+           - Each app should call this independently to avoid ID conflicts.
+
+        2. Remap `parent_id` of each node to the new UUIDs.
+           - If a node's `parent_id` is missing or invalid, it is set to None (root level).
+           - This ensures the parent-child relationship remains consistent.
+
+        3. Return the updated list of nodes with normalized `id` and `parent_id`.
 
         Args:
-            menu_nodes (list[MenuNode]): Flat list of MenuItem instances to sanitize.
+            nodes (list[MenuNode]): Flat list of MenuNode instances to normalize.
 
         Returns:
-            list[MenuNode]: The same input list, modified in place for corrected parent_id references.
+            list[MenuNode]: The same list, with updated IDs and parent IDs.
         """
-        # Collect all valid ids from the current items
-        valid_ids = {item.id for item in menu_nodes}
+        if not nodes:
+            return []
 
-        for item in menu_nodes:
-            if item.parent_id is not None and item.parent_id not in valid_ids:
-                # If parent_id is invalid, reset it to None (top-level)
-                item.parent_id = None
+        # Local mapping of original ID -> new UUID
+        id_map: dict[str, str] = {}
 
-        return menu_nodes
+        # Step 1: remap node IDs
+        for node in nodes:
+            if node.id:
+                original_id = node.id
+                # Generate a new UUID for this node
+                new_id = str(uuid4().hex)
+                node.id = new_id
+                id_map[original_id] = new_id
+
+        # Step 2: remap parent_ids using the local id_map
+        for node in nodes:
+            if node.parent_id not in id_map:
+                # If parent_id is invalid or missing, reset to None (top-level)
+                node.parent_id = None
+            else:
+                # Map parent_id to new UUID
+                node.parent_id = id_map[node.parent_id]
+
+        return nodes
 
     @staticmethod
-    def _prepare_menu_obj(item, parent_db_id):
+    def _prepare_menu_obj(item: MenuNode, parent_db_id: int | None) -> Menu:
         """Prepare Menu instance from MenuNode"""
         model_fields = get_model_fields(Menu)
         data = {}
@@ -431,47 +307,69 @@ class MenuSynchronizer:
         return created_count
 
     @classmethod
-    def synchronize_menu(cls, app_label: str):
+    def _generate_permissions(cls, menu_nodes: list[MenuNode], parent_code_map: dict[int, str]):
         """
-        Synchronize and persist all custom admin menus defined in installed apps.
-        This is atomic: deletion + insertion of menus and permissions are in one transaction.
+        Generate permissions for a list of menu nodes.
+        Mixed scheme: default 'view' permission + custom permissions.
+        Updates parent_code_map in-place for recursion.
         """
-        if app_label != MenuSyncMode.SYNC_ALL and app_label not in cls.valid_app_labels:
-            raise AdminMenuImportError(
-                f"Invalid app_label '{app_label}', must be one of installed apps."
+        for src in menu_nodes:
+            # Skip root nodes
+            if src.parent_id is None:
+                continue
+
+            # Record safe id for children
+            parent_code_map[src.db_id] = to_snake_case(src.title)
+
+            # Generate default view permission
+            # build codename using app_label + compact title
+            app = getattr(src, "app_label", "")
+            safe_title = to_compact_case(src.title)
+            codename = f"view_{app}:{safe_title}" if app else f"view_{safe_title}"
+
+            # ensure uniqueness if collision still possible (rare)
+            parent_id = src.parent_id
+            while MenuPermission.objects.filter(codename=codename).exists() and parent_id:
+                parent_safe = to_compact_case(parent_code_map.get(parent_id, ""))
+                if parent_safe:  # only prepend if parent_safe is not empty
+                    codename = f"view_{app}_{parent_safe}_{safe_title}" if app else f"view_{parent_safe}_{safe_title}"
+                # Move up the tree
+                parent_node = next((p for p in menu_nodes if p.db_id == parent_id), None)
+                parent_id = getattr(parent_node, "parent_id", None) if parent_node else None
+
+            MenuPermission.objects.update_or_create(
+                codename=codename,  # use codename as lookup key
+                defaults={
+                    "menu_key": src.menu_key,  # update/overwrite menu_key as auxiliary info
+                    "name": f"Can view {src.title}"
+                }
             )
 
-        with transaction.atomic():  # Outer transaction ensures atomicity
-            total_created = 0
-            inserted_menus = []
+            # Generate custom permissions if defined
+            if getattr(src, "permissions", None):
+                for perm in src.permissions:
+                    perm_code = perm.get("codename")
+                    if not perm_code:
+                        continue
+                    perm_name = perm.get("name", f"Can {perm_code} {src.title}")
+                    MenuPermission.objects.update_or_create(
+                        codename=perm_code,  # perm_code is already the business codename
+                        defaults={
+                            "menu_key": src.menu_key,
+                            "name": perm_name
+                        }
+                    )
 
-            if app_label == MenuSyncMode.SYNC_ALL:
-                all_menus = cls._get_sync_menus_all()
-                # Clear all existing menu records and permissions
-                Menu.objects.all().delete()
-
-                for label in {m.app_label for m in all_menus}:
-                    menus_for_label = [m for m in all_menus if m.app_label == label]
-                    clear_menus = cls._sanitize_menu(menu_nodes=menus_for_label)
-                    created = cls._insert_items(clear_menus, parent_db_id=None)
-                    total_created += created
-                    inserted_menus.extend([
-                        {"app_label": label, "title": m.title, "url": m.url}
-                        for m in clear_menus
-                    ])
-            else:
-                sync_menus = cls._get_sync_menus(app_label=app_label)
-                clear_menus = cls._sanitize_menu(menu_nodes=sync_menus)
-                MenuPermission.objects.filter(menu__app_label=app_label).delete()
-                Menu.objects.filter(app_label=app_label).delete()
-                created = cls._insert_items(clear_menus, parent_db_id=None)
-                total_created += created
-                inserted_menus.extend([
-                    {"app_label": app_label, "title": m.title, "url": m.url}
-                    for m in clear_menus
-                ])
-
-            return {"total_created": total_created, "menus": inserted_menus}
+    @staticmethod
+    def _clear_app_menus(app_label: str):
+        """
+        Clear menus and permissions for a single app.
+        NOTE:
+        MenuPermission is linked to Menu by `menu_key`, NOT by ForeignKey.
+        """
+        menu_keys = Menu.objects.filter(app_label=app_label).values_list("menu_key", flat=True)
+        MenuPermission.objects.filter(menu_key__in=menu_keys).delete()
+        Menu.objects.filter(app_label=app_label).delete()
 
 
 class AdminMenu:
@@ -581,7 +479,7 @@ class AdminMenu:
         return merged_nodes
 
     @staticmethod
-    def _filter_by_permissions(menu_nodes: list[MenuNode], user: User) -> list[MenuNode]:
+    def _filter_by_permissions(menu_nodes: list[MenuNode], user: AbstractUser) -> list[MenuNode]:
         """
         Filter menu nodes according to user's permissions.
         """
@@ -611,7 +509,7 @@ class AdminMenu:
         return filtered_nodes
 
     @classmethod
-    def get_menu(cls, app_list: list[dict], user: User | None = None) -> list[MenuNode]:
+    def get_menu(cls, app_list: list[dict], user: AbstractUser | None = None) -> list[MenuNode]:
         """
         Get final admin menu.
         """
