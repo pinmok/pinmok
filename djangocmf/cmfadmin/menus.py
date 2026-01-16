@@ -10,7 +10,6 @@ Author:
 Created:
   2025-06-11
 """
-from typing import Any
 
 from django.contrib.auth.models import AbstractUser
 from django.core.cache import cache
@@ -18,68 +17,11 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest
 from django.utils.translation import gettext as _
 
+from djangocmf import menu
+from djangocmf import site
 from djangocmf.cmfadmin import constants
-from djangocmf.cmfadmin import site
-from djangocmf.cmfadmin.constants import DEFAULT_SORT_ORDER
 from djangocmf.cmfadmin.enums import ConfigCategory
 from djangocmf.cmfadmin.service.menu import MenuSynchronizer, AdminMenu, MenuNode
-
-
-def menu(
-        key,
-        *,
-        title,
-        url: str | None = None,
-        parent_key: str | None = None,
-        sort_order: int = DEFAULT_SORT_ORDER,
-        icon: str | None = None,
-        remark: str | None = None,
-        extra: dict[str, Any] | None = None,
-) -> MenuNode:
-    """
-    Declare a raw admin menu item.
-
-    This function MUST:
-    - have no side effects
-    - not resolve URLs
-    - not touch permissions, DB, or settings
-    - not depend on runtime context
-
-    It only returns a MenuDeclaration object.
-    """
-
-    # ---- hard validation (fail fast) ----
-
-    if not isinstance(key, str) or not key:
-        raise ValueError("menu(): 'key' must be a non-empty string")
-
-    if not isinstance(title, str) or not title:
-        raise ValueError("menu(): 'title' must be a non-empty string")
-
-    if parent_key is not None and not isinstance(parent_key, str):
-        raise ValueError("menu(): 'parent_key' must be a string or None")
-
-    if not isinstance(sort_order, int):
-        raise ValueError("menu(): 'sort_order' must be an integer")
-
-    if url is not None and not isinstance(url, str):
-        raise ValueError("menu(): 'url' must be a string, or None")
-
-    if extra is not None and not isinstance(extra, dict):
-        raise ValueError("menu(): 'extra' must be a dict or None")
-
-    # ---- normalize ----
-
-    return MenuNode(
-        id=key,
-        title=title,
-        url=url,
-        parent_id=parent_key,
-        sort_order=sort_order,
-        icon=icon,
-        remark=remark,
-        extra=extra or {},
-    )
 
 
 class AdminMenuManager:

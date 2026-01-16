@@ -16,8 +16,8 @@ Including another URLconf
 """
 from django.urls import path
 
-from djangocmf import cmfadmin
+from djangocmf import site
 
 urlpatterns = [
-    path('admin/', cmfadmin.site.urls),
+    path('admin/', site.urls),
 ]

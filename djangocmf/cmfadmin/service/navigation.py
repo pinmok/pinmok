@@ -12,9 +12,9 @@ Created:
 """
 from dataclasses import dataclass
 
-from djangocmf.cmfadmin.constants import DEFAULT_SORT_ORDER
 from djangocmf.cmfadmin.enums import TargetChoices
 from djangocmf.cmfadmin.models import Nav, NavItem as NavItemModel
+from djangocmf.core.constants import DEFAULT_SORT_ORDER
 from djangocmf.core.libs.tree import TreeNode
 
 

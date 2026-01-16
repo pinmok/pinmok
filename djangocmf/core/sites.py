@@ -13,11 +13,13 @@ Author:
 Created:
   2025-06-07
 """
+import importlib
+
+from django.apps import apps
 from django.contrib import admin
 from django.contrib.admin import AdminSite
 from django.contrib.admin.sites import DefaultAdminSite
 from django.core.cache import cache
-from django.urls import path
 
 from djangocmf.cmfadmin.options import DjangoCmfModelAdmin
 from djangocmf.cmfadmin.utils.helper import get_system_info, get_disk_info
@@ -54,41 +56,33 @@ class DjangoCmfAdminSite(AdminSite):
 
     def get_urls(self):
         """
-        Override the default get_urls method to inject custom admin-only URLs.
+        Inject admin-only URLs provided by installed apps.
 
-        This method adds extra admin views defined in 'cmfadmin_urls' to the admin site.
-        Each view is wrapped with self.admin_view() to apply admin-specific permissions,
-        CSRF protection, and exception handling.
+        This method scans all installed apps for a module-level variable
+        named `admin_urlpatterns`. If found, each URLPattern will be wrapped
+        with `self.admin_view()` to enforce admin permissions and then
+        registered into the admin site's URL configuration.
+
+        This design allows apps to contribute admin URLs without directly
+        coupling to the admin site implementation.
         """
-        from djangocmf.cmfadmin.views import (
-            license_page,
-            UserProfile,
-            SiteInfoView,
-            EmailConfigView,
-            SpriteManagerView,
-            nav_items_edit,
-            NavItemView,
-            FileManagementView,
-            UploadSettingView,
-            UploadFileView,
-            sync_menu
-        )
+        urlpatterns = []
 
-        custom_urls = [
-            path('license/', license_page, name='license_page'),
-            path('sync-menu/', self.admin_view(sync_menu), name='sync_menu'),
-            path('profile/', self.admin_view(UserProfile.as_view()), name='profile'),
-            path('cmf/site/', self.admin_view(SiteInfoView.as_view()), name='site_config'),
-            path('cmf/email/', self.admin_view(EmailConfigView.as_view()), name='email_config'),
-            path('cmf/icons/', self.admin_view(SpriteManagerView.as_view()), name='icons_manage'),
-            path('cmf/nav/<int:pk>/', self.admin_view(nav_items_edit), name='nav_items_edit'),
-            path('cmf/nav/navitem/<int:nav_id>/<int:nav_item_id>/', self.admin_view(NavItemView.as_view()), name='navitem'),
-            path('cmf/files/', self.admin_view(FileManagementView.as_view()), name='file_management'),
-            path('cmf/upload/', self.admin_view(UploadSettingView.as_view()), name='upload'),
-            path('cmf/upload-file/', self.admin_view(UploadFileView.as_view()), name='upload_file'),  # File upload URL, used by AJAX
-        ]
+        for app in apps.get_app_configs():
+            try:
+                mod = importlib.import_module(f"{app.name}.urls")
+            except ModuleNotFoundError:
+                continue
 
-        return custom_urls + super().get_urls()
+            admin_urls = getattr(mod, 'admin_urlpatterns', None)
+            if not admin_urls:
+                continue
+
+            for url in admin_urls:
+                url.callback = self.admin_view(url.callback)
+                urlpatterns.append(url)
+
+        return urlpatterns + super().get_urls()
 
     def index(self, request, extra_context=None):
         """

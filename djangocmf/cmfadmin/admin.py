@@ -19,7 +19,8 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from djangocmf.cmfadmin import site, DjangoCmfModelAdmin
+from djangocmf import site
+from djangocmf.cmfadmin import DjangoCmfModelAdmin
 from djangocmf.cmfadmin.models import ExternalLink, Nav
 from djangocmf.cmfadmin.service.authorization import PermissionService
 

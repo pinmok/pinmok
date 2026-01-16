@@ -16,8 +16,8 @@ from django.contrib.auth.models import Group
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from djangocmf.cmfadmin.constants import DEFAULT_SORT_ORDER
 from djangocmf.cmfadmin.enums import ConfigCategory, TargetChoices, MimeType
+from djangocmf.core.constants import DEFAULT_SORT_ORDER
 from djangocmf.core.libs.upload import UploadResult
 
 User = get_user_model()

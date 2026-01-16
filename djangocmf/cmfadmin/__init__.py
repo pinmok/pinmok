@@ -11,4 +11,3 @@ Created:
   2025-05-30
 """
 from djangocmf.cmfadmin.options import DjangoCmfModelAdmin
-from djangocmf.cmfadmin.sites import site
