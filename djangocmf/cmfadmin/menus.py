@@ -113,35 +113,35 @@ admin_menu = [
     menu(
         ConfigCategory.SITE.value,
         title=ConfigCategory.SITE.label,
-        url='/admin/cmf/site/',
+        url='/admin/cmfadmin/site/',
         parent_key='config',
         sort_order=1000
     ),
     menu(
         ConfigCategory.EMAIL.value,
         title=ConfigCategory.EMAIL.label,
-        url='/admin/cmf/email/',
+        url='/admin/cmfadmin/email/',
         parent_key='config',
         sort_order=2000
     ),
     menu(
         ConfigCategory.FILE.value,
         title=ConfigCategory.FILE.label,
-        url='/admin/cmf/files/',
+        url='/admin/cmfadmin/files/',
         parent_key='config',
         sort_order=3000
     ),
     menu(
         ConfigCategory.ICONS.value,
         title=ConfigCategory.ICONS.label,
-        url='/admin/cmf/icons/',
+        url='/admin/cmfadmin/icons/',
         parent_key='config',
         sort_order=4000
     ),
     menu(
         ConfigCategory.UPLOAD.value,
         title=ConfigCategory.UPLOAD.label,
-        url='/admin/cmf/upload/',
+        url='/admin/cmfadmin/upload/',
         parent_key='config',
         sort_order=5000
     ),

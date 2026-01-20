@@ -16,11 +16,13 @@ from django.utils.version import get_version
 from djangocmf.core.menu import menu
 from djangocmf.core.sites import site
 
-VERSION = (0, 1, 0, 'alpha', 0)
+VERSION = (1, 0, 0, 'final', 0)
 __version__ = get_version(VERSION)
 
 __author__ = "惠达浪"
 __author_email = "crazys@126.com"
-__name__ = "DjangoCMF"
+__title__ = "DjangoCMF"
 __license__ = "MIT"
 __description__ = "A modular backend framework for Django."
+
+__path__ = __import__('pkgutil').extend_path(__path__, __name__)

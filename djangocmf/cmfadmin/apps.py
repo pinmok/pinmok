@@ -12,6 +12,8 @@ Created:
 """
 from django.apps import AppConfig
 
+default_app_config = 'djangocmf.core.apps.CmfAdminConfig'
+
 
 class CmfadminConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'

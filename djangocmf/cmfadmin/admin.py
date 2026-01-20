@@ -102,7 +102,7 @@ class NavAdmin(DjangoCmfModelAdmin):
     list_display = ('title', 'slug', 'is_active', 'created_at', 'edit_nav')
 
     def edit_nav(self, obj):
-        url = reverse('admin:nav_items_edit', args=[obj.pk])
+        url = reverse('admin:cmfadmin:nav_items_edit', args=[obj.pk])
         return format_html('<a href="{}">{}</a>', url, _('Edit Menu'))
 
     edit_nav.short_description = _('Action')

@@ -23,7 +23,7 @@
         </div>
         <div class="tab-content">
             <div class="tab-pane active show" id="base_setting" role="tabpanel">
-                <form action="{% url 'admin:email_config' %}" method="post">{% csrf_token %}
+                <form action="{% url 'admin:cmfadmin:email_config' %}" method="post">{% csrf_token %}
                     <div class="card-body">
                         <div class="mb-3 row">
                             <label class="col-2 col-form-label" for="e-addr">{% translate 'From email address' %}</label>
@@ -106,7 +106,7 @@
                 </form>
             </div>
             <div class="tab-pane" id="template" role="tabpanel">
-                <form action="{% url 'admin:email_config' %}" method="post">{% csrf_token %}
+                <form action="{% url 'admin:cmfadmin:email_config' %}" method="post">{% csrf_token %}
                     <div class="card-body">
                         <div class="mb-3 row">
                             <label class="col-2 col-form-label" for="t-name">{% translate 'From name' %}</label>
@@ -148,7 +148,7 @@
                 </form>
             </div>
             <div class="tab-pane" id="test" role="tabpanel">
-                <form action="{% url 'admin:email_config' %}" method="post" id="test_form">{% csrf_token %}
+                <form action="{% url 'admin:cmfadmin:email_config' %}" method="post" id="test_form">{% csrf_token %}
                     <div class="card-body">
                         <div class="mb-3 row">
                             <label class="col-2 col-form-label required" for="test_receiver">{% translate 'Recipient email' %}</label>

@@ -204,7 +204,7 @@ class UploadSettingView(ConfigView):
 
         # Build dynamic upload_file_config
         upload_file_config = {}
-        for key, ft in UPLOAD_FILE_CONFIG.flat_nodes():
+        for key, ft in UPLOAD_FILE_CONFIG.items():
             item = ft.copy()
             item['size_value'] = config_data.get(ft['size_key'], ft['default_size'])
             item['type_value'] = config_data.get(ft['type_key'], ','.join(ft['default_type'])).split(',')
@@ -401,7 +401,7 @@ class NavItemView(BaseAdminView):
             if 'add_another' in request.POST:
                 return redirect(request.path)
             # Redirect to navigation item list
-            redirect_url = reverse('admin:nav_items_edit', kwargs={'pk': nav.id})
+            redirect_url = reverse('admin:cmfadmin:nav_items_edit', kwargs={'pk': nav.id})
             return redirect(redirect_url)
 
         # If invalid, re-render with form errors
@@ -535,7 +535,7 @@ class SpriteManagerView(BaseAdminView):
                 messages.success(request, _("New icon '%(id)s' has been added successfully.") % {'id': symbol_id})
 
             # On success → redirect to the sprite manager page
-            return redirect(reverse('admin:icons_manage'))
+            return redirect(reverse('admin:cmfadmin:icons_manage'))
         except Exception as e:
             # On error → stay on the current add page with error message
             messages.error(request, _("Error: %(error)s") % {'error': e})

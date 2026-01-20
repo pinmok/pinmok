@@ -4,7 +4,7 @@
 {% block page_title %}{% translate 'Edit' %} {{ nav.title }} ({{ nav.slug }}){% endblock %}
 
 {% block page_right %}
-    <a href="{% url 'admin:navitem' nav.pk 0 %}" class="btn btn-secondary">
+    <a href="{% url 'admin:cmfadmin:navitem' nav.pk 0 %}" class="btn btn-secondary">
         {% sprite 'tabler-plus' %} {% translate 'Add' %} {% translate 'Nav Item' %}
     </a>
 {% endblock %}
@@ -28,7 +28,7 @@
                         <td{% if forloop.last %} class="border-bottom-0"{% endif %}>{{ item.sort_order }}</td>
                         <td{% if forloop.last %} class="border-bottom-0"{% endif %}>{{ item.title|safe }}</td>
                         <td{% if forloop.last %} class="border-bottom-0"{% endif %}>
-                            <a href="{% url 'admin:navitem' nav.pk item.id %}" class="mx-3">{% translate 'Edit' %}</a>
+                            <a href="{% url 'admin:cmfadmin:navitem' nav.pk item.id %}" class="mx-3">{% translate 'Edit' %}</a>
                             <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#delete-alert"
                                onclick="setDeleteId({{ item.id }})">{% translate 'Delete' %}</a>
                         </td>

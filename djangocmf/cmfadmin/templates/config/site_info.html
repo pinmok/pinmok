@@ -5,7 +5,7 @@
 
 {% block content %}
     <div class="card">
-        <form action="{% url 'admin:site_config' %}" method="post" enctype="multipart/form-data">{% csrf_token %}
+        <form action="{% url 'admin:cmfadmin:site_config' %}" method="post" enctype="multipart/form-data">{% csrf_token %}
             <div class="card-header">
                 <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
                     <li class="nav-item" role="presentation">
@@ -53,7 +53,7 @@
                                         data-preview="#img-logo"
                                         data-aspect-ratio="1"
                                         data-target-width="128"
-                                        data-upload-url="{% url 'admin:upload_file' %}">
+                                        data-upload-url="{% url 'admin:cmfadmin:upload_file' %}">
                                     {% translate 'Upload' %}
                                 </button>
                                 <small class="form-hint">
@@ -137,7 +137,7 @@
                                         data-input="#wechat"
                                         data-preview="#qrcode"
                                         data-aspect-ratio="1"
-                                        data-upload-url="{% url 'admin:upload_file' %}">
+                                        data-upload-url="{% url 'admin:cmfadmin:upload_file' %}">
                                     {% translate 'Upload' %}
                                 </button>
                                 <button type="button" class="btn btn-ghost-danger delete-file-btn"

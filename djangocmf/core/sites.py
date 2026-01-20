@@ -20,6 +20,7 @@ from django.contrib import admin
 from django.contrib.admin import AdminSite
 from django.contrib.admin.sites import DefaultAdminSite
 from django.core.cache import cache
+from django.urls import path, include, URLPattern, URLResolver
 
 from djangocmf.cmfadmin.options import DjangoCmfModelAdmin
 from djangocmf.cmfadmin.utils.helper import get_system_info, get_disk_info
@@ -66,7 +67,13 @@ class DjangoCmfAdminSite(AdminSite):
         This design allows apps to contribute admin URLs without directly
         coupling to the admin site implementation.
         """
-        urlpatterns = []
+        from djangocmf.cmfadmin.views import license_page, sync_menu, UserProfile
+
+        urlpatterns: list[URLPattern | URLResolver] = [
+            path('license/', self.admin_view(license_page), name='license_page'),
+            path('sync-menu/', self.admin_view(sync_menu), name='sync_menu'),
+            path('profile/', self.admin_view(UserProfile.as_view()), name='profile')
+        ]
 
         for app in apps.get_app_configs():
             try:
@@ -78,9 +85,14 @@ class DjangoCmfAdminSite(AdminSite):
             if not admin_urls:
                 continue
 
+            wrapped_urls = []
             for url in admin_urls:
                 url.callback = self.admin_view(url.callback)
-                urlpatterns.append(url)
+                wrapped_urls.append(url)
+
+            urlpatterns.append(
+                path(f"{app.label}/", include((wrapped_urls, app.label)))
+            )
 
         return urlpatterns + super().get_urls()
 

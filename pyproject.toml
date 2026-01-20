@@ -3,15 +3,15 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "DjangoCMF"
-version = "0.1.0a0"
+name = "djangocmf"
+version = "1.0.0"
 description = "A lightweight and flexible content management framework designed for fast and effortless backend development."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "惠达浪", email = "crazys@126.com" }]
 requires-python = ">=3.11"
-dependencies = ["Django>=5", "Pillow>=10.1.0"]
+dependencies = ["Django>=5.0", "Pillow>=10.1.0"]
 keywords = ['django', 'cmf', 'djangocmf', 'admin']
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -24,6 +24,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourname/djangocmf"
-Documentation = "https://github.com/yourname/djangocmf"
-Source = "https://github.com/yourname/djangocmf"
+Homepage = "https://github.com/django-cmf/djangocmf"
+Documentation = "https://github.com/django-cmf/djangocmf"
+Source = "https://github.com/django-cmf/djangocmf"
+
+[tool.setuptools]
+packages = ["djangocmf", "djangocmf.core", "djangocmf.cmfadmin"]

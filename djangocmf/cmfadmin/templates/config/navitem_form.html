@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block content %}
-    <form action="{% url 'admin:navitem' nav_id nav_item_id %}" method="post">{% csrf_token %}
+    <form action="{% url 'admin:cmfadmin:navitem' nav_id nav_item_id %}" method="post">{% csrf_token %}
         <div class="card">
             {% if form.errors %}
                 <div class="card-header">
