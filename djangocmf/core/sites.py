@@ -52,7 +52,7 @@ class DjangoCmfAdminSite(AdminSite):
             admin_class = DjangoCmfModelAdmin
         else:
             assert issubclass(admin_class, DjangoCmfModelAdmin), \
-                f"{admin_class.__name__} must inherit from CMFModelAdmin"
+                f"{admin_class.__name__} must inherit from DjangoCmfModelAdmin"
         super().register(model_or_iterable, admin_class=admin_class, **options)
 
     def get_urls(self):

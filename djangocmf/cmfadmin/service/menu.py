@@ -337,8 +337,15 @@ class AdminMenu:
                 icon=constants.AUTH_ICON,
                 app_label=app_label,
                 source=MenuSource.APP_LIST,
-                sort_order=1
             )
+
+            # Ensure admin menu order:
+            # 1. Sites menu is manually registered with sort_order = 0
+            # 2. Auth menu must always appear right after Sites
+            # 3. Other apps keep default sort_order (10000) and follow registration order
+            if app_label == 'auth':
+                app_item.sort_order = 1
+
             menu_nodes.append(app_item)
 
             # Process models under the application

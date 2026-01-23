@@ -12,10 +12,11 @@ Created:
 """
 from django.apps import AppConfig
 
-default_app_config = 'djangocmf.core.apps.CmfAdminConfig'
-
 
 class CmfadminConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'djangocmf.cmfadmin'
     verbose_name = 'DjangoCMF'
+
+
+default_app_config = 'djangocmf.cmfadmin.apps.CmfAdminConfig'

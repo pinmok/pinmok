@@ -1,21 +1,34 @@
-<fieldset class="card module aligned {{ fieldset.classes }}"{% if fieldset.name %}
-          aria-labelledby="{{ prefix }}-{{ id_prefix }}-{{ id_suffix }}-heading"{% endif %}>
+<fieldset class="card accordion-item module aligned {{ fieldset.classes|cut:"collapse" }}"
+        {% if fieldset.name %} aria-labelledby="{{ prefix }}-{{ id_prefix }}-{{ id_suffix }}-heading"{% endif %}>
     {% if fieldset.name %}
-        {% if fieldset.is_collapsible %}
-            <details>
-            <summary>
-        {% endif %}
-    <div class="card-header">
-        <h{{ heading_level|default:2 }} id="{{ prefix }}-{{ id_prefix }}-{{ id_suffix }}-heading" class="card-title">
-            {{ fieldset.name }}</h{{ heading_level|default:2 }}>
-        {% if fieldset.description %}
-            {{ fieldset.description|safe }}
-        {% endif %}
-    </div>
-    {% if fieldset.is_collapsible %}</summary>{% endif %}
+        <div class="card-header">
+            <h{{ heading_level|default:2 }} id="{{ prefix }}-{{ id_prefix }}-{{ id_suffix }}-heading" class="card-title accordion-header">
+                {% if fieldset.is_collapsible %}
+                    <button class="accordion-button collapsed p-0" type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#{{ prefix }}-{{ id_prefix }}-{{ id_suffix }}"
+                            aria-expanded="false">
+                        {{ fieldset.name }}
+                        <div class="accordion-button-toggle accordion-button-toggle-plus">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                <path d="M12 5l0 14"></path>
+                                <path d="M5 12l14 0"></path>
+                            </svg>
+                        </div>
+                    </button>
+                {% else %}
+                    {{ fieldset.name }}
+                {% endif %}
+                {% if fieldset.description %}
+                    <span class="card-subtitle">{{ fieldset.description|safe }}</span>
+                {% endif %}
+            </h{{ heading_level|default:2 }}>
+        </div>
     {% endif %}
 
-    <div class="card-body">
+    <div class="card-body{% if fieldset.is_collapsible %} accordion-collapse collapse{% endif %}"
+         id="{{ prefix }}-{{ id_prefix }}-{{ id_suffix }}">
         {% for line in fieldset %}
             <div class="mb-3{% if line.fields|length == 1 and line.errors %} errors{% endif %}{% if not line.has_visible_field %} hidden{% endif %}{% for field in line %}{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% endfor %}">
                 {% if line.fields|length == 1 %}{{ line.errors }}{% endif %}
@@ -52,5 +65,4 @@
             </div>
         {% endfor %}
     </div>
-    {% if fieldset.name and fieldset.is_collapsible %}</details>{% endif %}
 </fieldset>
