@@ -13,6 +13,7 @@ Created:
 import json
 
 from django.contrib import admin
+from django.contrib.admin import ModelAdmin
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import User, Group
 from django.urls import reverse
@@ -20,12 +21,11 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from djangocmf import site
-from djangocmf.cmfadmin import DjangoCmfModelAdmin
 from djangocmf.cmfadmin.models import ExternalLink, Nav
 from djangocmf.cmfadmin.service.authorization import PermissionService
 
 
-class CmfUserAdmin(DjangoCmfModelAdmin, UserAdmin):
+class CmfUserAdmin(UserAdmin):
     add_form_template = "admin/auth/user/user_add.html"
     change_form_template = "admin/auth/user/user_change_form.html"
 
@@ -55,7 +55,7 @@ class CmfUserAdmin(DjangoCmfModelAdmin, UserAdmin):
         PermissionService.save_custom_permissions(obj, request.POST.getlist("custom_permissions[]"))
 
 
-class CmfGroupAdmin(DjangoCmfModelAdmin, GroupAdmin):
+class CmfGroupAdmin(GroupAdmin):
     add_form_template = "admin/auth/user/group_add.html"
     change_form_template = "admin/auth/user/group_add.html"
 
@@ -74,7 +74,7 @@ class CmfGroupAdmin(DjangoCmfModelAdmin, GroupAdmin):
         PermissionService.save_custom_permissions(obj, request.POST.getlist("custom_permissions[]"))
 
 
-class ExternalLinksAdmin(DjangoCmfModelAdmin):
+class ExternalLinksAdmin(ModelAdmin):
     list_display = ('sort_order', 'image_thumb', 'title', 'url_link', 'status')
     list_display_links = ('title',)
     list_editable = ('sort_order',)
@@ -98,7 +98,7 @@ class ExternalLinksAdmin(DjangoCmfModelAdmin):
     image_thumb.admin_order_field = 'image_url'
 
 
-class NavAdmin(DjangoCmfModelAdmin):
+class NavAdmin(ModelAdmin):
     list_display = ('title', 'slug', 'is_active', 'created_at', 'edit_nav')
 
     def edit_nav(self, obj):

@@ -22,7 +22,6 @@ from django.contrib.admin.sites import DefaultAdminSite
 from django.core.cache import cache
 from django.urls import path, include, URLPattern, URLResolver
 
-from djangocmf.cmfadmin.options import DjangoCmfModelAdmin
 from djangocmf.cmfadmin.utils.helper import get_system_info, get_disk_info
 
 
@@ -44,16 +43,16 @@ class DjangoCmfAdminSite(AdminSite):
         # Copy registered models from default admin site
         self._registry.update(admin.site._registry)
 
-    def register(self, model_or_iterable, admin_class=..., **options):
-        """
-        Register a model or iterable with a CMFModelAdmin-based admin class, wrapping the given admin_class if needed.
-        """
-        if admin_class is None:
-            admin_class = DjangoCmfModelAdmin
-        else:
-            assert issubclass(admin_class, DjangoCmfModelAdmin), \
-                f"{admin_class.__name__} must inherit from DjangoCmfModelAdmin"
-        super().register(model_or_iterable, admin_class=admin_class, **options)
+    # def register(self, model_or_iterable, admin_class=..., **options):
+    #     """
+    #     Register a model or iterable with a CMFModelAdmin-based admin class, wrapping the given admin_class if needed.
+    #     """
+    #     if admin_class is None:
+    #         admin_class = DjangoCmfModelAdmin
+    #     else:
+    #         assert issubclass(admin_class, DjangoCmfModelAdmin), \
+    #             f"{admin_class.__name__} must inherit from DjangoCmfModelAdmin"
+    #     super().register(model_or_iterable, admin_class=admin_class, **options)
 
     def get_urls(self):
         """
