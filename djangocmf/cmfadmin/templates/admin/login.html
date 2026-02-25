@@ -1,5 +1,5 @@
 {% extends "admin/base.html" %}
-{% load i18n static media %}
+{% load i18n static cmf_tags %}
 
 {% block title %}{% if form.errors %}{% translate "Error:" %} {% endif %}{{ block.super }}{% endblock %}
 {% block sider_bar %}{% endblock %}

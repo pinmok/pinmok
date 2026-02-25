@@ -13,10 +13,10 @@ Created:
 from django.conf import settings
 
 import djangocmf
-from djangocmf import site
 from djangocmf.cmfadmin.enums import ConfigCategory
 from djangocmf.cmfadmin.menus import AdminMenuManager
 from djangocmf.cmfadmin.service.config import ConfigService
+from djangocmf.core import site
 
 
 def cmf_context(request):

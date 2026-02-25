@@ -1,4 +1,4 @@
-{% load i18n static icons media %}
+{% load i18n static cmf_tags %}
 
 <aside class="navbar navbar-vertical navbar-expand-lg">
     <div class="container-fluid">
@@ -10,7 +10,8 @@
         <!-- END NAVBAR TOGGLER -->
         <!-- BEGIN NAVBAR LOGO -->
         <div class="navbar-brand navbar-brand-autodark" style="font-size: 1rem">
-            <a href="{% url 'admin:index' %}" class="d-flex align-items-center text-decoration-none" aria-label="Tabler">
+            <a href="{% url 'admin:index' %}" class="d-flex align-items-center text-decoration-none"
+               aria-label="Tabler">
                 {% if config.site_logo %}
                     <img src="{% media_url config.site_logo %}" alt="Logo" width="28" height="28">
                 {% else %}
@@ -35,7 +36,9 @@
                 <!-- Synchronize menu -->
                 {% if user.is_superuser %}
                     <a class="text-danger cursor-pointer" data-bs-toggle="modal" data-bs-target="#sync_menu_alert">
-                        <svg class="icon" title="{% translate 'Synchronize Menu' %}" data-bs-toggle="tooltip" data-bs-placement="bottom">
+                        <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                             stroke-linejoin="round" title="{% translate 'Synchronize Menu' %}"
+                             data-bs-toggle="tooltip" data-bs-placement="bottom">
                             <use href="{% static 'admin/svg/sprite.svg' %}#tabler-menu"></use>
                         </svg>
                     </a>
@@ -57,7 +60,8 @@
                                data-bs-auto-close="false" role="button" aria-expanded="false"{% endif %}>
                                 <span class="nav-link-icon d-md-none d-lg-inline-block">
                                 {% if menu.icon %}
-                                    <svg class="icon">
+                                    <svg class="icon" fill="none" stroke="currentColor" stroke-width="2"
+                                         stroke-linecap="round" stroke-linejoin="round">
                                         <use href="{{ menu.sprite_path }}#{{ menu.icon }}"></use>
                                     </svg>
                                 {% endif %}
@@ -75,10 +79,13 @@
                                                     <div class="dropend">
                                                         <a class="dropdown-item dropdown-toggle"
                                                            {% if child.url %}href="{{ child.url }}"{% endif %}
-                                                           data-bs-toggle="dropdown" data-bs-auto-close="false" role="button"
+                                                           data-bs-toggle="dropdown" data-bs-auto-close="false"
+                                                           role="button"
                                                            aria-expanded="false">
                                                             {% if child.icon %}
-                                                                <svg class="icon">
+                                                                <svg class="icon" fill="none" stroke="currentColor"
+                                                                     stroke-width="2" stroke-linecap="round"
+                                                                     stroke-linejoin="round">
                                                                     <use href="{{ child.sprite_path }}#{{ child.icon }}"></use>
                                                                 </svg>
                                                             {% else %}
@@ -145,7 +152,8 @@
                 <h3 class="text-uppercase">{% translate 'Warning' %}</h3>
                 <div class="text-secondary text-start">
                     {% blocktranslate trimmed %}
-                        Synchronizing the menu will reload the menu configuration and reset all menu items. This action cannot be undone!
+                        Synchronizing the menu will reload the menu configuration and reset all menu items. This action
+                        cannot be undone!
                         Please proceed with caution if you have made any adjustments to the menus!
                     {% endblocktranslate %}
                 </div>
@@ -157,7 +165,8 @@
                             <button class="btn w-100" data-bs-dismiss="modal"> {% translate 'Cancel' %} </button>
                         </div>
                         <div class="col">
-                            <a href="{% url 'admin:sync_menu' %}" class="btn btn-danger w-100">{% translate 'Confirm' %}</a>
+                            <a href="{% url 'admin:sync_menu' %}"
+                               class="btn btn-danger w-100">{% translate 'Confirm' %}</a>
                         </div>
                     </div>
                 </div>

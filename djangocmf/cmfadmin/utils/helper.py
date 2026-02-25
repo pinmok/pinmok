@@ -10,19 +10,20 @@ Author:
 Created:
   2025-06-06
 """
+import logging
 import os
 import platform
 import shutil
-from typing import Type
 
 from django import get_version
 from django.apps import apps
 from django.conf import settings
-from django.db import connection, utils, models
-from django.db.models import Model
+from django.db import connection, utils
 
 import djangocmf
 from djangocmf.core.utils.tools import int_to_bytes
+
+logger = logging.getLogger(__name__)
 
 
 def get_system_info() -> dict[str, str]:
@@ -51,8 +52,8 @@ def get_system_info() -> dict[str, str]:
         'django_version': get_version(),
         'db_vendor': db_vendor,
         'db_version': db_version,
-        'cmf_name': djangocmf.__title__,
-        'cmf_version': djangocmf.__version__,
+        'cmf_name': djangocmf.core.__title__,
+        'cmf_version': djangocmf.core.__version__,
     }
     return system_info
 
@@ -68,7 +69,7 @@ def get_disk_info() -> dict[str, str | float]:
             - 'free' (str): Free disk space formatted as a human-readable string.
             - 'used_percent' (float): Percentage of used disk space rounded to two decimal places.
     """
-    total, used, free = shutil.disk_usage("/")
+    total, used, free = shutil.disk_usage(settings.BASE_DIR)
     used_percent = round(used / total * 100, 2)
 
     disk_info = {
@@ -85,79 +86,51 @@ def get_db_info() -> tuple[str, str]:
     Retrieve the current database server version as a string.
 
     Returns:
-        tuple(vendor, db_version): The database server vendor and version, or 'Unknown' if unavailable.
+        tuple[str, str]: A tuple of (vendor, version).
+        vendor is the capitalized database vendor name (e.g., 'Postgresql').
+        version is the database server version string. Both default to 'Unknown' if unavailable.
     """
     vendor = 'Unknown'
     db_version = 'Unknown'
 
     try:
-        cursor = connection.cursor()
         vendor = connection.vendor
 
-        match vendor:
-            case 'sqlite':
-                cursor.execute('SELECT sqlite_version()')
-                db_version = cursor.fetchone()[0]
-            case 'postgresql':
-                cursor.execute('SELECT version()')
-                db_version = cursor.fetchone()[0]
-            case 'mysql':
-                cursor.execute('SELECT VERSION()')
-                db_version = cursor.fetchone()[0]
-            case 'oracle':
-                cursor.execute("SELECT banner FROM v$version WHERE banner LIKE 'Oracle%'")
-                result = cursor.fetchone()
-                db_version = result[0] if result else 'Unknown'
-            case _:
-                pass
-    except utils.DatabaseError:
-        pass
-    except (AttributeError, ValueError):
-        pass
+        with  connection.cursor() as cursor:
+            match vendor:
+                case 'sqlite':
+                    cursor.execute('SELECT sqlite_version()')
+                    db_version = cursor.fetchone()[0]
+                case 'postgresql':
+                    cursor.execute('SELECT version()')
+                    db_version = cursor.fetchone()[0]
+                case 'mysql':
+                    cursor.execute('SELECT VERSION()')
+                    db_version = cursor.fetchone()[0]
+                case 'oracle':
+                    cursor.execute("SELECT banner FROM v$version WHERE banner LIKE 'Oracle%'")
+                    result = cursor.fetchone()
+                    if result:
+                        db_version = result[0]
+                    else:
+                        cursor.execute(
+                            "SELECT VERSION FROM PRODUCT_COMPONENT_VERSION WHERE PRODUCT LIKE 'Oracle Database%'")
+                        result = cursor.fetchone()
+                        db_version = result[0] if result else 'Unknown'
+                case 'microsoft':
+                    cursor.execute('SELECT @@VERSION')
+                    db_version = cursor.fetchone()[0]
+                case _:
+                    logger.warning("Unsupported database vendor: %s", vendor)
+    except utils.DatabaseError as e:
+        logger.error("Database error while retrieving DB info: %s", e)
+    except AttributeError as e:
+        logger.error("Database connection is not properly configured: %s", e)
 
     return vendor.capitalize(), db_version
 
 
-def get_model_fields(model: Type[Model]) -> list[str]:
-    """
-    Get all manually assignable field names for a Django model.
-
-    Excludes:
-    - Auto-increment fields (AutoField, BigAutoField)
-    - Auto-created fields (reverse relations)
-    - Auto date fields (auto_now, auto_now_add)
-    - Relation fields (ForeignKey, OneToOne, ManyToMany)
-
-    Args:
-        model: The Django model class.
-
-    Returns:
-        list[str]: A list of manually assignable field names.
-    """
-    fields = []
-    # noinspection PyProtectedMember
-    for f in model._meta.get_fields():
-        if not f.concrete:
-            continue  # skip non-database fields (like @property)
-
-        if f.auto_created:
-            continue  # skip auto-created fields (like reverse relations)
-
-        if getattr(f, 'auto_now', False) or getattr(f, 'auto_now_add', False):
-            continue  # skip auto date fields
-
-        if isinstance(f, (models.AutoField, models.BigAutoField)):
-            continue  # skip auto-increment primary keys
-
-        if f.is_relation:
-            continue  # skip all relation fields (ForeignKey, OneToOne, ManyToMany)
-
-        fields.append(f.name)
-
-    return fields
-
-
-def get_valid_app_labels(exclude_prefixes: str | None = None) -> set[str]:
+def get_valid_app_labels(exclude_prefixes: list[str] | None = None) -> set[str]:
     """
     Return a set of valid installed app labels, optionally excluding apps
     whose full names start with any prefix in exclude_prefixes.
@@ -183,9 +156,5 @@ def get_static_dir() -> str:
     """
     Get normalized static directory path with guaranteed trailing separator
     """
-    base_path = (
-        settings.STATIC_ROOT
-        if hasattr(settings, 'STATIC_ROOT') and settings.STATIC_ROOT
-        else os.path.join(settings.BASE_DIR, 'static')
-    )
-    return os.path.abspath(os.path.join(os.path.normpath(base_path), ''))
+    base_path = settings.STATIC_ROOT or os.path.join(settings.BASE_DIR, 'static')
+    return os.path.abspath(os.path.normpath(base_path))

@@ -17,11 +17,11 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest
 from django.utils.translation import gettext as _
 
-from djangocmf import menu
-from djangocmf import site
 from djangocmf.cmfadmin import constants
 from djangocmf.cmfadmin.enums import ConfigCategory
 from djangocmf.cmfadmin.service.menu import MenuSynchronizer, AdminMenu, MenuNode
+from djangocmf.core import menu
+from djangocmf.core import site
 
 
 class AdminMenuManager:

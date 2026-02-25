@@ -14,13 +14,13 @@ Created:
   2025-06-07
 """
 import importlib
+import warnings
 
 from django.apps import apps
-from django.contrib import admin
 from django.contrib.admin import AdminSite
-from django.contrib.admin.sites import DefaultAdminSite
 from django.core.cache import cache
 from django.urls import path, include, URLPattern, URLResolver
+from django.views.i18n import JavaScriptCatalog
 
 from djangocmf.cmfadmin.utils.helper import get_system_info, get_disk_info
 
@@ -35,28 +35,18 @@ class DjangoCmfAdminSite(AdminSite):
     construction, permission checks, and integrates additional CMS-specific
     functionalities.
     """
-    index_template = "admin/index.html"
+    site_header = 'DjangoCMF'
+    site_title = 'DjangoCMF Admin'
 
-    def __init__(self, name='admin'):
-        super().__init__(name=name)
-
-        # Copy registered models from default admin site
-        self._registry.update(admin.site._registry)
-
-    # def register(self, model_or_iterable, admin_class=..., **options):
-    #     """
-    #     Register a model or iterable with a CMFModelAdmin-based admin class, wrapping the given admin_class if needed.
-    #     """
-    #     if admin_class is None:
-    #         admin_class = DjangoCmfModelAdmin
-    #     else:
-    #         assert issubclass(admin_class, DjangoCmfModelAdmin), \
-    #             f"{admin_class.__name__} must inherit from DjangoCmfModelAdmin"
-    #     super().register(model_or_iterable, admin_class=admin_class, **options)
+    def i18n_javascript(self, request, extra_context=None):
+        """
+        Display the i18n JavaScript for both Django admin and project apps.
+        """
+        return JavaScriptCatalog.as_view(packages=None)(request)
 
     def get_urls(self):
         """
-        Inject admin-only URLs provided by installed apps.
+        Build URL patterns for the admin site.
 
         This method scans all installed apps for a module-level variable
         named `admin_urlpatterns`. If found, each URLPattern will be wrapped
@@ -65,61 +55,102 @@ class DjangoCmfAdminSite(AdminSite):
 
         This design allows apps to contribute admin URLs without directly
         coupling to the admin site implementation.
+
+        Returns:
+            list: Complete URL patterns for the admin site
         """
         from djangocmf.cmfadmin.views import license_page, sync_menu, UserProfile
 
+        # Some CMF admin URLs without 'admin' prefix
         urlpatterns: list[URLPattern | URLResolver] = [
             path('license/', self.admin_view(license_page), name='license_page'),
             path('sync-menu/', self.admin_view(sync_menu), name='sync_menu'),
             path('profile/', self.admin_view(UserProfile.as_view()), name='profile')
         ]
 
+        # Scan apps for admin URL contributions
         for app in apps.get_app_configs():
             try:
                 mod = importlib.import_module(f"{app.name}.urls")
             except ModuleNotFoundError:
+                # App doesn't have a urls.py, skip it
                 continue
 
+            # Look for admin_urlpatterns
             admin_urls = getattr(mod, 'admin_urlpatterns', None)
             if not admin_urls:
                 continue
 
+            # Validate that admin_urls is iterable
+            if not hasattr(admin_urls, '__iter__'):
+                warnings.warn(
+                    f"App '{app.label}' has admin_urlpatterns but it's not iterable. Skipping.",
+                    UserWarning
+                )
+                continue
+
+            # Wrap each URL pattern with admin_view() for permission checking
             wrapped_urls = []
-            for url in admin_urls:
-                url.callback = self.admin_view(url.callback)
-                wrapped_urls.append(url)
+            for url_pattern in admin_urls:
+                try:
+                    if isinstance(url_pattern, URLPattern):
+                        # Create a new URLPattern with wrapped callback
+                        # Don't modify the original url_pattern object
+                        wrapped_pattern = URLPattern(
+                            pattern=url_pattern.pattern,
+                            callback=self.admin_view(url_pattern.callback),
+                            default_args=url_pattern.default_args,
+                            name=url_pattern.name
+                        )
+                        wrapped_urls.append(wrapped_pattern)
+                    elif isinstance(url_pattern, URLResolver):
+                        # URLResolver (include) can be added directly
+                        # The admin_view wrapping should be done in the included URLs
+                        wrapped_urls.append(url_pattern)
+                    else:
+                        warnings.warn(
+                            f"App '{app.label}' has an unrecognized URL pattern type: {type(url_pattern)}. Skipping.",
+                            UserWarning
+                        )
+                except Exception as e:
+                    warnings.warn(
+                        f"Error processing URL pattern in app '{app.label}': {e}. Skipping.",
+                        UserWarning
+                    )
+                    continue
 
-            urlpatterns.append(
-                path(f"{app.label}/", include((wrapped_urls, app.label)))
-            )
+            # Include wrapped URLs under app namespace
+            if wrapped_urls:
+                urlpatterns.append(path(f"{app.label}/", include((wrapped_urls, app.label))))
 
+        # Append Django's default admin URLs
         return urlpatterns + super().get_urls()
 
     def index(self, request, extra_context=None):
         """
-        Render the admin site's index page with additional system info in the context.
+        Render the admin site's index page with system monitoring information.
+
+        Args:
+            request: HttpRequest object
+            extra_context: Additional context dict (optional)
+
+        Returns:
+            HttpResponse: Rendered admin index page
         """
         extra_context = extra_context or {}
 
         # Add custom context variables
         extra_context.update({
             'index_title': self.index_title,
-            'sys_info': cache.get_or_set('sys_info', get_system_info, timeout=3600 * 24 * 30),
-            'disk_info': cache.get_or_set('disk_info', get_disk_info, timeout=3600)
+            # System info: cached for 24 hours (CPU, memory, OS version)
+            'sys_info': cache.get_or_set('cmf_sys_info', get_system_info, timeout=3600 * 24),
+            # Disk info: cached for 1 hour (disk usage can change frequently)
+            'disk_info': cache.get_or_set('cmf_disk_info', get_disk_info, timeout=3600)
         })
 
-        # Call the parent class's index method, passing the updated context to render the admin index page
+        # Render the index page with enhanced context
         return super().index(request, extra_context)
 
 
-class DefaultCmfAdminSite(DefaultAdminSite):
-    """
-    Initialize the default CMF admin site by wrapping an instance of CMFAdminSite.
-    """
-
-    def _setup(self):
-        self._wrapped = DjangoCmfAdminSite()
-
-
 # Instantiate the custom admin site with a unique name for URL reversing and namespace distinction
-site = DefaultCmfAdminSite()
+site = DjangoCmfAdminSite()

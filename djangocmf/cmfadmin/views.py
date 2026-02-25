@@ -51,6 +51,7 @@ def license_page(request):
 class BaseAdminView(PermissionRequiredMixin, View):
     """Base class for DjangoCMF admin."""
     feature_name: str | None = None
+    exclude_keys: list[str] = ['csrfmiddlewaretoken']
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -61,169 +62,133 @@ class BaseAdminView(PermissionRequiredMixin, View):
             safe_title = to_compact_case(cls.feature_name)
             cls.permission_required = f"view_{app_label}:{safe_title}"
 
-
-class ConfigView(BaseAdminView):
-    category: ConfigCategory | None = None
-    extra_categories: list[ConfigCategory] | None = None
-    template_name: str | None = None
-    extra_context: dict | None = None
-    exclude_keys: list[str] = ['csrfmiddlewaretoken']
-
-    @classmethod
-    def __init_subclass__(cls, **kwargs):
-        """ Generate permission_required based on category. """
-        if getattr(cls, "category", None):
-            cls.feature_name = cls.category.label  # noqa
-        super().__init_subclass__(**kwargs)
-
-    def _get_exclude_keys(self) -> list[str]:
+    def _get_cleaned_data(self, request) -> dict[str, str | list[str]]:
         """
-        Return merged exclude_keys (base + subclass).
+        Filter out excluded POST keys and trim values.
+        Preserves all values for multi-value fields (returns list).
         """
-        base = ConfigView.exclude_keys
-        current = getattr(self, 'exclude_keys', [])
-        return list(dict.fromkeys(base + current))
+        data = {}
+        for key, values in request.POST.lists():
+            if key in self.exclude_keys:
+                continue
 
-    def _get_cleaned_data(self, request) -> dict[str, str]:
-        """
-        Filter out unwanted POST keys and trim values.
-        Handles multi-value POST fields by taking the first value.
-        """
-        exclude = self._get_exclude_keys()
-        return {
-            key: (value[0] if isinstance(value, list) else value).strip()
-            for key, value in request.POST.lists()
-            if key not in exclude
-        }
+            # POST responses are always lists; extract the item when only one is expected.
+            if len(values) == 1:
+                data[key] = values[0].strip()
+            else:
+                data[key] = ','.join(v.strip() for v in values if v.strip())
 
-    def _get_context_data(self, extra: dict | None = None) -> dict:
-        """
-        Build context with main and extra categories, static and dynamic extra context.
-        Each request gets independent dict to avoid shared mutable objects.
-        """
-        context: dict = {}
+        return data
 
-        # Main + extra categories
-        categories = [self.category] if self.category else []
-        if self.extra_categories:
-            categories.extend(self.extra_categories)
 
-        for cat in categories:
-            key = 'config' if cat == self.category else f'config_{cat.name.lower()}'
-            context[key] = ConfigService.get_by_category(cat)
-
-        # Static extra context
-        context.update(self.extra_context or {})
-
-        # Dynamic extra context
-        if extra:
-            context.update(extra)
-
-        return context
-
-    def _handle_file_upload(self, request, field_name: str, file_type: FileType) -> str | None:
-        """
-        Handle a single file upload for a given POST field safely.
-        """
-        file = request.FILES.get(field_name)
-        if not file:
-            return None
-
-        try:
-            service = UploadService()
-            result = service.save(file, file_type, request.user)
-            return result.path
-        except Exception as e:
-            messages.error(request, _("Failed to upload '%(name)s': %(error)s") % {
-                "name": file.name,
-                "error": e
-            })
-            return None
+class SiteInfoView(BaseAdminView):
+    """
+    Site configuration management.
+    Handles site metadata and logo upload.
+    """
+    feature_name = ConfigCategory.SITE.label
 
     def get(self, request, *args, **kwargs):
-        """
-        Render configuration template with context data.
-        """
+        template_name = 'config/site_info.html'
         try:
-            context = self._get_context_data()
+            config = ConfigService.get_by_category(ConfigCategory.SITE)
+            context = {'config': config, 'title': ConfigCategory.SITE.label}
+            return render(request, template_name, context)
         except Exception as e:
-            messages.error(request, _("Failed to load configuration: %(error)s") % {"error": e})
-            context = {}
-
-        return render(request, self.template_name, context)
+            messages.error(request, _('Error: %(error)s') % {'error': e})
+            return render(request, template_name, {'title': ConfigCategory.SITE.label})
 
     def post(self, request, *args, **kwargs):
-        """
-        Save configuration form submission safely.
-        """
+        # Handle file upload
+        logo_path = None
+        file = request.FILES.get('site_logo')
+        if file:
+            try:
+                upload_service = UploadService()
+                upload_result = upload_service.save(file, FileType.IMAGE, request.user)
+                logo_path = upload_result.path
+            except Exception as e:
+                messages.error(request, _("Failed to upload '%(name)s': %(error)s") % {
+                    "name": file.name,
+                    "error": e
+                })
+
+        # Prepare data
+        data = self._get_cleaned_data(request)
+        if logo_path:
+            data['site_logo'] = logo_path
+
+        # Save data
         try:
-            data = self._get_cleaned_data(request)
             if data:
-                ConfigService.set_by_category(self.category, data)
+                ConfigService.set_by_category(ConfigCategory.SITE, data)
                 messages.success(request, _("Configuration updated successfully."))
             else:
                 messages.warning(request, _("No valid data submitted."))
         except Exception as e:
             messages.error(request, _("Failed to save configuration: %(error)s") % {"error": e})
 
-        # Always render page instead of redirect to avoid loop and keep messages
-        try:
-            context = self._get_context_data(extra={'post_data': request.POST.dict()})
-        except Exception:
-            context = {}
-        return render(request, self.template_name, context)
+        return self.get(request, *args, **kwargs)
 
 
-class SiteInfoView(ConfigView):
-    category = ConfigCategory.SITE
-    template_name = 'config/site_info.html'
-    extra_context = {
-        'title': ConfigCategory.SITE.label,
-    }
-
-    def post(self, request, *args, **kwargs):
-        logo_path = self._handle_file_upload(request, 'site_logo', FileType.IMAGE)
-        if logo_path:
-            request.POST = request.POST.copy()
-            request.POST['site_logo'] = logo_path
-
-        return super().post(request, *args, **kwargs)
-
-
-class UploadSettingView(ConfigView):
-    category = ConfigCategory.UPLOAD
-    template_name = 'config/upload_setting.html'
-    extra_context = {
-        'title': ConfigCategory.UPLOAD.label,
-        'path_rule': list(UploadPathRule),
-    }
+class UploadSettingView(BaseAdminView):
+    """
+    File upload settings configuration.
+    Manages file type restrictions and size limits.
+    """
+    feature_name = ConfigCategory.UPLOAD.label
 
     def get(self, request, *args, **kwargs):
         # Get base config
-        config_data = ConfigService.get_by_category(self.category)
+        config_data = ConfigService.get_by_category(ConfigCategory.UPLOAD)
 
         # Build dynamic upload_file_config
         upload_file_config = {}
         for key, ft in UPLOAD_FILE_CONFIG.items():
             item = ft.copy()
             item['size_value'] = config_data.get(ft['size_key'], ft['default_size'])
-            item['type_value'] = config_data.get(ft['type_key'], ','.join(ft['default_type'])).split(',')
+            item['type_value'] = config_data.get(ft['type_key'], ft['default_type']).split(',')
             item['key_value'] = _(key)
             upload_file_config[key] = item
 
-        # Pass as dynamic context (avoid mutating class-level dict)
-        extra = {'upload_file_config': upload_file_config}
-        context = self._get_context_data(extra)
-        return render(request, self.template_name, context)
+        context = {
+            'config': config_data,
+            'upload_file_config': upload_file_config,
+            'title': ConfigCategory.UPLOAD.label,
+            'path_rule': list(UploadPathRule),
+        }
+        return render(request, 'config/upload_setting.html', context)
+
+    def post(self, request, *args, **kwargs):
+        data = self._get_cleaned_data(request)
+        try:
+            if data:
+                ConfigService.set_by_category(ConfigCategory.UPLOAD, data)
+                messages.success(request, _("Configuration updated successfully."))
+        except Exception as e:
+            messages.error(request, _("Failed to save configuration: %(error)s") % {"error": e})
+
+        return self.get(request, *args, **kwargs)
 
 
-class EmailConfigView(ConfigView):
-    category = ConfigCategory.EMAIL
-    extra_categories = [ConfigCategory.EMAIL_TEMPLATE]
-    template_name = 'config/email_settings.html'
-    extra_context = {
-        'title': ConfigCategory.EMAIL.label,
-    }
+class EmailConfigView(BaseAdminView):
+    """
+    Email server and template configuration.
+    Manages SMTP settings and email templates.
+    """
+    feature_name = ConfigCategory.EMAIL.label
+
+    def get(self, request, *args, **kwargs):
+        config_data = ConfigService.get_by_category(ConfigCategory.EMAIL)
+        template_data = ConfigService.get_by_category(ConfigCategory.EMAIL_TEMPLATE)
+
+        context = {
+            'config': config_data,
+            'config_email_template': template_data,
+            'title': ConfigCategory.EMAIL.label,
+        }
+
+        return render(request, 'config/email_settings.html', context)
 
     def post(self, request, *args, **kwargs):
         try:
@@ -249,14 +214,10 @@ class EmailConfigView(ConfigView):
         except Exception as e:
             messages.error(request, _("Failed to process request: %(error)s") % {"error": e})
 
-        try:
-            context = self._get_context_data(extra={'post_data': request.POST.dict()})
-        except Exception:
-            context = {}
-        return render(request, self.template_name, context)
+        return self.get(request, *args, **kwargs)
 
     def _handle_reset(self):
-        ConfigService.delete(category=self.category)
+        ConfigService.delete(category=ConfigCategory.EMAIL)
 
     def _handle_email_base(self, data):
         # Normalize checkbox values
@@ -267,7 +228,7 @@ class EmailConfigView(ConfigView):
         if not timeout:
             data.pop('email_timeout', None)
 
-        ConfigService.set_by_category(self.category, data)
+        ConfigService.set_by_category(ConfigCategory.EMAIL, data)
 
     @staticmethod
     def _handle_email_template(data):
@@ -328,16 +289,12 @@ class EmailConfigView(ConfigView):
 
 class FileManagementView(BaseAdminView):
     superuser_only = True
-    template_name = 'config/files.html'
-    extra_context = {
-        'title': ConfigCategory.FILE.label,
-    }
 
     def get(self, request, *args, **kwargs):
         current_page = request.GET.get('page', 1)
         context = UploadService.list(current_page)
-        context.update(self.extra_context)
-        return render(request, self.template_name, context)
+        context.update({'title': ConfigCategory.FILE.label})
+        return render(request, 'config/files.html', context)
 
 
 class NavItemView(BaseAdminView):
@@ -345,7 +302,6 @@ class NavItemView(BaseAdminView):
     Handle CRUD operations for navigation items within a given navigation group.
     This view assumes 'view' permission is sufficient for access.
     """
-    template_name = 'config/navitem_form.html'
     permission_required = f"{NavItem._meta.app_label}.view_{NavItem._meta.model_name}"
 
     def get(self, request, *args, **kwargs):
@@ -377,7 +333,7 @@ class NavItemView(BaseAdminView):
             'nav_items': nav_items,
             'target': TargetChoices,
         }
-        return render(request, self.template_name, context)
+        return render(request, 'config/navitem_form.html', context)
 
     def post(self, request, *args, **kwargs):
         """
@@ -415,7 +371,7 @@ class NavItemView(BaseAdminView):
             'form': form,
             'target': TargetChoices,
         }
-        return render(request, self.template_name, context)
+        return render(request, 'config/navitem_form.html', context)
 
     def delete(self, request, *args, **kwargs):
         """

@@ -22,7 +22,7 @@ from djangocmf.cmfadmin import constants
 from djangocmf.cmfadmin.enums import MenuSource, MenuSyncMode
 from djangocmf.cmfadmin.models import Menu, MenuPermission
 from djangocmf.cmfadmin.service.authorization import PermissionService
-from djangocmf.cmfadmin.utils.helper import get_valid_app_labels, get_model_fields
+from djangocmf.cmfadmin.utils.helper import get_valid_app_labels
 from djangocmf.core.menu import MenuNode
 from djangocmf.core.utils.tools import to_compact_case, to_snake_case
 
@@ -166,16 +166,25 @@ class MenuSynchronizer:
 
         return nodes
 
-    @staticmethod
-    def _prepare_menu_obj(item: MenuNode, parent_db_id: int | None) -> Menu:
+    _MENU_ASSIGNABLE_FIELDS: frozenset[str] = frozenset(
+        f.name
+        for f in Menu._meta.get_fields()
+        if f.concrete
+        and not f.auto_created
+        and not f.primary_key
+        and not f.is_relation
+        and not getattr(f, 'auto_now', False)
+        and not getattr(f, 'auto_now_add', False)
+    )
+
+    @classmethod
+    def _prepare_menu_obj(cls, item: MenuNode, parent_db_id: int | None) -> Menu:
         """Prepare Menu instance from MenuNode"""
-        model_fields = get_model_fields(Menu)
-        data = {}
-        for model_field in model_fields:
-            if hasattr(item, model_field):
-                value = getattr(item, model_field)
-                if value is not None:
-                    data[model_field] = value
+        data = {
+            field: value
+            for field in cls._MENU_ASSIGNABLE_FIELDS
+            if hasattr(item, field) and (value := getattr(item, field)) is not None
+        }
         data["parent_id"] = parent_db_id
 
         # build menu_key from app_label + normalized title [+ parent]
@@ -205,13 +214,14 @@ class MenuSynchronizer:
         created_count += len(created_items)
 
         # Step 3: Build mapping from temporary ID to DB ID
-        id_mapping = {src.id: db.id for src, db in zip(current_level, created_items)}
-        for src, db in zip(current_level, created_items):
+        created_map = {m.menu_key: m for m in created_items}
+        for src in current_level:
+            db = created_map[src.menu_key]
             src.db_id = db.id
             src.menu_key = db.menu_key
             for child in menu_nodes:
                 if child.parent_id == src.id:
-                    child.parent_id = id_mapping[src.id]
+                    child.parent_id = db.id
 
         # Step 4: insert permissions
         parent_code_map: dict[int, str] = {}

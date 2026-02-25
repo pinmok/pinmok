@@ -1,68 +1,83 @@
-<fieldset class="card accordion-item module aligned {{ fieldset.classes|cut:"collapse" }}"
+{% load cmf_tags i18n %}
+{% if fieldset.is_collapsible %}
+    <div class="accordion accordion-tabs accordion-inverted">
+{% endif %}
+
+<fieldset class="card mb-3 {{ fieldset.classes|cut:"collapse" }}{% if fieldset.is_collapsible %} accordion-item{% endif %}"
         {% if fieldset.name %} aria-labelledby="{{ prefix }}-{{ id_prefix }}-{{ id_suffix }}-heading"{% endif %}>
     {% if fieldset.name %}
         <div class="card-header">
-            <h{{ heading_level|default:2 }} id="{{ prefix }}-{{ id_prefix }}-{{ id_suffix }}-heading" class="card-title accordion-header">
-                {% if fieldset.is_collapsible %}
-                    <button class="accordion-button collapsed p-0" type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#{{ prefix }}-{{ id_prefix }}-{{ id_suffix }}"
-                            aria-expanded="false">
+            <div>
+                <div class="card-title{% if fieldset.is_collapsible %} accordion-header{% endif %}"
+                     id="{{ prefix }}-{{ id_prefix }}-{{ id_suffix }}-heading">
+                    {% if fieldset.is_collapsible %}
+                        <button class="accordion-button collapsed p-0" type="button" data-bs-toggle="collapse" aria-expanded="false"
+                                data-bs-target="#{{ prefix }}-{{ id_prefix }}-{{ id_suffix }}">
+                            {{ fieldset.name }}
+                            <div class="accordion-button-toggle accordion-button-toggle-plus">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                    <path d="M6 9l6 6l6 -6"></path>
+                                </svg>
+                            </div>
+                        </button>
+                    {% else %}
                         {{ fieldset.name }}
-                        <div class="accordion-button-toggle accordion-button-toggle-plus">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-                                <path d="M12 5l0 14"></path>
-                                <path d="M5 12l14 0"></path>
-                            </svg>
-                        </div>
-                    </button>
-                {% else %}
-                    {{ fieldset.name }}
-                {% endif %}
+                    {% endif %}
+                </div>
                 {% if fieldset.description %}
-                    <span class="card-subtitle">{{ fieldset.description|safe }}</span>
+                    <div class="card-subtitle">{{ fieldset.description|safe }}</div>
                 {% endif %}
-            </h{{ heading_level|default:2 }}>
+            </div>
         </div>
     {% endif %}
+
 
     <div class="card-body{% if fieldset.is_collapsible %} accordion-collapse collapse{% endif %}"
          id="{{ prefix }}-{{ id_prefix }}-{{ id_suffix }}">
         {% for line in fieldset %}
-            <div class="mb-3{% if line.fields|length == 1 and line.errors %} errors{% endif %}{% if not line.has_visible_field %} hidden{% endif %}{% for field in line %}{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% endfor %}">
-                {% if line.fields|length == 1 %}{{ line.errors }}{% endif %}
+            <div class="row mb-3{% if not line.has_visible_field %} d-none{% endif %}{% for field in line %}{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% endfor %}">
                 {% for field in line %}
-                    {% if not line.fields|length == 1 and not field.is_readonly %}{{ field.errors }}{% endif %}
-                    <div class="row{% if not line.fields|length == 1 %} fieldBox{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% if not field.is_readonly and field.errors %} errors{% endif %}{% if field.field.is_hidden %} hidden{% endif %}{% endif %}{% if field.is_checkbox %} checkbox-row{% endif %}">
-                        <label class="col-3 col-form-label{% if field.field.field.required %} required{% endif %}"
-                               for="{{ field.field.id_for_label }}">{{ field.field.label }}</label>
-                        <div class="col">
-                            {% if field.is_checkbox %}
-                                <label class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" name="{{ field.field.name }}"
-                                           id="{{ field.field.id_for_label }}" {% if field.field.value %}checked{% endif %}>
-                                </label>
-                            {% else %}
-                                <input type="{{ field.field.field.widget.input_type }}"
-                                       name="{{ field.field.name }}" id="{{ field.field.id_for_label }}"
-                                       class="form-control {{ field.field.field.widget.attrs.class }}"
-                                        {% if field.field.field.widget.attrs.maxlength %}
-                                       maxlength="{{ field.field.field.widget.attrs.maxlength }}"{% endif %}
-                                       value="{{ field.field.value|default:'' }}"
-                                        {% if field.field.is_readonly %} readonly{% endif %}
-                                        {% if field.field.field.required %} required{% endif %}>
-                            {% endif %}
-                            {% if field.field.help_text %}
-                                <small class="form-hint{% if field.field.is_hidden %} hidden{% endif %}"
-                                        {% if field.field.id_for_label %} id="{{ field.field.id_for_label }}_helptext"{% endif %}>
-                                    <div>{{ field.field.help_text|safe }}</div>
-                                </small>
-                            {% endif %}
-                        </div>
-                    </div>
+                    {% if not line.fields|length == 1 %}
+                        <div class="col-md{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% if field.field.is_hidden %} d-none{% endif %}">
+                    {% endif %}
+                {% if field.is_fieldset %}
+                    <fieldset class="form-fieldset" {% if field.field.help_text %}
+                              aria-describedby="{{ field.field.id_for_label }}_helptext"{% endif %}>
+                    {{ field.label_tag|add_class:'card-title' }}
+                {% endif %}
+                {% if field.is_checkbox %}
+                    <label class="form-check form-switch" for="{{ field.field.id_for_label }}">
+                        {{ field.field }}
+                        {% if not field.is_fieldset %}
+                            <span class="form-check-label">{{ field.field.label }}</span>
+                        {% endif %}
+                    </label>
+                {% else %}
+                    {% if not field.is_fieldset %}{{ field.label_tag|add_class:'form-label' }}{% endif %}
+                    {% if field.is_readonly %}
+                        <div class="form-control-plaintext">{{ field.contents }}</div>
+                    {% else %}
+                        {% if field.errors %}
+                            {{ field.field|add_class:'is-invalid' }}
+                            <div class="invalid-feedback">{{ field.errors }}</div>
+                        {% else %}
+                            {{ field.field }}
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+                {% if field.field.help_text %}
+                    <small class="form-hint{% if field.field.is_hidden %} hidden{% endif %}"
+                            {% if field.field.id_for_label %} id="{{ field.field.id_for_label }}_helptext"{% endif %}>
+                        {{ field.field.help_text|safe }}
+                    </small>
+                {% endif %}
+                {% if field.is_fieldset %}</fieldset>{% endif %}
+                {% if not line.fields|length == 1 %}</div>{% endif %}
                 {% endfor %}
             </div>
         {% endfor %}
     </div>
 </fieldset>
+
+{% if fieldset.is_collapsible %}</div>{% endif %}

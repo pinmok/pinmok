@@ -1,0 +1,11 @@
+{% if url_valid %}
+    <div class="input-group input-group-flat">
+    <span class="input-group-text"> {{ change_label }} </span>
+{% endif %}
+{% include "django/forms/widgets/input.html" %}
+{% if url_valid %}
+    </div>
+    <small class="form-hint">
+        {{ current_label }}<a href="{{ widget.href }}">{{ widget.value }}</a>
+    </small>
+{% endif %}

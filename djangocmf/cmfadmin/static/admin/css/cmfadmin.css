@@ -13,3 +13,7 @@ th.action-checkbox-column {
 th.column-sort_order {
     width: 8rem;
 }
+
+.errorlist {
+    margin-bottom: 0;
+}

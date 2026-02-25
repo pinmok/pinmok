@@ -4,7 +4,10 @@
 admin module
 
 Description:
-  admin module of CMF
+  Admin class definitions for DjangoCMF models.
+
+  This module defines ModelAdmin classes and registers CMF models
+  using the @cmfadmin.register() decorator.
 Author:
   惠达浪 <crazys@126.com>
 Created:
@@ -12,20 +15,23 @@ Created:
 """
 import json
 
-from django.contrib import admin
-from django.contrib.admin import ModelAdmin
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
-from django.contrib.auth.models import User, Group
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from djangocmf import site
+from djangocmf import cmfadmin
 from djangocmf.cmfadmin.models import ExternalLink, Nav
+from djangocmf.cmfadmin.options import CMFModelAdmin
 from djangocmf.cmfadmin.service.authorization import PermissionService
 
 
-class CmfUserAdmin(UserAdmin):
+class CmfUserAdmin(UserAdmin, CMFModelAdmin):
+    """
+    Custom admin for Django's User model with CMF enhancements.
+
+    Note: This is registered in apps.py, not here.
+    """
     add_form_template = "admin/auth/user/user_add.html"
     change_form_template = "admin/auth/user/user_change_form.html"
 
@@ -55,7 +61,12 @@ class CmfUserAdmin(UserAdmin):
         PermissionService.save_custom_permissions(obj, request.POST.getlist("custom_permissions[]"))
 
 
-class CmfGroupAdmin(GroupAdmin):
+class CmfGroupAdmin(GroupAdmin, CMFModelAdmin):
+    """
+    Custom admin for Django's Group model with CMF enhancements.
+
+    Note: This is registered in apps.py, not here.
+    """
     add_form_template = "admin/auth/user/group_add.html"
     change_form_template = "admin/auth/user/group_add.html"
 
@@ -74,7 +85,9 @@ class CmfGroupAdmin(GroupAdmin):
         PermissionService.save_custom_permissions(obj, request.POST.getlist("custom_permissions[]"))
 
 
-class ExternalLinksAdmin(ModelAdmin):
+@cmfadmin.register(ExternalLink)
+class ExternalLinksAdmin(CMFModelAdmin):
+    """Admin for external links management."""
     list_display = ('sort_order', 'image_thumb', 'title', 'url_link', 'status')
     list_display_links = ('title',)
     list_editable = ('sort_order',)
@@ -89,8 +102,8 @@ class ExternalLinksAdmin(ModelAdmin):
     url_link.admin_order_field = 'url'
 
     def image_thumb(self, obj):
-        """Display the thumbnail image in admin list"""
-        if obj.image_url:
+        """Display thumbnail image in list view."""
+        if obj.image:
             return format_html('<img src="{}" class="icon">', obj.image.url)
         return "-"
 
@@ -98,22 +111,14 @@ class ExternalLinksAdmin(ModelAdmin):
     image_thumb.admin_order_field = 'image_url'
 
 
-class NavAdmin(ModelAdmin):
+@cmfadmin.register(Nav)
+class NavAdmin(CMFModelAdmin):
+    """Admin for navigation menu management."""
     list_display = ('title', 'slug', 'is_active', 'created_at', 'edit_nav')
 
     def edit_nav(self, obj):
+        """Display edit menu action link."""
         url = reverse('admin:cmfadmin:nav_items_edit', args=[obj.pk])
         return format_html('<a href="{}">{}</a>', url, _('Edit Menu'))
 
     edit_nav.short_description = _('Action')
-
-
-# Unregister the default model registration in Django Admin
-admin.site.unregister(User)
-admin.site.unregister(Group)
-
-# Register the model using the CMF admin class
-site.register(User, CmfUserAdmin)
-site.register(Group, CmfGroupAdmin)
-site.register(ExternalLink, ExternalLinksAdmin)
-site.register(Nav, NavAdmin)

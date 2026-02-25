@@ -4,49 +4,47 @@
         <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"/>
         <path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/>
     </symbol>
-    <symbol id="tabler-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-home" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M5 12l-2 0l9 -9l9 9l-2 0"/>
         <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/>
         <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/>
     </symbol>
-    <symbol id="tabler-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-mail" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z"/>
         <path d="M3 7l9 6l9 -6"/>
     </symbol>
-    <symbol id="tabler-mail-opened" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-mail-opened" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M3 9l9 6l9 -6l-9 -6l-9 6"/>
         <path d="M21 9v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10"/>
         <path d="M3 19l6 -6"/>
         <path d="M15 13l6 6"/>
     </symbol>
-    <symbol id="tabler-user-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-user-shield" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M6 21v-2a4 4 0 0 1 4 -4h2"/>
         <path d="M22 16c0 4 -2.5 6 -3.5 6s-3.5 -2 -3.5 -6c1 0 2.5 -.5 3.5 -1.5c1 1 2.5 1.5 3.5 1.5z"/>
         <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/>
     </symbol>
-    <symbol id="tabler-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-user" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/>
         <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
     </symbol>
-    <symbol id="tabler-user-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <symbol id="tabler-user-edit" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/>
         <path d="M6 21v-2a4 4 0 0 1 4 -4h3.5"/>
         <path d="M18.42 15.61a2.1 2.1 0 0 1 2.97 2.97l-3.39 3.42h-3v-3l3.42 -3.39z"/>
     </symbol>
-    <symbol id="tabler-password-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-pencil" viewBox="0 0 24 24">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4"/>
+        <path d="M13.5 6.5l4 4"/>
+    </symbol>
+    <symbol id="tabler-password-user" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M12 17v4"/>
         <path d="M10 20l4 -2"/>
@@ -60,8 +58,7 @@
         <path d="M9 6a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/>
         <path d="M7 14a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2"/>
     </symbol>
-    <symbol id="tabler-users-group" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-users-group" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M10 13a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/>
         <path d="M8 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1"/>
@@ -70,73 +67,61 @@
         <path d="M5 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/>
         <path d="M3 13v-1a2 2 0 0 1 2 -2h2"/>
     </symbol>
-    <symbol id="tabler-login" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-login" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M15 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"/>
         <path d="M21 12h-13l3 -3"/>
         <path d="M11 15l-3 -3"/>
     </symbol>
-    <symbol id="tabler-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-logout" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"/>
         <path d="M9 12h12l-3 -3"/>
         <path d="M18 15l3 -3"/>
     </symbol>
-    <symbol id="tabler-news" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-news" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M16 6h3a1 1 0 0 1 1 1v11a2 2 0 0 1 -4 0v-13a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1v12a3 3 0 0 0 3 3h11"/>
         <path d="M8 8l4 0"/>
         <path d="M8 12l4 0"/>
         <path d="M8 16l4 0"/>
     </symbol>
-    <symbol id="tabler-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-moon" viewBox="0 0 24 24">
         <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"/>
     </symbol>
-    <symbol id="tabler-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-sun" viewBox="0 0 24 24">
         <path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/>
         <path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"/>
     </symbol>
-    <symbol id="tabler-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-bell" viewBox="0 0 24 24">
         <path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/>
         <path d="M9 17v1a3 3 0 0 0 6 0v-1"/>
     </symbol>
-    <symbol id="tabler-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-star" viewBox="0 0 24 24">
         <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/>
     </symbol>
-    <symbol id="tabler-star-fill" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-star-fill" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M8.243 7.34l-6.38 .925l-.113 .023a1 1 0 0 0 -.44 1.684l4.622 4.499l-1.09 6.355l-.013 .11a1 1 0 0 0 1.464 .944l5.706 -3l5.693 3l.1 .046a1 1 0 0 0 1.352 -1.1l-1.091 -6.355l4.624 -4.5l.078 -.085a1 1 0 0 0 -.633 -1.62l-6.38 -.926l-2.852 -5.78a1 1 0 0 0 -1.794 0l-2.853 5.78z"/>
     </symbol>
-    <symbol id="tabler-star-half" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-star-half" viewBox="0 0 24 24" fill="currentColor">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M12 1a.993 .993 0 0 1 .823 .443l.067 .116l2.852 5.781l6.38 .925c.741 .108 1.08 .94 .703 1.526l-.07 .095l-.078 .086l-4.624 4.499l1.09 6.355a1.001 1.001 0 0 1 -1.249 1.135l-.101 -.035l-.101 -.046l-5.693 -3l-5.706 3c-.105 .055 -.212 .09 -.32 .106l-.106 .01a1.003 1.003 0 0 1 -1.038 -1.06l.013 -.11l1.09 -6.355l-4.623 -4.5a1.001 1.001 0 0 1 .328 -1.647l.113 -.036l.114 -.023l6.379 -.925l2.853 -5.78a.968 .968 0 0 1 .904 -.56zm0 3.274v12.476a1 1 0 0 1 .239 .029l.115 .036l.112 .05l4.363 2.299l-.836 -4.873a1 1 0 0 1 .136 -.696l.07 -.099l.082 -.09l3.546 -3.453l-4.891 -.708a1 1 0 0 1 -.62 -.344l-.073 -.097l-.06 -.106l-2.183 -4.424z"/>
     </symbol>
-    <symbol id="tabler-license" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-license" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M15 21h-9a3 3 0 0 1 -3 -3v-1h10v2a2 2 0 0 0 4 0v-14a2 2 0 1 1 2 2h-2m2 -4h-11a3 3 0 0 0 -3 3v11"/>
         <path d="M9 7l4 0"/>
         <path d="M9 11l4 0"/>
     </symbol>
-    <symbol id="tabler-apps" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-apps" viewBox="0 0 24 24">
         <path d="M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"/>
         <path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"/>
         <path d="M14 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"/>
         <path d="M14 7l6 0"/>
         <path d="M17 4l0 6"/>
     </symbol>
-    <symbol id="tabler-lifebuoy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-lifebuoy" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/>
         <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/>
@@ -145,22 +130,18 @@
         <path d="M5.65 5.65l3.35 3.35"/>
         <path d="M18.35 5.65l-3.35 3.35"/>
     </symbol>
-    <symbol id="tabler-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-heart" viewBox="0 0 24 24">
         <path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572"/>
     </symbol>
-    <symbol id="tabler-trending-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-trending-up" viewBox="0 0 24 24">
         <path d="M3 17l6 -6l4 4l8 -8"/>
         <path d="M14 7l7 0l0 7"/>
     </symbol>
-    <symbol id="tabler-trending-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-trending-down" viewBox="0 0 24 24">
         <path d="M3 7l6 6l4 -4l8 8"/>
         <path d="M21 10l0 7l-7 0"/>
     </symbol>
-    <symbol id="tabler-setting" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-setting" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M12.003 21c-.732 .001 -1.465 -.438 -1.678 -1.317a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c.886 .215 1.325 .957 1.318 1.694"/>
         <path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/>
@@ -172,22 +153,19 @@
         <path d="M15.97 17.25l1.3 .75"/>
         <path d="M20.733 20l1.3 .75"/>
     </symbol>
-    <symbol id="tabler-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-menu" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M4 6h16"/>
         <path d="M7 12h13"/>
         <path d="M10 18h10"/>
     </symbol>
-    <symbol id="tabler-archive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-archive" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M3 4m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/>
         <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10"/>
         <path d="M10 12l4 0"/>
     </symbol>
-    <symbol id="tabler-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-list" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M9 6l11 0"/>
         <path d="M9 12l11 0"/>
@@ -196,21 +174,18 @@
         <path d="M5 12l0 .01"/>
         <path d="M5 18l0 .01"/>
     </symbol>
-    <symbol id="tabler-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-search" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/>
         <path d="M21 21l-6 -6"/>
     </symbol>
-    <symbol id="tabler-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-edit" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"/>
         <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"/>
         <path d="M16 5l3 3"/>
     </symbol>
-    <symbol id="tabler-delete" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-delete" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M4 7l16 0"/>
         <path d="M10 11l0 6"/>
@@ -218,48 +193,39 @@
         <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/>
         <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>
     </symbol>
-    <symbol id="tabler-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-plus" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M12 5l0 14"/>
         <path d="M5 12l14 0"/>
     </symbol>
-    <symbol id="tabler-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-minus" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M5 12l14 0"/>
     </symbol>
-    <symbol id="tabler-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-refresh" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"/>
         <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/>
     </symbol>
-    <symbol id="tabler-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-chevron-right" viewBox="0 0 24 24">
         <path d="M9 6l6 6l-6 6"/>
     </symbol>
-    <symbol id="tabler-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-chevron-left" viewBox="0 0 24 24">
         <path d="M15 6l-6 6l6 6"/>
     </symbol>
-    <symbol id="tabler-chevron-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-chevron-up" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M6 15l6 -6l6 6"/>
     </symbol>
-    <symbol id="tabler-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-chevron-down" viewBox="0 0 24 24">
         <path d="M6 9l6 6l6 -6"/>
     </symbol>
-    <symbol id="tabler-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-eye" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/>
         <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"/>
     </symbol>
-    <symbol id="tabler-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-eye-off" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M10.585 10.587a2 2 0 0 0 2.829 2.828"/>
         <path d="M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6
@@ -267,8 +233,7 @@
              c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87"/>
         <path d="M3 3l18 18"/>
     </symbol>
-    <symbol id="tabler-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-eye-closed" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M21 9c-2.4 2.667 -5.4 4 -9 4c-3.6 0 -6.6 -1.333 -9 -4"/>
         <path d="M3 15l2.5 -3.8"/>
@@ -276,103 +241,88 @@
         <path d="M9 17l.5 -4"/>
         <path d="M15 17l-.5 -4"/>
     </symbol>
-    <symbol id="tabler-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-check" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M5 12l5 5l10 -10"/>
     </symbol>
-    <symbol id="tabler-ban" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-ban" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/>
         <path d="M5.7 5.7l12.6 12.6"/>
     </symbol>
-    <symbol id="tabler-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-x" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M18 6l-12 12"/>
         <path d="M6 6l12 12"/>
     </symbol>
-    <symbol id="tabler-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-edit" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"/>
         <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"/>
         <path d="M16 5l3 3"/>
     </symbol>
-    <symbol id="tabler-square-add" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-square-add" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M9 12h6"/>
         <path d="M12 9v6"/>
         <path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z"/>
     </symbol>
-    <symbol id="tabler-copy-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-copy-x" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M7 9.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z"/>
         <path d="M4.012 16.737a2 2 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1"/>
         <path d="M11.5 11.5l4.9 5"/>
         <path d="M16.5 11.5l-5.1 5"/>
     </symbol>
-    <symbol id="tabler-filter-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-filter-x" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M13.758 19.414l-4.758 1.586v-8.5l-4.48-4.928a2 2 0 0 1-.52-1.345v-2.227h16v2.172a2 2 0 0 1-.586 1.414l-4.414 4.414v1.5"/>
         <path d="M22 22l-5-5"/>
         <path d="M17 22l5-5"/>
     </symbol>
-    <symbol id="tabler-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-help" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/>
         <path d="M12 17l0 .01"/>
         <path d="M12 13.5a1.5 1.5 0 0 1 1 -1.5a2.6 2.6 0 1 0 -3 -4"/>
     </symbol>
-    <symbol id="tabler-alert-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-alert-circle" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/>
         <path d="M12 8v4"/>
         <path d="M12 16h.01"/>
     </symbol>
-    <symbol id="tabler-alert-octagon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-alert-octagon" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M12.802 2.165l5.575 2.389c.48 .206 .863 .589 1.07 1.07l2.388 5.574c.22 .512 .22 1.092 0 1.604l-2.389 5.575c-.206 .48 -.589 .863 -1.07 1.07l-5.574 2.388c-.512 .22 -1.092 .22 -1.604 0l-5.575 -2.389a2.036 2.036 0 0 1 -1.07 -1.07l-2.388 -5.574a2.036 2.036 0 0 1 0 -1.604l2.389 -5.575c.206 -.48 .589 -.863 1.07 -1.07l5.574 -2.388a2.036 2.036 0 0 1 1.604 0z"/>
         <path d="M12 8v4"/>
         <path d="M12 16h.01"/>
     </symbol>
-    <symbol id="tabler-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-alert-triangle" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M12 9v4"/>
         <path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"/>
         <path d="M12 16h.01"/>
     </symbol>
-    <symbol id="tabler-file-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-file-info" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
         <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
         <path d="M11 14h1v4h1"/>
         <path d="M12 11h.01"/>
     </symbol>
-    <symbol id="tabler-info-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-info-circle" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/>
         <path d="M12 9h.01"/>
         <path d="M11 12h1v4h1"/>
     </symbol>
-    <symbol id="tabler-question-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-question-mark" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M8 8a3.5 3 0 0 1 3.5 -3h1a3.5 3 0 0 1 3.5 3a3 3 0 0 1 -2 3a3 4 0 0 0 -2 4"/>
         <path d="M12 19l0 .01"/>
     </symbol>
-    <symbol id="tabler-plant" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-plant" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M2 9a10 10 0 1 0 20 0"/>
         <path d="M12 19a10 10 0 0 1 10 -10"/>
@@ -420,13 +370,35 @@
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M10.586 3l-6.586 6.586a2 2 0 0 0 -.434 2.18l.068 .145a2 2 0 0 0 1.78 1.089h2.586v7a2 2 0 0 0 2 2h4l.15 -.005a2 2 0 0 0 1.85 -1.995l-.001 -7h2.587a2 2 0 0 0 1.414 -3.414l-6.586 -6.586a2 2 0 0 0 -2.828 0z"/>
     </symbol>
-    <symbol id="tabler-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-shield" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M12 3a12 12 0 0 0 8.5 3a12 12 0 0 1 -8.5 15a12 12 0 0 1 -8.5 -15a12 12 0 0 0 8.5 -3"/>
     </symbol>
-    <symbol id="tabler-calendar-week" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-clock-hour" viewBox="0 0 24 24">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/>
+        <path d="M12 12l3 2"/>
+        <path d="M12 7v5"/>
+    </symbol>
+    <symbol id="tabler-calendar" viewBox="0 0 24 24">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12"/>
+        <path d="M16 3v4"/>
+        <path d="M8 3v4"/>
+        <path d="M4 11h16"/>
+        <path d="M11 15h1"/>
+        <path d="M12 15v3"/>
+    </symbol>
+    <symbol id="tabler-calendar-time" viewBox="0 0 24 24">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M11.795 21h-6.795a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4"/>
+        <path d="M14 18a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/>
+        <path d="M15 3v4"/>
+        <path d="M7 3v4"/>
+        <path d="M3 11h16"/>
+        <path d="M18 16.496v1.504l1 1"/>
+    </symbol>
+    <symbol id="tabler-calendar-week" viewBox="0 0 24 24">
         <path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z"/>
         <path d="M16 3v4"/>
         <path d="M8 3v4"/>
@@ -439,42 +411,36 @@
         <path d="M7.01 17h.005"/>
         <path d="M10.01 17h.005"/>
     </symbol>
-    <symbol id="tabler-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-arrow-left" viewBox="0 0 24 24">
         <path d="M5 12l14 0"/>
         <path d="M5 12l6 6"/>
         <path d="M5 12l6 -6"/>
     </symbol>
-    <symbol id="tabler-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-arrow-right" viewBox="0 0 24 24">
         <path d="M5 12l14 0"/>
         <path d="M13 18l6 -6"/>
         <path d="M13 6l6 6"/>
     </symbol>
-    <symbol id="tabler-user-square" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-user-square" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M9 10a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/>
         <path d="M6 21v-1a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v1"/>
         <path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z"/>
     </symbol>
-    <symbol id="tabler-photo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-photo" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M15 8h.01"/>
         <path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z"/>
         <path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5"/>
         <path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3"/>
     </symbol>
-    <symbol id="tabler-table" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-table" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z"/>
         <path d="M3 10h18"/>
         <path d="M10 3v18"/>
     </symbol>
-    <symbol id="tabler-language" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-language" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629"/>
         <path d="M4 6.371h7"/>
@@ -483,8 +449,7 @@
         <path d="M19.1 18h-6.2"/>
         <path d="M6.694 3l.793 .582"/>
     </symbol>
-    <symbol id="tabler-apps" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-apps" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"/>
         <path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"/>
@@ -492,8 +457,7 @@
         <path d="M14 7l6 0"/>
         <path d="M17 4l0 6"/>
     </symbol>
-    <symbol id="tabler-world" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-world" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/>
         <path d="M3.6 9h16.8"/>
@@ -501,8 +465,7 @@
         <path d="M11.5 3a17 17 0 0 0 0 18"/>
         <path d="M12.5 3a17 17 0 0 1 0 18"/>
     </symbol>
-    <symbol id="tabler-world-www" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-world-www" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M19.5 7a9 9 0 0 0 -7.5 -4a8.991 8.991 0 0 0 -7.484 4"/>
         <path d="M11.5 3a16.989 16.989 0 0 0 -1.826 4"/>
@@ -514,8 +477,7 @@
         <path d="M17 10l1 4l1.5 -4l1.5 4l1 -4"/>
         <path d="M9.5 10l1 4l1.5 -4l1.5 4l1 -4"/>
     </symbol>
-    <symbol id="tabler-timezone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-timezone" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M20.884 10.554a9 9 0 1 0 -10.337 10.328"/>
         <path d="M3.6 9h16.8"/>
@@ -525,8 +487,7 @@
         <path d="M18 18m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/>
         <path d="M18 16.5v1.5l.5 .5"/>
     </symbol>
-    <symbol id="tabler-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-package" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5"/>
         <path d="M12 12l8 -4.5"/>
@@ -534,8 +495,7 @@
         <path d="M12 12l-8 -4.5"/>
         <path d="M16 5.25l-8 4.5"/>
     </symbol>
-    <symbol id="tabler-address-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-address-book" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M20 6v12a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2z"/>
         <path d="M10 16h6"/>
@@ -544,21 +504,18 @@
         <path d="M4 12h3"/>
         <path d="M4 16h3"/>
     </symbol>
-    <symbol id="tabler-cash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-cash" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M7 15h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v3"/>
         <path d="M7 9m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z"/>
         <path d="M12 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/>
     </symbol>
-    <symbol id="tabler-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-wallet" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12"/>
         <path d="M20 12v4h-4a2 2 0 0 1 0 -4h4"/>
     </symbol>
-    <symbol id="tabler-brand-android" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-brand-android" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M4 10l0 6"/>
         <path d="M20 10l0 6"/>
@@ -568,22 +525,19 @@
         <path d="M9 18l0 3"/>
         <path d="M15 18l0 3"/>
     </symbol>
-    <symbol id="tabler-brand-apple" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <symbol id="tabler-brand-apple" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M8.286 7.008c-3.216 0 -4.286 3.23 -4.286 5.92c0 3.229 2.143 8.072 4.286 8.072c1.165 -.05 1.799 -.538 3.214 -.538c1.406 0 1.607 .538 3.214 .538s4.286 -3.229 4.286 -5.381c-.03 -.011 -2.649 -.434 -2.679 -3.23c-.02 -2.335 2.589 -3.179 2.679 -3.228c-1.096 -1.606 -3.162 -2.113 -3.75 -2.153c-1.535 -.12 -3.032 1.077 -3.75 1.077c-.729 0 -2.036 -1.077 -3.214 -1.077z"/>
         <path d="M12 4a2 2 0 0 0 2 -2a2 2 0 0 0 -2 2"/>
     </symbol>
-    <symbol id="tabler-brand-alipay" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-brand-alipay" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M19 3h-14a2 2 0 0 0 -2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2 -2v-14a2 2 0 0 0 -2 -2z"/>
         <path d="M7 7h10"/>
         <path d="M12 3v7"/>
         <path d="M21 17.314c-2.971 -1.923 -15 -8.779 -15 -1.864c0 1.716 1.52 2.55 2.985 2.55c3.512 0 6.814 -5.425 6.814 -8h-6.604"/>
     </symbol>
-    <symbol id="tabler-brand-visa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-brand-visa" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M21 15l-1 -6l-2.5 6"/>
         <path d="M9 15l1 -6"/>
@@ -591,27 +545,23 @@
         <path d="M16 9.5a.5 .5 0 0 0 -.5 -.5h-.75c-.721 0 -1.337 .521 -1.455 1.233l-.09 .534a1.059 1.059 0 0 0 1.045 1.233a1.059 1.059 0 0 1 1.045 1.233l-.09 .534a1.476 1.476 0 0 1 -1.455 1.233h-.75a.5 .5 0 0 1 -.5 -.5"/>
         <path d="M18 14h2.7"/>
     </symbol>
-    <symbol id="tabler-currency-yen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-currency-yen" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M12 19v-7l-5 -7m10 0l-5 7"/>
         <path d="M8 17l8 0"/>
         <path d="M8 13l8 0"/>
     </symbol>
-    <symbol id="tabler-currency-dollar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-currency-dollar" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M16.7 8a3 3 0 0 0 -2.7 -2h-4a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6h-4a3 3 0 0 1 -2.7 -2"/>
         <path d="M12 3v3m0 12v3"/>
     </symbol>
-    <symbol id="tabler-currency-euro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-currency-euro" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M17.2 7a6 7 0 1 0 0 10"/>
         <path d="M13 10h-8m0 4h8"/>
     </symbol>
-    <symbol id="tabler-currency-pound" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
+    <symbol id="tabler-currency-pound" viewBox="0 0 24 24">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M17 18.5a6 6 0 0 1 -5 0a6 6 0 0 0 -5 .5a3 3 0 0 0 2 -2.5v-7.5a4 4 0 0 1 7.45 -2m-2.55 6h-7"/>
     </symbol>

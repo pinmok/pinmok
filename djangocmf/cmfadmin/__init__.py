@@ -10,3 +10,5 @@ Author:
 Created:
   2025-05-30
 """
+
+from djangocmf.cmfadmin.decorators import register

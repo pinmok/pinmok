@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+cmf_tags module
+
+Description:
+  Common template tags and filters usable across both frontend and admin interfaces.
+Author:
+  惠达浪 <crazys@126.com>
+Created:
+  2026/02/14
+"""
+import re
+
+from django import template
+from django.core.files.storage import default_storage
+from django.templatetags.static import static
+from django.utils.safestring import mark_safe
+
+from djangocmf.cmfadmin.constants import CUSTOM_SPRITE_FILE, CMF_SPRITE_FILE
+
+register = template.Library()
+
+
+@register.filter
+def add_class(html, css_class: str):
+    """
+    Add CSS classes to any HTML element (universal version).
+
+    This filter works on rendered HTML strings and can handle any HTML element
+    including labels, inputs, selects, textareas, divs, etc. It intelligently
+    appends classes to existing class attributes or creates new ones.
+
+    Args:
+        html: Rendered HTML string, SafeString, or BoundField object
+        css_class: Space-separated CSS class names to add
+
+    Returns:
+        SafeString: HTML with classes added to the first opening tag
+
+    Usage:
+        {{ field.label_tag|add_class:"form-label required" }}
+        {{ field.field|add_class:"form-control is-invalid" }}
+        {{ some_html|add_class:"mb-3" }}
+    """
+    # Convert to string (BoundField.__str__() automatically renders to HTML)
+    html_str = str(html)
+
+    # Check if there's an existing class attribute
+    if 'class="' in html_str:
+        # Append to existing class attribute
+        # Pattern matches: opening tag, then class=" and captures existing classes
+        pattern = r'(<[a-zA-Z][a-zA-Z0-9]*\b[^>]*?\bclass=")([^"]*)'
+        new_html = re.sub(
+            pattern,
+            r'\1\2 ' + css_class,  # Append new classes after existing ones
+            html_str,
+            count=1  # Only modify the first tag
+        )
+    else:
+        # No existing class attribute, add a new one
+        # Pattern matches: opening tag and captures the rest until >
+        pattern = r'(<[a-zA-Z][a-zA-Z0-9]*\b)([^>]*>)'
+        new_html = re.sub(
+            pattern,
+            r'\1 class="' + css_class + r'"\2',  # Insert class attribute
+            html_str,
+            count=1
+        )
+
+    return mark_safe(new_html)
+
+
+@register.simple_tag
+def sprite(icon_name: str, css_class: str = '', size: int = 24) -> str:
+    """
+    Render an inline SVG using a symbol from the sprite file.
+
+    Args:
+        icon_name (str): The ID of the icon symbol in the SVG sprite.
+        size (int, optional): Width and height of the SVG in pixels. Defaults to 16.
+        css_class (str, optional): Additional CSS classes for the <svg> element. Defaults to ''.
+
+    Returns:
+        django.utils.safestring.SafeString: An SVG element string ready for rendering in the template.
+    """
+    sprite_path = static(CMF_SPRITE_FILE)
+    return _process_file(sprite_path, icon_name, css_class, size)
+
+
+@register.simple_tag
+def custom_sprite(icon_name: str, css_class: str = '', size: int = 24) -> str:
+    sprite_path = static(CUSTOM_SPRITE_FILE)
+    return _process_file(sprite_path, icon_name, css_class, size)
+
+
+def _process_file(sprite_path: str, icon_name: str, css_class: str = '', size: int = 16):
+    class_attr = f' class="{css_class}"' if css_class else ''
+    try:
+        size = int(size)
+    except (ValueError, TypeError):
+        size = 24
+
+    svg_html = (
+        f'<svg width="{size}" height="{size}"{class_attr} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+        f'<use href="{sprite_path}#{icon_name}"></use>'
+        f'</svg>'
+    )
+    return mark_safe(svg_html)
+
+
+@register.simple_tag
+def media_url(path: str) -> str:
+    if not path:
+        return ''
+    if path.startswith(('http://', 'https://')):
+        return path
+    return default_storage.url(path)

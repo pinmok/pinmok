@@ -1,4 +1,4 @@
-{% load i18n static icons %}
+{% load i18n static cmf_tags %}
 {% if result_hidden_fields %}
     <div class="hiddenfields">{# DIV for HTML validation #}
         {% for item in result_hidden_fields %}{{ item }}{% endfor %}
@@ -64,20 +64,46 @@
     </div>
 {% endif %}
 <script>
+    /*
     document.addEventListener('DOMContentLoaded', function () {
+        // Checkbox for toggling selection of all rows (action-toggle).
         const toggle = document.getElementById('action-toggle');
         if (toggle) {
             toggle.classList.add('form-check-input', 'm-0', 'align-middle', 'table-selectable-check');
         }
+
+        // The checkbox for selecting a single row.
         document.querySelectorAll('input.action-select').forEach(function (el) {
             el.classList.add('form-check-input', 'm-0', 'align-middle', 'table-selectable-check');
         });
-        document.querySelectorAll('input[name^="form-"]').forEach(input => {
-            input.classList.add('form-control');
+
+        // Select fields
+        document.querySelectorAll('select[name^="form-"]').forEach(el => {
+            el.classList.add('form-select');
         });
+
+        // BooleanField(checkbox)
+        document.querySelectorAll('input[type="checkbox"][name^="form-"]').forEach(el => {
+            el.classList.add('form-check-input');
+        });
+
+        document.querySelectorAll(
+            'input[name^="form-"][type="text"],' +
+            'input[name^="form-"][type="number"],' +
+            'input[name^="form-"][type="email"],' +
+            'input[name^="form-"][type="url"],' +
+            'input[name^="form-"][type="password"],' +
+            'textarea[name^="form-"]'
+        ).forEach(el => {
+            el.classList.add('form-control');
+        });
+
+
+        // The Save button at the bottom of the form.
         const saveButton = document.querySelector('input[name="_save"]');
         if (saveButton) {
             saveButton.classList.add('btn', 'btn-primary', 'mb-3');
         }
     });
+     */
 </script>

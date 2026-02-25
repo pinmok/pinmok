@@ -1,0 +1,26 @@
+{% load cmf_tags %}
+{% if related_url %}
+    <div class="row g-2">
+{% endif %}
+<div class="col">
+    {% include 'django/forms/widgets/input.html' %}
+</div>
+<div class="col-auto">
+    {% if related_url %}
+        <a href="{{ related_url }}" class="related-lookup btn btn-icon" id="lookup_id_{{ widget.name }}" title="{{ link_title }}">
+            {% sprite 'tabler-search' 'icon' %}
+        </a>
+    {% endif %}
+    {% if link_label %}
+        <strong>
+            {% if link_url %}
+                <a href="{{ link_url }}">{{ link_label }}</a>
+            {% else %}
+                {{ link_label }}
+            {% endif %}
+        </strong>
+    {% endif %}
+</div>
+{% if related_url %}
+    </div>
+{% endif %}
