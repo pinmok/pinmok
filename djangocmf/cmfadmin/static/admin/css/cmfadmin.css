@@ -15,5 +15,9 @@ th.column-sort_order {
 }
 
 .errorlist {
-    margin-bottom: 0;
+    margin: 0;
+}
+
+.hidden {
+    display: none;
 }

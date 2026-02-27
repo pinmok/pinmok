@@ -545,11 +545,6 @@ msgid ""
 "following objects and their related items will be deleted:"
 msgstr "确定要删除选中的 %(objects_name)s 吗？以下对象及其关联项都将被删除："
 
-#: .\djangocmf\cmfadmin\templates\admin\filter.html:6
-#, python-format
-msgid "By %(filter_title)s"
-msgstr "按 %(filter_title)s 筛选"
-
 #: .\djangocmf\cmfadmin\templates\admin\includes\footer.html:36
 msgid "Based on Tabler"
 msgstr "基于 Tabler 制作"

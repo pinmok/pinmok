@@ -1,37 +1,18 @@
-{% load admin_list %}
-{% load static i18n cmf_tags %}
-<div class="card-footer">
-    <div>
-        {% if show_all_url %}<a href="{{ show_all_url }}" class="showall">{% translate 'Show all' %}</a>{% endif %}
-        {% if cl.formset and cl.result_count %}<input type="submit" name="_save" class="default" value="{% translate 'Save' %}">{% endif %}
-    </div>
-    <div class="row g-2 justify-content-center justify-content-between">
-        <div class="col-auto d-flex align-items-center">
-            <p class="m-0 text-secondary">
-                <strong>{{ cl.result_count }}</strong>
-                <span>{% if cl.result_count == 1 %}{{ cl.opts.verbose_name }}{% else %}{{ cl.opts.verbose_name_plural }}{% endif %}</span>
-            </p>
+{% load static i18n cmf_tags %} {#  #}
+<h2 id="pagination" class="visually-hidden">
+    {% blocktranslate with name=cl.opts.verbose_name_plural %}Pagination {{ name }}{% endblocktranslate %}
+</h2>
+{% if pagination_required %}
+    <div class="d-flex align-items-center gap-3">
+        <ul class="pagination">
+            {% paginator_previous cl %}
+            {% for i in page_range %} {% paginator_number cl i %} {% endfor %}
+            {% paginator_next cl %}
+        </ul>
+        <div class="text-secondary">
+            <strong>{{ cl.result_count }}</strong>
+            <span>{% if cl.result_count == 1 %}{{ cl.opts.verbose_name }}{% else %}{{ cl.opts.verbose_name_plural }}{% endif %}</span>
+            {% if show_all_url %} <a href="{{ show_all_url }}" class="btn btn-link">{% translate 'Show all' %}</a> {% endif %}
         </div>
-        {% if pagination_required %}
-            <div class="col-auto">
-                <ul class="pagination m-0 ms-auto">
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
-                            {% sprite 'tabler-chevron-left' 'icon' 24 %}
-                        </a>
-                    </li>
-                    {% for i in page_range %}
-                        <li class="page-item active">
-                            <a class="page-link" href="#">{% paginator_number cl i %}</a>
-                        </li>
-                    {% endfor %}
-                    <li class="page-item">
-                        <a class="page-link" href="#">
-                            {% sprite 'tabler-chevron-right' 'icon' 24 %}
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        {% endif %}
     </div>
-</div>
+{% endif %}

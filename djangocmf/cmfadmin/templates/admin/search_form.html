@@ -1,38 +1,27 @@
 {% load i18n static cmf_tags %}
 {% if cl.search_fields %}
-    <form id="changelist-search" method="get" role="search">
-        {% if cl.search_help_text %}
-            <label class="text text-muted mb-1" id="searchbar_helptext">{{ cl.search_help_text }}</label>
-        {% endif %}
-        <div class="d-flex gap-2 align-items-center flex-wrap">
-            <div class="d-flex align-items-center">
-                <div class="input-icon">
-                    <span class="input-icon-addon">{% sprite 'tabler-search' 'icon' %}</span>
-                    <input name="{{ search_var }}" value="{{ cl.query }}" id="searchbar" type="text" class="form-control"
-                            {% if cl.search_help_text %} aria-describedby="searchbar_helptext"{% endif %}>
-                </div>
-                <button type="submit" class="btn">{% translate 'Search' %}</button>
+    <h2 id="changelist-search-form" class="visually-hidden">
+        {% blocktranslate with name=cl.opts.verbose_name_plural %}Search {{ name }}{% endblocktranslate %}</h2>
+    <form id="changelist-search" method="get" role="search" aria-labelledby="changelist-search-form">
+        <div class="d-flex gap-2 align-items-center">
+            <div class="input-group input-group-flat w-auto">
+                <span class="input-group-text">{% sprite 'tabler-search' 'icon' %}</span>
+                <input type="text" class="form-control" size="40" name="{{ search_var }}" value="{{ cl.query }}" id="searchbar"
+                        {% if cl.search_help_text %} aria-describedby="searchbar_helptext"{% endif %}>
+                <button class="btn" type="submit">{% translate 'Search' %}</button>
             </div>
-            <div class="text-nowrap">
-                {% if show_result_count %}
-                    <span class="small quiet">
-                    <!-- @formatter:off -->
-                        {% blocktranslate trimmed count counter=cl.result_count %}{{ counter }} result {% plural %} {{ counter }} results{% endblocktranslate %}
-                        (<a href="?{% if cl.is_popup %}{{ is_popup_var }}=1{% if cl.add_facets %}&{% endif %}{% endif %}
-                        {% if cl.add_facets %}{{ is_facets_var }}{% endif %}">
-                        {% if cl.show_full_result_count %}
-                            {% blocktranslate trimmed with full_result_count=cl.full_result_count %} {{ full_result_count }} total {% endblocktranslate %}
-                        {% else %}
-                            {% translate "Show all" %}
-                        {% endif %}
-                        </a>)
-                    <!-- @formatter:on -->
-                    </span>
-                {% endif %}
-                {% for pair in cl.params.items %}
-                    {% if pair.0 != search_var %}<input type="hidden" name="{{ pair.0 }}" value="{{ pair.1 }}">{% endif %}
-                {% endfor %}
-            </div>
+            {% if cl.search_help_text %}
+                <small class="form-hint" id="searchbar_helptext" data-bs-toggle="tooltip" data-bs-placement="right"
+                       data-bs-title="{{ cl.search_help_text }}">{% sprite 'tabler-help' %}</small>
+            {% endif %}
+            {% if show_result_count %}
+                <!-- @formatter:off -->
+                <span class="small quiet">{% blocktranslate count counter=cl.result_count %}{{ counter }} result{% plural %}{{ counter }} results{% endblocktranslate %} (<a href="?{% if cl.is_popup %}{{ is_popup_var }}=1{% if cl.add_facets %}&{% endif %}{% endif %}{% if cl.add_facets %}{{ is_facets_var }}{% endif %}">{% if cl.show_full_result_count %}{% blocktranslate with full_result_count=cl.full_result_count %}{{ full_result_count }} total{% endblocktranslate %}{% else %}{% translate "Show all" %}{% endif %}</a>)</span>
+                <!-- @formatter:on -->
+            {% endif %}
+            {% for pair in cl.params.items %}
+                {% if pair.0 != search_var %}<input type="hidden" name="{{ pair.0 }}" value="{{ pair.1 }}">{% endif %}
+            {% endfor %}
         </div>
     </form>
 {% endif %}

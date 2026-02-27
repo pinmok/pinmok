@@ -16,10 +16,24 @@ from django.contrib import admin
 from django.contrib.admin.options import get_ul_class
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.db import models
+from django.forms.widgets import Select
 from django.utils.translation import gettext as _
 
 from djangocmf.cmfadmin import widgets
 from djangocmf.cmfadmin.widgets import CMFTextarea
+
+
+class CMFActionForm(forms.Form):
+    action = forms.ChoiceField(
+        label=_("Action:"),
+        widget=Select(attrs={'class': 'form-select form-select-sm w-auto'}),
+    )
+    select_across = forms.BooleanField(
+        label="",
+        required=False,
+        initial=0,
+        widget=forms.HiddenInput({"class": "select-across"}),
+    )
 
 
 class CMFModelAdmin(admin.ModelAdmin):
@@ -29,6 +43,8 @@ class CMFModelAdmin(admin.ModelAdmin):
     Automatically applies Tabler-style widgets while retaining
     all Django customization points.
     """
+    action_form = CMFActionForm
+
     formfield_overrides = {
         models.DateTimeField: {
             "form_class": forms.DateTimeField,

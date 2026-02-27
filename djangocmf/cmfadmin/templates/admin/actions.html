@@ -4,39 +4,30 @@
         {% block actions-form %}
             {% for field in action_form %}
                 {% if field.label %}
-                    <label for="{{ field.id_for_label }}" class="form-label mb-0">{{ field.label }}</label>
-                    <select name="{{ field.html_name }}" id="{{ field.id_for_label }}" class="form-select form-select-sm w-auto">
-                        {% for value, label in field.field.choices %}
-                            <option value="{{ value }}" {% if value == field.value %}selected{% endif %}>
-                                {{ label }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                {% else %}
-                    {{ field }}
+                    <label class="form-label mb-0">{{ field.label }}</label>
                 {% endif %}
+                {{ field }}
             {% endfor %}
         {% endblock %}
         {% block actions-submit %}
-            <button type="submit" class="btn btn-sm btn-outline-secondary btn-pill" title="{% translate "Run the selected action" %}"
-                    name="index" value="{{ action_index|default:0 }}">{% translate "Go" %}</button>
+            <button type="submit" class="btn btn-sm btn-outline-secondary btn-pill" name="index"
+                    value="{{ action_index|default:0 }}">{% translate "Run" %}</button>
         {% endblock %}
         {% block actions-counter %}
-            <div class="d-flex align-items-center gap-2 small text-muted">
-                {% if actions_selection_counter %}
-                    <span class="action-counter" data-actions-icnt="{{ cl.result_list|length }}">{{ selection_note }}</span>
-                    {% if cl.result_count != cl.result_list|length %}
-                        <span class="all hidden">{{ selection_note_all }}</span>
-                        <span class="question hidden">
-                            <a role="button" href="#" title="{% translate "Click here to select the objects across all pages" %}">
-                                {% blocktranslate trimmed with cl.result_count as total_count %}
-                                    Select all {{ total_count }} {{ module_name }}
-                                {% endblocktranslate %}</a>
-                        </span>
-                        <span class="clear hidden"><a role="button" href="#">{% translate "Clear selection" %}</a></span>
-                    {% endif %}
+            {% if actions_selection_counter %}
+                <span class="action-counter" data-actions-icnt="{{ cl.result_list|length }}">{{ selection_note }}</span>
+                {% if cl.result_count != cl.result_list|length %}
+                    <span class="all hidden">{{ selection_note_all }}</span>
+                    <span class="question hidden">
+                        <a role="button" href="#" title="{% translate "Click here to select the objects across all pages" %}">
+                            {% blocktranslate trimmed with cl.result_count as total_count %}
+                                Select all {{ total_count }} {{ module_name }}
+                            {% endblocktranslate %}
+                        </a>
+                    </span>
+                    <span class="clear hidden"><a role="button" href="#">{% translate "Clear selection" %}</a></span>
                 {% endif %}
-            </div>
+            {% endif %}
         {% endblock %}
     {% endblock %}
 </div>

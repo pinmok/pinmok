@@ -1,0 +1,20 @@
+{% if show %}
+    <nav class="btn-group btn-group-sm">
+        {% block date-hierarchy-toplinks %}
+            {% block date-hierarchy-back %}
+                {% if back %}
+                    <a href="{{ back.link }}" class="btn btn-primary">&lsaquo; {{ back.title }}</a>
+                {% endif %}
+            {% endblock %}
+            {% block date-hierarchy-choices %}
+                {% for choice in choices %}
+                    {% if choice.link %}
+                        <a href="{{ choice.link }}" class="btn btn-outline-primary">{{ choice.title }}</a>
+                    {% else %}
+                        <button class="btn btn-outline-primary disabled">{{ choice.title }}</button>
+                    {% endif %}
+                {% endfor %}
+            {% endblock %}
+        {% endblock %}
+    </nav>
+{% endif %}

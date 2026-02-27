@@ -13,6 +13,7 @@ Created:
 import re
 
 from django import template
+from django.contrib.admin.views.main import PAGE_VAR
 from django.core.files.storage import default_storage
 from django.templatetags.static import static
 from django.utils.safestring import mark_safe
@@ -116,3 +117,43 @@ def media_url(path: str) -> str:
     if path.startswith(('http://', 'https://')):
         return path
     return default_storage.url(path)
+
+
+@register.inclusion_tag('admin/pagination/paginator_number.html')
+def paginator_number(cl, i):
+    """
+    Render a single page number item in the pagination list.
+    Handles three states: ellipsis, current page (active), and normal page link.
+    """
+    if i == cl.paginator.ELLIPSIS:
+        return {'ellipsis': True, 'label': cl.paginator.ELLIPSIS}
+    elif i == cl.page_num:
+        return {'active': True, 'label': i}
+    else:
+        return {'url': cl.get_query_string({PAGE_VAR: i}), 'label': i}
+
+
+@register.inclusion_tag('admin/pagination/paginator_previous.html')
+def paginator_previous(cl):
+    """
+    Render the previous page button.
+    Disabled when on the first page or when there is only one page.
+    """
+    enabled = cl.paginator.num_pages > 1 and cl.page_num > 1
+    return {
+        'url': cl.get_query_string({PAGE_VAR: cl.page_num - 1}) if enabled else None,
+        'enabled': enabled,
+    }
+
+
+@register.inclusion_tag('admin/pagination/paginator_next.html')
+def paginator_next(cl):
+    """
+    Render the next page button.
+    Disabled when on the last page or when there is only one page.
+    """
+    enabled = cl.paginator.num_pages > 1 and cl.page_num < cl.paginator.num_pages
+    return {
+        'url': cl.get_query_string({PAGE_VAR: cl.page_num + 1}) if enabled else None,
+        'enabled': enabled,
+    }

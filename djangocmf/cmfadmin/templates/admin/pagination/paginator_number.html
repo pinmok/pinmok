@@ -1,0 +1,7 @@
+{% if ellipsis %}
+    <li class="page-item disabled"><a class="page-link">{{ label }}</a></li>
+{% elif active %}
+    <li class="page-item active"><a class="page-link" role="button" href="" aria-current="page">{{ label }}</a></li>
+{% else %}
+    <li class="page-item"><a class="page-link" role="button" href="{{ url }}">{{ label }}</a></li>
+{% endif %}
