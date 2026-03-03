@@ -1,0 +1,16 @@
+{% load cmf_tags %}
+{% if title %}
+    <div class="alert {{ class_attrs }}" role="alert">
+        <div class="alert-icon">{{ icon }}</div>
+        {% if description %}
+            <div>
+                <h4 class="alert-heading">{{ title|safe }}</h4>
+                <div class="alert-description">{{ description }}</div>
+            </div>
+        {% else %}
+            {{ title|safe }}
+            {% if link %}<a href="{{ link.0 }}" class="alert-action">{{ link.1 }}</a>{% endif %}
+        {% endif %}
+        {% if dismiss %}<a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>{% endif %}
+    </div>
+{% endif %}

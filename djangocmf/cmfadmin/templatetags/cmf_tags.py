@@ -157,3 +157,42 @@ def paginator_next(cl):
         'url': cl.get_query_string({PAGE_VAR: cl.page_num + 1}) if enabled else None,
         'enabled': enabled,
     }
+
+
+@register.inclusion_tag('admin/includes/alert.html')
+def alert(title, description=None, level='danger', variant='', dismiss=False, extra_class='', link_url=None, link_text=None):
+    """
+    Render an alert component.
+
+    Args:
+        title: Alert heading text. If empty, nothing is rendered.
+        description: Optional body content displayed below the heading.
+        level: Alert type, one of 'danger', 'warning', 'success', 'info'. Defaults to 'danger'.
+        variant: Visual variant, one of 'important', 'minor'. Leave empty for default appearance.
+        dismiss: If True, renders a close button to dismiss the alert.
+        link_url: Optional URL for an action link. Requires link_text to take effect.
+        link_text: Optional label for the action link. Requires link_url to take effect.
+        extra_class: Additional CSS classes appended to the alert element.
+    """
+    categories = {
+        'danger': 'tabler-alert-circle',
+        'warning': 'tabler-alert-triangle',
+        'success': 'tabler-check',
+        'info': 'tabler-info-circle'
+    }
+
+    level_key = level.lower() if level.lower() in categories else 'danger'
+    icon = sprite(categories[level_key], 'icon alert-icon')
+    variant = f'alert-{variant.lower()}' if variant.lower() in {'important', 'minor'} else ''
+    dismiss_class = 'alert-dismissible' if dismiss else ''
+    class_attrs = ' '.join(filter(None, [f'alert-{level_key}', variant, extra_class, dismiss_class]))
+    link = (link_url, link_text) if link_url and link_text else None
+
+    return {
+        'title': title,
+        'description': description,
+        'class_attrs': class_attrs,
+        'dismiss': dismiss,
+        'icon': icon,
+        'link': link,
+    }

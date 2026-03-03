@@ -61,8 +61,9 @@
             {% if errors %}
                 <div class="alert alert-danger">
                     <div class="alert-icon">{% sprite 'tabler-alert-circle' 'icon alert-icon' %}</div>
-                    {% blocktranslate count counter=errors|length %}Please correct the error below.{% plural %}
-                        Please correct the errors below.{% endblocktranslate %}
+                    {% blocktranslate trimmed count counter=errors|length %}
+                        Please correct the error below.{% plural %}Please correct the errors below.
+                    {% endblocktranslate %}
                     {{ adminform.form.non_field_errors }}
                 </div>
             {% endif %}
@@ -76,7 +77,6 @@
             {% block after_field_sets %}{% endblock %}
 
             {% block inline_field_sets %}
-                {# todo: 改内联模板：admin/edit_inline/tabular.html和admin/edit_inline/stacked.htm l#}
                 {% for inline_admin_formset in inline_admin_formsets %}
                     {% include inline_admin_formset.opts.template %}
                 {% endfor %}
@@ -98,8 +98,4 @@
         {# JavaScript for prepopulated fields #}
         {% prepopulated_fields_js %}
     </form>
-{% endblock %}
-
-{% block additional %}
-    {% include 'component/cropper.html' %}
 {% endblock %}

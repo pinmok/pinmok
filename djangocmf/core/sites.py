@@ -42,6 +42,7 @@ class DjangoCmfAdminSite(AdminSite):
         """
         Display the i18n JavaScript for both Django admin and project apps.
         """
+        # Set package to None to use the `po` files of all apps
         return JavaScriptCatalog.as_view(packages=None)(request)
 
     def get_urls(self):

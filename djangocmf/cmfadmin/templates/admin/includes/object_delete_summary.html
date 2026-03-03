@@ -1,13 +1,7 @@
 {% load i18n %}
-
-<div class="card">
-    <div class="card-status-top bg-primary"></div>
-    <div class="card-header">
-        <h3 class="card-title">{% translate "Summary" %}</h3>
-    </div>
-    <ul class="list-group">
-        {% for model_name, object_count in model_count %}
-            <li class="list-group-item">{{ model_name|capfirst }}: {{ object_count }}</li>
-        {% endfor %}
-    </ul>
-</div>
+<h2>{% translate "Summary" %}</h2>
+<ul class="list-group">
+    {% for model_name, object_count in model_count %}
+        <li class="list-group-item">{{ model_name|capfirst }}: {{ object_count }}</li>
+    {% endfor %}
+</ul>

@@ -12,8 +12,7 @@ Created:
 """
 
 from django import forms
-from django.contrib import admin
-from django.contrib.admin.options import get_ul_class
+from django.contrib.admin.options import get_ul_class, BaseModelAdmin, ModelAdmin, TabularInline, StackedInline
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.db import models
 from django.forms.widgets import Select
@@ -36,9 +35,9 @@ class CMFActionForm(forms.Form):
     )
 
 
-class CMFModelAdmin(admin.ModelAdmin):
+class CMFModelAdminMixin(BaseModelAdmin):
     """
-    CMF default ModelAdmin.
+    CMF default ModelAdmin mixin.
 
     Automatically applies Tabler-style widgets while retaining
     all Django customization points.
@@ -144,3 +143,15 @@ class CMFModelAdmin(admin.ModelAdmin):
                 kwargs["widget"] = widgets.CMFSelectMultiple()
 
         return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+
+class CMFModelAdmin(CMFModelAdminMixin, ModelAdmin):
+    pass
+
+
+class CMFStackedInline(CMFModelAdminMixin, StackedInline):
+    pass
+
+
+class CMFTabularInline(CMFModelAdminMixin, TabularInline):
+    pass

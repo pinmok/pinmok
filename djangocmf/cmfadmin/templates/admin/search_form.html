@@ -15,9 +15,9 @@
                        data-bs-title="{{ cl.search_help_text }}">{% sprite 'tabler-help' %}</small>
             {% endif %}
             {% if show_result_count %}
-                <!-- @formatter:off -->
+                {# @formatter:off #}
                 <span class="small quiet">{% blocktranslate count counter=cl.result_count %}{{ counter }} result{% plural %}{{ counter }} results{% endblocktranslate %} (<a href="?{% if cl.is_popup %}{{ is_popup_var }}=1{% if cl.add_facets %}&{% endif %}{% endif %}{% if cl.add_facets %}{{ is_facets_var }}{% endif %}">{% if cl.show_full_result_count %}{% blocktranslate with full_result_count=cl.full_result_count %}{{ full_result_count }} total{% endblocktranslate %}{% else %}{% translate "Show all" %}{% endif %}</a>)</span>
-                <!-- @formatter:on -->
+                {# @formatter:on #}
             {% endif %}
             {% for pair in cl.params.items %}
                 {% if pair.0 != search_var %}<input type="hidden" name="{{ pair.0 }}" value="{{ pair.1 }}">{% endif %}

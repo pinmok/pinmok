@@ -63,7 +63,7 @@
                                         Please correct the error below.{% plural %}Please correct the errors below.
                                     {% endblocktranslate %}
                                 </h4>
-                                <div class="alert-description">{{ cl.formset.non_form_errors }}</div>
+                                <div class="alert-description">{{ cl.formset.non_form_errors|add_class:'alert-list' }}</div>
                             </div>
                         </div>
                     {% endif %}
@@ -80,10 +80,10 @@
             {% block result_list %}
                 {# [actions.html] Display action buttons above the result list if enabled #}
                 {% if action_form and actions_on_top and cl.show_admin_actions or cl.has_filters %}
-                    <div class="card-body border-bottom d-flex justify-content-between align-items-center">
+                    <div class="card-body border-bottom d-flex align-items-center">
                         {% if action_form and actions_on_top and cl.show_admin_actions %}{% admin_actions %}{% endif %}
                         {% if cl.has_filters %}
-                            <a class="btn btn-outline-primary" data-bs-toggle="offcanvas" href="#changelist-filter" role="button"
+                            <a class="btn btn-outline-primary ms-auto" data-bs-toggle="offcanvas" href="#changelist-filter" role="button"
                                aria-controls="changelist-filter">{% translate 'Filter' %}</a>
                         {% endif %}
                     </div>
@@ -98,15 +98,17 @@
                 {% endif %}
             {% endblock %}
 
-            <div class="card-footer d-flex">
-                {# pagination.html #}
-                {% block pagination %}{% pagination cl %}{% endblock %}
-                {% if cl.formset and cl.result_count %}
-                    <div class="ms-auto">
-                        <input type="submit" name="_save" class="btn btn-primary" value="{% translate 'Save' %}">
-                    </div>
-                {% endif %}
-            </div>
+            {% if pagination_required or cl.formset and cl.result_count %}
+                <div class="card-footer d-flex">
+                    {# pagination.html #}
+                    {% block pagination %}{% pagination cl %}{% endblock %}
+                    {% if cl.formset and cl.result_count %}
+                        <div class="ms-auto">
+                            <input type="submit" name="_save" class="btn btn-primary" value="{% translate 'Save' %}">
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
         </form>
     </div>
 

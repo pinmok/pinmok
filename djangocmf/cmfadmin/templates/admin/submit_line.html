@@ -8,13 +8,11 @@
             <button type="submit" class="btn btn-primary" name="_saveasnew">{% translate 'Save as new' %}</button>
         {% endif %}
         {% if show_save_and_add_another %}
-            <button type="submit" class="btn btn-primary"
-                    name="_addanother">{% translate 'Save and add another' %}</button>
+            <button type="submit" class="btn btn-primary" name="_addanother">{% translate 'Save and add another' %}</button>
         {% endif %}
         {% if show_save_and_continue %}
             <button type="submit" class="btn btn-primary" name="_continue">
-                {% if can_change %}{% translate 'Save and continue editing' %}{% else %}
-                    {% translate 'Save and view' %}{% endif %}
+                {% if can_change %}{% translate 'Save and continue editing' %}{% else %}{% translate 'Save and view' %}{% endif %}
             </button>
         {% endif %}
         {% if show_close %}
