@@ -38,10 +38,10 @@
 
 {% block additional %}{% endblock %}
 <script>
-    window.APP_URLS = {
-        uploadFile: "{% url 'admin:cmfadmin:upload_file' %}"
-    }
     window.DEFAULT_IMG = "{% static 'admin/svg/photo-up.svg' %}"
+    window.URL_ALIASES = {
+        "{% url 'admin:cmfadmin_navitem_changelist' %}": "{% url 'admin:cmfadmin_nav_changelist' %}"
+    }
 </script>
 <script src="{% static 'admin/js/tabler.min.js' %}" defer></script>
 <script src="{% static 'admin/js/tabler-theme.min.js' %}" defer></script>

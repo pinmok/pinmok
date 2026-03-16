@@ -1,7 +1,7 @@
 {% extends 'config/config_base.html' %}
 {% load i18n cmf_tags %}
 
-{% block page_subtitle %}{{ title }}{% endblock %}
+{% block page_subtitle %}Icon Management{% endblock %}
 {% block page_title %}{% translate 'Icons in sprite' %}{% endblock %}
 {% block page_right %}
     <a href="{% url 'admin:cmfadmin:icons_manage' %}?action=add" class="btn btn-secondary">

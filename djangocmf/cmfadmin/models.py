@@ -220,8 +220,16 @@ class ExternalLink(models.Model):
     """
     Model representing a friendly external link.
     """
-    title = models.CharField(max_length=50, verbose_name=_("title"), help_text=_("The title for the external link."))
-    url = models.URLField(verbose_name=_("url"), blank=True, help_text=_("The URL for the external link."))
+    title = models.CharField(
+        max_length=50,
+        verbose_name=_("title"),
+        help_text=_("The title for the external link.")
+    )
+    url = models.URLField(
+        verbose_name=_("url"),
+        blank=True,
+        help_text=_("The URL for the external link.")
+    )
     image = models.ImageField(
         upload_to='links/',
         blank=True,

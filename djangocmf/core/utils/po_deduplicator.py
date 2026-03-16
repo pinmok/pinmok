@@ -57,8 +57,6 @@ class PoDeduplicator:
 
     DOMAIN = {'django', 'djangojs'}
 
-    _all_system_msgids: dict[str, set[str]] = {}
-
     def __init__(
             self,
             lang: str = 'zh-hans',
@@ -345,11 +343,13 @@ class PoDeduplicator:
         parser.add_argument(
             "--no-backup",
             action="store_false",
+            default=True,
             help="Do not create backup before cleaning"
         )
         parser.add_argument(
             "--no-comments",
             action="store_false",
+            default=True,
             help="Do not preserve comments"
         )
 

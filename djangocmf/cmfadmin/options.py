@@ -114,6 +114,8 @@ class CMFModelAdminMixin(BaseModelAdmin):
                 kwargs["empty_label"] = (
                     kwargs.get("empty_label", _("None")) if db_field.blank else None
                 )
+            else:
+                kwargs["widget"] = widgets.CMFSelect()
 
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 

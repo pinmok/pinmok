@@ -103,7 +103,6 @@
                             <!-- BEGIN DROPDOWN MENU -->
                             <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
                                 {% block userlinks %}
-                                    <a href="{% url 'admin:profile' %}" class="dropdown-item">{% translate 'Profile' %}</a>
                                     {% if user.has_usable_password %}
                                         <a href="{% url 'admin:password_change' %}"
                                            class="dropdown-item">{% translate 'Change password' %}</a>

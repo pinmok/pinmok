@@ -48,10 +48,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const currentUrl = window.location.pathname;
 
+    // URL alias mapping: when on these paths, activate the corresponding menu item
+    const urlAliases = window.URL_ALIASES || {};
+
+    // Apply alias before matching
+    let matchPath = currentUrl;
+    if (!matchPath.endsWith('/')) matchPath += '/';
+    for (const [alias, target] of Object.entries(urlAliases)) {
+        if (matchPath.startsWith(alias)) {
+            matchPath = target;
+            break;
+        }
+    }
+
     // Loop through all nav links inside li.nav-item
     document.querySelectorAll('#sidebar-menu li.nav-item a').forEach(link => {
         const linkUrl = new URL(link.href, window.location.origin);
-        let linkPath = linkUrl.pathname;
+        let linkPath  = linkUrl.pathname;
 
         // Ensure the menu link path ends with a slash to unify format and avoid mismatches due to missing trailing slash
         if (!linkPath.endsWith('/')) {
@@ -72,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // If the link matches the current page URL
-        if (currentPath.startsWith(linkPath)) {
+        if (matchPath.startsWith(linkPath)) {
             // Find the closest top-level nav-item (should always exist in a well-formed menu)
             link.classList.add('active');
 

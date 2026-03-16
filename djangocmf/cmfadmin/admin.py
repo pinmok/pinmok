@@ -23,7 +23,7 @@ from djangocmf import cmfadmin
 from djangocmf.cmfadmin.enums import ConfigCategory, UploadConfigKey
 from djangocmf.cmfadmin.forms.config_forms import EmailConfigForm, UploadConfigForm
 from djangocmf.cmfadmin.forms.forms import CMFAdminPasswordResetForm, CMFAdminUserCreationForm
-from djangocmf.cmfadmin.models import ExternalLink, Nav, SiteConfig, EmailConfig, UploadConfig
+from djangocmf.cmfadmin.models import ExternalLink, Nav, SiteConfig, EmailConfig, UploadConfig, NavItem
 from djangocmf.cmfadmin.options import CMFModelAdmin, CMFModelAdminMixin, ConfigModelAdmin, ExtraPanel
 
 
@@ -143,6 +143,12 @@ class ExternalLinksAdmin(CMFModelAdmin):
     list_display = ('sort_order', 'image_thumb', 'title', 'url_link', 'status')
     list_display_links = ('title',)
     list_editable = ('sort_order',)
+    fieldsets = [
+        (None, {'fields': [
+            ('title', 'url', 'sort_order'),
+            ('image', 'status'),
+        ]})
+    ]
 
     def url_link(self, obj):
         """Display the URL as a link that opens in a new tab in the list view"""
@@ -160,17 +166,90 @@ class ExternalLinksAdmin(CMFModelAdmin):
         return "-"
 
     image_thumb.short_description = _('Icon')
-    image_thumb.admin_order_field = 'image_url'
 
 
 @cmfadmin.register(Nav)
 class NavAdmin(CMFModelAdmin):
     """Admin for navigation menu management."""
-    list_display = ('title', 'slug', 'is_active', 'created_at', 'edit_nav')
+    list_display = ('title', 'slug', 'is_active', 'created_at', 'edit_items')
+    list_display_links = ('title', 'slug')
 
-    def edit_nav(self, obj):
-        """Display edit menu action link."""
-        url = reverse('admin:cmfadmin:nav_items_edit', args=[obj.pk])
-        return format_html('<a href="{}">{}</a>', url, _('Edit Menu'))
+    def edit_items(self, obj):
+        url = reverse('admin:cmfadmin_navitem_changelist') + f'?nav__id__exact={obj.pk}'
+        return format_html('<a href="{}">{}</a>', url, _('Edit Nav Items'))
 
-    edit_nav.short_description = _('Action')
+    edit_items.short_description = _('Items')
+
+
+@cmfadmin.register(NavItem)
+class NavItemAdmin(CMFModelAdmin):
+    """Admin for navigation item management."""
+    list_display = ('name', 'nav', 'parent', 'url', 'sort_order', 'is_visible')
+    list_display_links = ('name',)
+    list_filter = ('nav',)
+    list_editable = ('sort_order', 'is_visible')
+    exclude = ('nav',)
+    fieldsets = [
+        (None, {'fields': [
+            ('name', 'url'),
+            ('parent',),
+            ('icon', 'target'),
+            ('sort_order', 'is_visible'),
+        ]})
+    ]
+
+    def get_model_perms(self, request):
+        """Hide from app_list but keep accessible via direct URL."""
+        return {}
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Filter parent choices to same nav, with tree indentation."""
+        if db_field.name == 'parent':
+            nav_id = self._get_nav_id(request)
+            if nav_id:
+                kwargs['queryset'] = NavItem.objects.filter(nav_id=nav_id)
+                kwargs['empty_label'] = _('Top Level')
+            else:
+                kwargs['queryset'] = NavItem.objects.none()
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        """Remove related widget action buttons and set parent choices with tree indentation."""
+        formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
+
+        if db_field.name in ('nav', 'parent') and formfield:
+            if hasattr(formfield.widget, 'can_add_related'):
+                formfield.widget.can_add_related = False
+                formfield.widget.can_change_related = False
+                formfield.widget.can_delete_related = False
+                formfield.widget.can_view_related = False
+        return formfield
+
+    def _get_nav_id(self, request):
+        """Extract nav_id from request in all contexts."""
+        filters = request.GET.get('_changelist_filters', '')
+
+        if filters:
+            for part in filters.split('&'):
+                if part.startswith('nav__id__exact='):
+                    return part.split('=')[1]
+
+        # From existing object URL (/navitem/123/change/)
+        if hasattr(request, 'resolver_match'):
+            obj_id = request.resolver_match.kwargs.get('object_id')
+            if obj_id:
+                try:
+                    return NavItem.objects.values_list('nav_id', flat=True).get(pk=obj_id)
+                except NavItem.DoesNotExist:
+                    pass
+        return None
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            nav_id = self._get_nav_id(request)
+            print("nav_id:", nav_id)
+            print("GET:", request.GET)
+            print("POST:", request.POST)
+            if nav_id:
+                obj.nav_id = nav_id
+        super().save_model(request, obj, form, change)

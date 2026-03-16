@@ -14,33 +14,28 @@ import json
 import os
 from json import JSONDecodeError
 
-from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.staticfiles import finders
 from django.core.exceptions import SuspiciousFileOperation, ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import validate_email
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views import View
 
 from djangocmf.cmfadmin.constants import CUSTOM_SPRITE_FILE, CMF_ICON_PREFIX, CMF_SPRITE_FILE
-from djangocmf.cmfadmin.enums import FileType, ConfigCategory, TargetChoices
-from djangocmf.cmfadmin.forms.forms import NavItemForm
-from djangocmf.cmfadmin.models import Nav, NavItem
+from djangocmf.cmfadmin.enums import FileType, ConfigCategory
 from djangocmf.cmfadmin.service.email import EmailService
 from djangocmf.cmfadmin.service.menu import AdminMenuManager
 from djangocmf.cmfadmin.service.menu import MenuSyncMode
-from djangocmf.cmfadmin.service.navigation import NavService
 from djangocmf.cmfadmin.service.upload import UploadService
 from djangocmf.core import api
 from djangocmf.core.api import ErrorCode
 from djangocmf.core.libs.sprite import SpriteManager, SpriteError
 from djangocmf.core.mixins import CMFPermissionMixin
-from djangocmf.core.utils.tools import to_compact_case
 
 
 def license_page(request):
@@ -48,37 +43,12 @@ def license_page(request):
     return render(request, 'pages/license.html')
 
 
-class BaseAdminView(View):
-    """Base class for DjangoCMF admin."""
-    feature_name: str | None = None
-    exclude_keys: list[str] = ['csrfmiddlewaretoken']
-
-    @classmethod
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        # Generate permission_required
-        if getattr(cls, "feature_name", None):
-            app_label = apps.get_containing_app_config(cls.__module__).label
-            safe_title = to_compact_case(cls.feature_name)
-            cls.permission_required = f"view_{app_label}:{safe_title}"
-
-    def _get_cleaned_data(self, request) -> dict[str, str | list[str]]:
-        """
-        Filter out excluded POST keys and trim values.
-        Preserves all values for multi-value fields (returns list).
-        """
-        data = {}
-        for key, values in request.POST.lists():
-            if key in self.exclude_keys:
-                continue
-
-            # POST responses are always lists; extract the item when only one is expected.
-            if len(values) == 1:
-                data[key] = values[0].strip()
-            else:
-                data[key] = ','.join(v.strip() for v in values if v.strip())
-
-        return data
+def sync_menu(request):
+    """
+    Sync all admin menus (superuser only).
+    """
+    result = AdminMenuManager.synchronize_menu(MenuSyncMode.SYNC_ALL, request.user)
+    return render(request, 'config/sync_menu.html', {'result': result})
 
 
 class TestEmailView(View):
@@ -156,112 +126,6 @@ class TestEmailView(View):
                 return self._handle_test_template(request.POST)
             case _:
                 return api.error(ErrorCode.BAD_REQUEST, _('Invalid action.'))
-
-
-class NavItemView(View):
-    """
-    Handle CRUD operations for navigation items within a given navigation group.
-    This view assumes 'view' permission is sufficient for access.
-    """
-    permission_required = f"{NavItem._meta.app_label}.view_{NavItem._meta.model_name}"
-
-    def get(self, request, *args, **kwargs):
-        """
-        Render navigation item form for creation or editing.
-        """
-        nav_id = kwargs.get('nav_id')
-        nav_item_id = kwargs.get('nav_item_id', 0)
-
-        # Fetch main navigation object or 404
-        nav = get_object_or_404(Nav, id=nav_id)
-        # Retrieve existing items for sidebar or context list
-        nav_items = NavService.get_items(nav)
-
-        # Determine edit or add mode
-        if nav_item_id:
-            nav_item = get_object_or_404(NavItem, id=nav_item_id, nav=nav)
-            action = _('Edit')
-        else:
-            nav_item = NavItem(nav=nav)
-            action = _('Add')
-
-        context = {
-            'title': f"{action} {_('Nav Item')}",
-            'nav': nav,
-            'nav_id': nav_id,
-            'nav_item_id': nav_item_id,
-            'nav_item': nav_item,
-            'nav_items': nav_items,
-            'target': TargetChoices,
-        }
-        return render(request, 'config/navitem_form.html', context)
-
-    def post(self, request, *args, **kwargs):
-        """
-        Create or update a navigation item.
-        """
-        nav_id = kwargs.get('nav_id')
-        nav_item_id = kwargs.get('nav_item_id')
-
-        # Ensure related navigation exists
-        nav = get_object_or_404(Nav, id=nav_id)
-        nav_item = get_object_or_404(NavItem, id=nav_item_id, nav=nav) if nav_item_id else None
-
-        # Prepare POST data and enforce relationship
-        post_data = request.POST.copy()
-        post_data['nav'] = nav.id
-
-        form = NavItemForm(post_data, nav_id=nav.id, instance=nav_item)
-        if form.is_valid():
-            form.save()
-            # Support "Save and add another" feature
-            if 'add_another' in request.POST:
-                return redirect(request.path)
-            # Redirect to navigation item list
-            redirect_url = reverse('admin:cmfadmin:nav_items_edit', kwargs={'pk': nav.id})
-            return redirect(redirect_url)
-
-        # If invalid, re-render with form errors
-        nav_items = NavService.get_items(nav)
-        context = {
-            'nav': nav,
-            'nav_item': nav_item,
-            'nav_id': nav_id,
-            'nav_item_id': nav_item_id,
-            'nav_items': nav_items,
-            'form': form,
-            'target': TargetChoices,
-        }
-        return render(request, 'config/navitem_form.html', context)
-
-    def delete(self, request, *args, **kwargs):
-        """
-        Delete a navigation item only if it has no child items.
-        Return JSON response for frontend AJAX handling.
-        """
-        nav_item_id = kwargs.get('nav_item_id')
-        if not nav_item_id:
-            return api.error(ErrorCode.BAD_REQUEST, _('Missing navigation item ID.'))
-
-        try:
-            nav_item = NavItem.objects.get(pk=nav_item_id)
-        except NavItem.DoesNotExist:
-            return api.error(ErrorCode.NOT_FOUND, _('Node does not exist.'))
-
-        # Prevent deletion if children exist
-        if nav_item.children.exists():
-            return api.error(
-                ErrorCode.BAD_REQUEST,
-                _('This node has child items and cannot be deleted. Please delete child items first.')
-            )
-
-        # Attempt to delete safely
-        try:
-            nav_item.delete()
-            return api.success(_('Deleted successfully.'))
-        except Exception as e:
-            # Catch any unexpected errors (e.g., DB constraints)
-            return api.error(ErrorCode.SERVER_ERROR, _('Failed to delete item: ') + str(e))
 
 
 class SpriteManagerView(View):
@@ -467,63 +331,3 @@ class UploadFileView(CMFPermissionMixin, View):
             return api.error(ErrorCode.VALIDATION_ERROR, e.message)
         except Exception as e:
             return api.error(ErrorCode.SERVER_ERROR, _('Upload failed: %(error)s') % {'error': e})
-
-
-class UserProfile(View):
-    """Handle user profile update and display."""
-    template_name = 'admin/auth/user/profile.html'
-
-    def get(self, request, *args, **kwargs):
-        """Render profile page with current user data."""
-        context = {
-            'user': request.user,
-            'title': _('User Profile'),
-        }
-        return render(request, self.template_name, context)
-
-    def post(self, request, *args, **kwargs):
-        """
-        Update basic user information: first_name, last_name, email.
-        Uses minimal validation and consistent toast-style feedback.
-        """
-        base_fields = ['first_name', 'last_name', 'email']
-        updated = False
-
-        # Cleanly assign posted values
-        for field in base_fields:
-            value = request.POST.get(field)
-            if value is not None:
-                setattr(request.user, field, value.strip())
-                updated = True
-
-        if not updated:
-            messages.info(request, _('No changes detected.'))
-        else:
-            try:
-                request.user.full_clean()  # Basic field validation (email format etc.)
-                request.user.save(update_fields=base_fields)
-                messages.success(request, _("Profile updated successfully."))
-            except Exception as e:
-                messages.error(request, _("Failed to save profile: %(error)s") % {'error': e})
-
-        return render(request, self.template_name, {'user': request.user})
-
-
-def nav_items_edit(request, pk):
-    nav = Nav.objects.get(pk=pk)
-    nav_items = NavService.get_items(nav)
-
-    context = {
-        'title': ConfigCategory.NAV.label,
-        'nav': nav,
-        'nav_items': nav_items,
-    }
-    return render(request, 'config/navigation.html', context)
-
-
-def sync_menu(request):
-    """
-    Sync all admin menus (superuser only).
-    """
-    result = AdminMenuManager.synchronize_menu(MenuSyncMode.SYNC_ALL, request.user)
-    return render(request, 'config/sync_menu.html', {'result': result})

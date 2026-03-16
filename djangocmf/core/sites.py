@@ -99,13 +99,12 @@ class DjangoCmfAdminSite(AdminSite):
         Returns:
             list: Complete URL patterns for the admin site
         """
-        from djangocmf.cmfadmin.views import license_page, sync_menu, UserProfile
+        from djangocmf.cmfadmin.views import license_page, sync_menu
 
         # Some CMF admin URLs without 'admin' prefix
         urlpatterns: list[URLPattern | URLResolver] = [
             path('license/', self.admin_view(license_page), name='license_page'),
             path('sync-menu/', self.admin_view(sync_menu), name='sync_menu'),
-            path('profile/', self.admin_view(UserProfile.as_view()), name='profile')
         ]
 
         # Scan apps for admin URL contributions
