@@ -1,0 +1,5 @@
+<label{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %} class="form-selectgroup-item">
+    <input type="{{ widget.type }}" name="{{ widget.name }}" {% if widget.value != None %}
+           value="{{ widget.value|stringformat:'s' }}"{% endif %}{% include "django/forms/widgets/attrs.html" %}>
+    <span class="form-selectgroup-label">{{ widget.label }}</span>
+</label>

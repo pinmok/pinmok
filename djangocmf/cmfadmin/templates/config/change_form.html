@@ -1,0 +1,108 @@
+{% extends 'config/config_base.html' %}
+{% load i18n cmf_tags %}
+
+{% block extrahead %}{{ block.super }}
+    {{ media }}
+{% endblock %}
+
+{% block page_right %}
+    {# OffCanvas buttons for extra panels #}
+    {% for panel in extra_panels %}
+        <button class="btn btn-secondary" data-bs-toggle="offcanvas" data-bs-target="#extra-panel-{{ forloop.counter }}">
+            {% if panel.icon %}{% icon panel.icon 'icon' %}{% endif %}
+            {{ panel.label }}
+        </button>
+    {% endfor %}
+{% endblock %}
+
+{% block content %}
+    <form {% if has_file_field %}enctype="multipart/form-data" {% endif %}{% if form_url %}action="{{ form_url }}" {% endif %}method="post"
+          id="{{ opts.model_name }}_form" novalidate>{% csrf_token %}{% block form_top %}{% endblock %}
+        {% if is_popup %}<input type="hidden" name="{{ is_popup_var }}" value="1">{% endif %}
+        {% if to_field %}<input type="hidden" name="{{ to_field_var }}" value="{{ to_field }}">{% endif %}
+
+        {% if form.errors %}
+            <div class="alert alert-danger">
+                <div class="alert-icon">{% icon 'tabler-alert-circle' 'icon alert-icon' %}</div>
+                {% blocktranslate trimmed count counter=errors|length %}
+                    Please correct the error below.{% plural %}Please correct the errors below.
+                {% endblocktranslate %}
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+        {% for name, fieldset in fieldsets %}
+            {% if fieldset.is_collapsible %}
+                <div class="accordion accordion-tabs accordion-inverted">
+            {% endif %}
+        <div class="card mb-3{{ fieldset.classes }}{% if fieldset.is_collapsible %} accordion-item{% endif %}">
+            {% if name %}
+                <div class="card-header">
+                    <div> {# For card subtitle use, can not be deleted. #}
+                        {% if fieldset.is_collapsible %}
+                            <button class="accordion-button collapsed p-0" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#{{ name }}">
+                                {{ name }}
+                                <div class="accordion-button-toggle">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                         class="icon">
+                                        <path d="M6 9l6 6l6 -6"></path>
+                                    </svg>
+                                </div>
+                            </button>
+                        {% else %}
+                            {{ name }}
+                        {% endif %}
+                    </div>
+                    {% if fieldset.description %}
+                        <div class="card-subtitle">{{ fieldset.description|safe }}</div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <div class="card-body{% if fieldset.is_collapsible %} accordion-collapse collapse{% endif %}" id="{{ name }}">
+                {% for line in fieldset.fields %}
+                    <div class="row mb-3{% if not line.has_visible_field %} d-none{% endif %}">
+                        {% for field in line %}
+                            <div class="col-md">
+                                {% if field.is_checkbox %}
+                                    <div class="form-check">
+                                        {{ field }}{{ field.label_tag }}
+                                    </div>
+                                {% else %}
+                                    {{ field.label_tag }}
+                                    {% if field.errors %}
+                                        {{ field|add_class:'is-invalid' }}
+                                        <div class="invalid-feedback">{{ field.errors }}</div>
+                                    {% else %}
+                                        {{ field }}
+                                    {% endif %}
+                                {% endif %}
+                                {% if field.help_text %}
+                                    <small class="form-hint{% if field.is_hidden %} hidden{% endif %}">
+                                        {{ field.help_text|safe }}
+                                    </small>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% if fieldset.is_collapsible %}</div>{% endif %}
+        {% endfor %}
+        <button type="submit" class="btn btn-primary ms-3" name="_save">{% translate 'Save' %}</button>
+    </form>
+
+    {% for panel in extra_panels %}
+        <div class="offcanvas offcanvas-end" id="extra-panel-{{ forloop.counter }}">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title">{{ panel.label }}</h5>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body">
+                {% include panel.template %}
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

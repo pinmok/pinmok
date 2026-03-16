@@ -13,6 +13,8 @@ Created:
 """
 from django.apps import AppConfig
 
+from djangocmf.cmfadmin.utils.helper import cmf_autodiscover_and_register
+
 
 class CmfadminConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
@@ -20,15 +22,8 @@ class CmfadminConfig(AppConfig):
     verbose_name = 'DjangoCMF'
 
     def ready(self):
-        """
-        Register Django's built-in auth models with CMF admin site.
-        """
-        from djangocmf.core import site
-        from django.contrib.auth.models import User, Group
-        from djangocmf.cmfadmin.admin import CmfUserAdmin, CmfGroupAdmin
+        # Automatically discover models registered on admin and register them on DjangoCMF site.
+        cmf_autodiscover_and_register()
 
-        # Register Django's built-in auth models
-        if not site.is_registered(User):
-            site.register(User, CmfUserAdmin)
-        if not site.is_registered(Group):
-            site.register(Group, CmfGroupAdmin)
+        # Import signals module to trigger signal handler registration via @receiver decorators.
+        import djangocmf.cmfadmin.signals  # noqa: F401

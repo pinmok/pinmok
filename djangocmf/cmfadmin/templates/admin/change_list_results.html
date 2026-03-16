@@ -23,7 +23,7 @@
                 {% for header in result_headers %}
                     <th scope="col"{{ header.class_attrib }}>
                         {% if header.sortable %}
-                            <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
                                 {# Sortable: clicking the title sets this column as primary sort #}
                                 <a href="{{ header.url_primary }}"
                                    class="text-decoration-none{% if header.sort_priority == 0 %} table-sort{% endif %}">
@@ -36,14 +36,16 @@
                                 </a>
                                 {# Show toggle and remove controls only when this column is actively sorting #}
                                 {% if header.sort_priority > 0 %}
-                                    {# Toggle between ascending and descending order #}
-                                    <a href="{{ header.url_toggle }}" title="{% translate "Toggle sorting" %}"
-                                       class=" table-sort{% if header.sort_priority > 0 %} {{ header.ascending|yesno:'asc,desc' }}{% endif %}"></a>
-                                    {# Remove this column from sorting #}
-                                    <a class="sort-remove text-danger" href="{{ header.url_remove }}"
-                                       title="{% translate "Remove from sorting" %}">
-                                        {% sprite 'tabler-filter-x' '' 14 %}
-                                    </a>
+                                    <div class="d-flex align-items-center gap-1">
+                                        {# Toggle between ascending and descending order #}
+                                        <a href="{{ header.url_toggle }}" title="{% translate "Toggle sorting" %}"
+                                           class=" table-sort{% if header.sort_priority > 0 %} {{ header.ascending|yesno:'asc,desc' }}{% endif %}"></a>
+                                        {# Remove this column from sorting #}
+                                        <a class="sort-remove text-danger" href="{{ header.url_remove }}"
+                                           title="{% translate "Remove from sorting" %}">
+                                            {% icon 'tabler-filter-x' '' 14 %}
+                                        </a>
+                                    </div>
                                 {% endif %}
                             </div>
                         {% else %}

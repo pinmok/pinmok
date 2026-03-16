@@ -40,7 +40,7 @@
     <div class="card">
         <div class="card-stamp">
             <div class="card-stamp-icon bg-yellow">
-                {% sprite 'tabler-table' 'icon icon-tabler icons-tabler-outline icon-tabler-filters' %}
+                {% icon 'tabler-table' 'icon icon-tabler icons-tabler-outline icon-tabler-filters' %}
             </div>
         </div>
         <div class="card-header flex-column align-items-start">
@@ -56,7 +56,7 @@
                 <div class="col-md-auto col-sm-12">
                     {% if cl.formset and cl.formset.errors %}
                         <div class="alert alert-danger m-0" role="alert">
-                            <div class="alert-icon">{% sprite 'tabler-alert-circle' 'icon alert-icon' %}</div>
+                            <div class="alert-icon">{% icon 'tabler-alert-circle' 'icon alert-icon' %}</div>
                             <div>
                                 <h4 class="alert-heading">
                                     {% blocktranslate trimmed count counter=cl.formset.total_error_count %}
@@ -126,17 +126,17 @@
                             {% if cl.is_facets_optional %}
                                 {% if cl.add_facets %}
                                     <a href="{{ cl.remove_facet_link }}" class="btn btn-sm btn-outline-info">
-                                        {% sprite 'tabler-eye-closed' 'icon me-2' %} {% translate "Hide counts" %}
+                                        {% icon 'tabler-eye-closed' 'icon me-2' %} {% translate "Hide counts" %}
                                     </a>
                                 {% else %}
                                     <a href="{{ cl.add_facet_link }}" class="btn btn-sm btn-outline-info">
-                                        {% sprite 'tabler-eye' 'icon me-2' %} {% translate "Show counts" %}
+                                        {% icon 'tabler-eye' 'icon me-2' %} {% translate "Show counts" %}
                                     </a>
                                 {% endif %}
                             {% endif %}
                             {% if cl.has_active_filters %}
                                 <a href="{{ cl.clear_all_filters_qs }}" class="btn btn-sm btn-outline-pink">
-                                    {% sprite 'tabler-copy-x' 'icon me-2' %} {% translate "Clear all filters" %}
+                                    {% icon 'tabler-copy-x' 'icon me-2' %} {% translate "Clear all filters" %}
                                 </a>
                             {% endif %}
                         </div>

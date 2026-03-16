@@ -5,7 +5,7 @@
 
 {% block page_right %}
     <a href="{% url 'admin:cmfadmin:navitem' nav.pk 0 %}" class="btn btn-secondary">
-        {% sprite 'tabler-plus' %} {% translate 'Add' %} {% translate 'Nav Item' %}
+        {% icon 'tabler-plus' %} {% translate 'Add' %} {% translate 'Nav Item' %}
     </a>
 {% endblock %}
 
@@ -45,7 +45,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 <div class="modal-status bg-warning"></div>
                 <div class="modal-body text-center py-4">
-                    {% sprite 'tabler-question-mark' 'icon mb-2 text-warning icon-lg' %}
+                    {% icon 'tabler-question-mark' 'icon mb-2 text-warning icon-lg' %}
                     <h3>{% translate 'Are you sure?' %}</h3>
                     <div class="text-secondary">
                         Do you really want to remove this nav item? What you've done cannot be undone.
@@ -79,12 +79,12 @@
 
         function confirmDelete() {
             const confirmButton = document.getElementById('confirmDeleteButton');
-            const navItemId = confirmButton.getAttribute('data-id');
-            const url = `/admin/cmfadmin/nav/navitem/{{ nav.pk }}/${navItemId}/`;
+            const navItemId     = confirmButton.getAttribute('data-id');
+            const url           = `/admin/cmfadmin/nav/navitem/{{ nav.pk }}/${navItemId}/`;
 
             ajaxRequest({
                 url,
-                method: 'DELETE',
+                method:    'DELETE',
                 onSuccess: () => {
                     location.reload();
                 }

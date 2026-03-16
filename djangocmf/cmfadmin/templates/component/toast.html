@@ -1,4 +1,4 @@
-<!-- Toast template -->
+<!-- Toast container — cloned for each notification, cleaned up after hide -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
     <div class="toast fade toast-template" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="toast-header">
@@ -11,140 +11,147 @@
 </div>
 <script>
     (function (window) {
-        // ToastType enum
+        /**
+         * ToastType enum
+         * Django's level_tag values (debug, info, success, warning, error) are mapped
+         * here. 'debug' has no direct equivalent and falls back to INFO via
+         * normalizeToastType().
+         */
         const ToastType = {
-            INFO: "info",
+            INFO:    "info",
             SUCCESS: "success",
             WARNING: "warning",
-            ERROR: "error"
+            ERROR:   "error",
         };
 
-        // Normalize type to enum, default is INFO
+        // Cache DOM references once — avoids repeated querySelector calls on every
+        // showToast() invocation.
+        const _container = document.querySelector('.toast-container');
+        const _template  = document.querySelector('.toast-template');
+
+        /**
+         * normalizeToastType
+         * Accepts any string and returns a valid ToastType value.
+         * Unknown or empty values default to INFO.
+         * @param type
+         * @returns {string|string}
+         */
         function normalizeToastType(type) {
             const t = String(type || '').trim().toLowerCase();
             return Object.values(ToastType).includes(t) ? t : ToastType.INFO;
         }
 
-        // Show toast
+        /**
+         * showToast
+         *
+         * Clones the hidden template, fills in content, appends to the container,
+         * and initialises a Tabler Toast instance. The cloned element is removed
+         * from the DOM automatically after the hide animation completes.
+         *
+         * @param message {string}  — Body text. Supports plain text only (not HTML).
+         * @param type    {string}  — One of ToastType.*. Defaults to INFO.
+         * @param tip     {string}  — Small secondary text shown in the header.
+         * @param delay   {number}  — Override auto-dismiss delay in milliseconds.
+         */
         function showToast(message, type = ToastType.INFO, {tip = '', delay} = {}) {
-            const template = document.querySelector('.toast-template');
-            const container = document.querySelector('.toast-container');
-            if (!template || !container) return;
+            if (!_template || !_container) return;
 
-            // Clone template
-            const toastEl = template.cloneNode(true);
-            toastEl.classList.remove('toast-template');
-            container.appendChild(toastEl);
-
-            // Find element in toast scope
-            const toastHeader = toastEl.querySelector('.toast-title');
-            const toastTip = toastEl.querySelector('.toast-tip');
-            const toastMessage = toastEl.querySelector('.toast-message');
-
-            const titles = {
-                [ToastType.SUCCESS]: gettext('Success'),
-                [ToastType.ERROR]: gettext('Error'),
-                [ToastType.WARNING]: gettext('Warning'),
-                [ToastType.INFO]: gettext('Info'),
-            };
-
-            const colors = {
-                [ToastType.SUCCESS]: 'bg-success',
-                [ToastType.ERROR]: 'bg-danger',
-                [ToastType.WARNING]: 'bg-warning',
-                [ToastType.INFO]: 'bg-info',
-            };
-            const toast_delay = {
-                [ToastType.SUCCESS]: 2000,
-                [ToastType.ERROR]: 7000,
-                [ToastType.WARNING]: 5000,
-                [ToastType.INFO]: 3000,
-            };
-            // normalize
             const toast_type = normalizeToastType(type);
 
-            toastHeader.textContent = titles[toast_type];
-            toastTip.textContent = tip || '';
-            toastMessage.textContent = message || titles[toast_type];
+            // Per-type display configuration
+            const titles        = {
+                [ToastType.SUCCESS]: gettext('Success'),
+                [ToastType.ERROR]:   gettext('Error'),
+                [ToastType.WARNING]: gettext('Warning'),
+                [ToastType.INFO]:    gettext('Info'),
+            };
+            const colors        = {
+                [ToastType.SUCCESS]: 'bg-success',
+                [ToastType.ERROR]:   'bg-danger',
+                [ToastType.WARNING]: 'bg-warning',
+                [ToastType.INFO]:    'bg-info',
+            };
+            const defaultDelays = {
+                [ToastType.SUCCESS]: 2000,
+                [ToastType.ERROR]:   7000,
+                [ToastType.WARNING]: 5000,
+                [ToastType.INFO]:    3000,
+            };
 
-            const headerContainer = toastEl.querySelector('.toast-header');
-            headerContainer.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'bg-info');
-            headerContainer.classList.add(colors[toast_type]);
+            // Clone the hidden template and remove the marker class so it
+            // participates in the normal toast lifecycle.
+            const toastEl = _template.cloneNode(true);
+            toastEl.classList.remove('toast-template');
+            _container.appendChild(toastEl);
 
-            const toast_instance = new tabler.Toast(toastEl, {delay: delay || toast_delay[toast_type]});
-            toast_instance.show();
+            // Populate content
+            toastEl.querySelector('.toast-title').textContent   = titles[toast_type];
+            toastEl.querySelector('.toast-tip').textContent     = tip || '';
+            toastEl.querySelector('.toast-message').textContent = message || titles[toast_type];
 
-            // Automatically clean up the DOM
+            // Apply type colour to header
+            const header = toastEl.querySelector('.toast-header');
+            header.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'bg-info');
+            header.classList.add(colors[toast_type]);
+
+            // Initialise and show
+            const instance = new tabler.Toast(toastEl, {
+                delay: delay || defaultDelays[toast_type],
+            });
+            instance.show();
+
+            // Remove from DOM after the hide animation completes to prevent
+            // an ever-growing list of hidden toast elements.
             toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
         }
 
-        // Export globally
+        // Export to global scope so other scripts can call showToast / ToastType.
         window.ToastType = ToastType;
         window.showToast = showToast;
 
-        // ==================================================
-        // Messages
+        /**
+         * parseExtras
+         *
+         * Parses the extra_tags string attached to a Django message into a plain
+         * options object. Only standard JSON is supported — pass extra_tags as a
+         * JSON string from the Django view for reliable parsing.
+         *
+         * Example (Django view):
+         *   messages.success(request, "Saved", extra_tags='{"delay": 4000}')
+         *
+         * Returns {} for empty or unparseable input rather than throwing.
+         */
         function parseExtras(rawExtra) {
-            if (!rawExtra) return {}; // Empty string → return empty object
-
-            // Try parsing as valid JSON
+            if (!rawExtra) return {};
             try {
                 const obj = JSON.parse(rawExtra);
                 if (typeof obj === 'object' && obj !== null) return obj;
             } catch (_) {
-                // ignore, fallback to other parsing methods
+                // Non-JSON extra_tags are treated as having no options.
             }
-
-            // Handle pseudo JSON format: {key:value,...}
-            if (rawExtra.startsWith('{') && rawExtra.endsWith('}')) {
-                const inner = rawExtra.slice(1, -1); // Remove braces
-                return parseExtras(inner); // Recursively treat as key=value pairs
-            }
-
-            // Parse as key=value pairs separated by ; or ,
-            const extras = {};
-            rawExtra.split(/[;,]/).forEach(p => {
-                const [rawK, rawV] = p.split('='); // Split key and value
-                const key = rawK?.trim();
-                let value = rawV?.trim();
-                if (!key) return;
-
-                // Convert value to proper type
-                if (value === undefined) {
-                    extras[key] = true; // No value → boolean true
-                } else if (value === 'true') {
-                    extras[key] = true;
-                } else if (value === 'false') {
-                    extras[key] = false;
-                } else if (value === 'null') {
-                    extras[key] = null;
-                } else if (!isNaN(value)) {
-                    extras[key] = Number(value); // Convert numeric string to number
-                } else {
-                    extras[key] = value; // Keep string as is
-                }
-            });
-
-            return extras;
+            return {};
         }
 
-        // Auto show Django messages
+        /**
+         * Auto-display Django messages
+         * Runs after DOMContentLoaded so the toast container is guaranteed to exist.
+         */
         {% if messages %}
             document.addEventListener('DOMContentLoaded', function () {
                 {% for msg in messages %}
                     (function () {
                         const rawExtra = '{{ msg.extra_tags|default:""|escapejs }}';
-                        const extras = parseExtras(rawExtra);
-                        const level_tag = "{{ msg.level_tag|lower }}"
-                        const type = normalizeToastType(level_tag)
+                        const extras   = parseExtras(rawExtra);
+                        const type     = normalizeToastType("{{ msg.level_tag|lower }}");
 
-                        // Ensure delay is numeric for Tabler Toast
+                        // Ensure delay is numeric — Django may pass it as a string.
                         if (extras.delay) extras.delay = Number(extras.delay);
 
-                        showToast("{{ msg.message|escapejs }}", type || ToastType.INFO, extras);
+                        showToast("{{ msg.message|escapejs }}", type, extras);
                     })();
                 {% endfor %}
             });
         {% endif %}
+
     })(window);
 </script>

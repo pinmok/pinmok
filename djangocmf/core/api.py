@@ -15,6 +15,7 @@ from http import HTTPStatus
 from typing import Any
 
 from django.http import JsonResponse
+from django.utils.encoding import force_str
 from django.utils.functional import Promise
 from django.utils.translation import gettext_lazy as _
 
@@ -36,7 +37,8 @@ class ErrorCode(IntEnum):
     SERVER_ERROR = 50001
 
 
-# Default HTTP status mapping for each ErrorCode
+# Default HTTP status mapping for each ErrorCode.
+# This is the single source of truth for error code → HTTP status resolution.
 _DEFAULT_HTTP_STATUS: dict[ErrorCode, HTTPStatus] = {
     ErrorCode.SUCCESS: HTTPStatus.OK,
     ErrorCode.BAD_REQUEST: HTTPStatus.BAD_REQUEST,
@@ -47,7 +49,8 @@ _DEFAULT_HTTP_STATUS: dict[ErrorCode, HTTPStatus] = {
     ErrorCode.SERVER_ERROR: HTTPStatus.INTERNAL_SERVER_ERROR,
 }
 
-# Default localized messages for each ErrorCode
+# Default localized messages for each ErrorCode.
+# Every ErrorCode MUST have an entry here — missing keys will raise KeyError immediately.
 _DEFAULT_ERROR_MESSAGES: dict[ErrorCode, Promise] = {
     ErrorCode.SUCCESS: _("Success"),
     ErrorCode.BAD_REQUEST: _("Bad request."),
@@ -60,61 +63,28 @@ _DEFAULT_ERROR_MESSAGES: dict[ErrorCode, Promise] = {
 
 
 def _infer_http_status(error_code: ErrorCode) -> HTTPStatus:
-    """
-    Infer HTTP status from ErrorCode category.
-
-    This function MUST NOT grow as ErrorCode grows.
-    """
-    code = int(error_code)
-
-    if code == 0:
-        return HTTPStatus.OK
-
-    # Validation errors (user can fix input)
-    if 42200 <= code < 42300:
-        return HTTPStatus.UNPROCESSABLE_ENTITY
-
-    # Client / business errors
-    if 40000 <= code < 50000:
-        return HTTPStatus.BAD_REQUEST
-
-    # Server errors
-    if 50000 <= code < 60000:
-        return HTTPStatus.INTERNAL_SERVER_ERROR
-
-    # Fallback (should never happen)
-    return HTTPStatus.INTERNAL_SERVER_ERROR
+    """Resolve HTTP status from ErrorCode via lookup table."""
+    return _DEFAULT_HTTP_STATUS.get(error_code, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
-def success(
-        message: str | Promise | None = None,
-        data: dict[str, Any] | None = None,
-) -> JsonResponse:
-    """
-    Build a successful API response.
-    """
-    return error(error_code=ErrorCode.SUCCESS, message=message, data=data)
-
-
-def error(
+def _build_response(
         error_code: ErrorCode,
         message: str | Promise | None = None,
-        data: dict[str, Any] | None = None,
+        data: Any = None,
         http_status: int | HTTPStatus | None = None,
 ) -> JsonResponse:
     """
-    Unified API JSON response builder.
+    Internal response builder used by both success() and error().
 
-    - Maps error codes to HTTP status automatically
-    - Provides default, translatable messages
-    - Ensures JSON-serializable output
+    Response format:
+      {
+        "code": int,
+        "message": str,
+        "data": any
+      }
     """
     if message is None:
-        message = _DEFAULT_ERROR_MESSAGES.get(error_code, _('Error'))
-
-    # Ensure lazy translation objects are JSON serializable
-    if isinstance(message, Promise):
-        message = str(message)
+        message = _DEFAULT_ERROR_MESSAGES[error_code]
 
     if data is None:
         data = {}
@@ -125,8 +95,26 @@ def error(
     return JsonResponse(
         {
             "code": int(error_code),
-            "message": message,
+            "message": force_str(message),
             "data": data,
         },
         status=http_status,
     )
+
+
+def success(
+        message: str | Promise | None = None,
+        data: Any = None,
+) -> JsonResponse:
+    """Build a successful API response."""
+    return _build_response(ErrorCode.SUCCESS, message=message, data=data)
+
+
+def error(
+        error_code: ErrorCode,
+        message: str | Promise | None = None,
+        data: Any = None,
+        http_status: int | HTTPStatus | None = None,
+) -> JsonResponse:
+    """Build an error API response."""
+    return _build_response(error_code, message=message, data=data, http_status=http_status)

@@ -13,12 +13,13 @@ Created:
 import re
 
 from django import template
+from django.conf import settings
 from django.contrib.admin.views.main import PAGE_VAR
 from django.core.files.storage import default_storage
 from django.templatetags.static import static
 from django.utils.safestring import mark_safe
 
-from djangocmf.cmfadmin.constants import CUSTOM_SPRITE_FILE, CMF_SPRITE_FILE
+from djangocmf.cmfadmin.constants import CUSTOM_SPRITE_FILE, CMF_SPRITE_FILE, CMF_ICON_PREFIX
 
 register = template.Library()
 
@@ -73,41 +74,42 @@ def add_class(html, css_class: str):
 
 
 @register.simple_tag
-def sprite(icon_name: str, css_class: str = '', size: int = 24) -> str:
+def icon(icon_name: str, css_class: str = '', size: int = 24) -> str:
     """
-    Render an inline SVG using a symbol from the sprite file.
+    Render an inline SVG icon from the appropriate sprite file.
+
+    Automatically resolves the sprite source based on the icon name:
+    - Names starting with 'tabler-' use the built-in CMF sprite.
+    - All other names use the user-defined custom sprite file,
+      configurable via the CUSTOM_SPRITE_FILE setting.
 
     Args:
-        icon_name (str): The ID of the icon symbol in the SVG sprite.
-        size (int, optional): Width and height of the SVG in pixels. Defaults to 16.
-        css_class (str, optional): Additional CSS classes for the <svg> element. Defaults to ''.
+        icon_name (str): The symbol ID of the icon in the sprite file.
+        css_class (str): Additional CSS classes for the <svg> element.
+        size (int): Width and height of the SVG in pixels. Defaults to 24.
 
     Returns:
-        django.utils.safestring.SafeString: An SVG element string ready for rendering in the template.
+        SafeString: An SVG element ready for template rendering.
     """
-    sprite_path = static(CMF_SPRITE_FILE)
-    return _process_file(sprite_path, icon_name, css_class, size)
+    if not icon_name:
+        return mark_safe('')
 
-
-@register.simple_tag
-def custom_sprite(icon_name: str, css_class: str = '', size: int = 24) -> str:
-    sprite_path = static(CUSTOM_SPRITE_FILE)
-    return _process_file(sprite_path, icon_name, css_class, size)
-
-
-def _process_file(sprite_path: str, icon_name: str, css_class: str = '', size: int = 16):
-    class_attr = f' class="{css_class}"' if css_class else ''
     try:
         size = int(size)
     except (ValueError, TypeError):
         size = 24
 
-    svg_html = (
+    if icon_name.startswith(CMF_ICON_PREFIX):
+        sprite_path = static(CMF_SPRITE_FILE)
+    else:
+        sprite_path = default_storage.url(getattr(settings, 'CUSTOM_SPRITE_FILE', CUSTOM_SPRITE_FILE))
+    class_attr = f' class="{css_class}"' if css_class else ''
+
+    return mark_safe(
         f'<svg width="{size}" height="{size}"{class_attr} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
         f'<use href="{sprite_path}#{icon_name}"></use>'
         f'</svg>'
     )
-    return mark_safe(svg_html)
 
 
 @register.simple_tag
@@ -133,7 +135,7 @@ def paginator_number(cl, i):
         return {'url': cl.get_query_string({PAGE_VAR: i}), 'label': i}
 
 
-@register.inclusion_tag('admin/pagination/paginator_previous.html')
+@register.inclusion_tag('admin/pagination/paginator_button.html')
 def paginator_previous(cl):
     """
     Render the previous page button.
@@ -143,10 +145,11 @@ def paginator_previous(cl):
     return {
         'url': cl.get_query_string({PAGE_VAR: cl.page_num - 1}) if enabled else None,
         'enabled': enabled,
+        'direction': 'previous'
     }
 
 
-@register.inclusion_tag('admin/pagination/paginator_next.html')
+@register.inclusion_tag('admin/pagination/paginator_button.html')
 def paginator_next(cl):
     """
     Render the next page button.
@@ -156,11 +159,12 @@ def paginator_next(cl):
     return {
         'url': cl.get_query_string({PAGE_VAR: cl.page_num + 1}) if enabled else None,
         'enabled': enabled,
+        'direction': 'next'
     }
 
 
 @register.inclusion_tag('admin/includes/alert.html')
-def alert(title, description=None, level='danger', variant='', dismiss=False, extra_class='', link_url=None, link_text=None):
+def alert(title, level='danger', description=None, variant='', dismiss=False, extra_class='', link_url=None, link_text=None):
     """
     Render an alert component.
 

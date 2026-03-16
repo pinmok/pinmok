@@ -30,7 +30,7 @@
                 <!-- Jump to home -->
                 <a href="/" title="{% translate 'View site' %}" class="text-primary" target="_blank"
                    data-bs-toggle="tooltip" data-bs-placement="bottom">
-                    {% sprite 'tabler-home' 'icon' %}
+                    {% icon 'tabler-home' 'icon' %}
                 </a>
 
                 <!-- Synchronize menu -->
@@ -59,14 +59,9 @@
                                {% if menu.children %}data-bs-toggle="dropdown"
                                data-bs-auto-close="false" role="button" aria-expanded="false"{% endif %}>
                                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                {% if menu.icon %}
-                                    <svg class="icon" fill="none" stroke="currentColor" stroke-width="2"
-                                         stroke-linecap="round" stroke-linejoin="round">
-                                        <use href="{{ menu.sprite_path }}#{{ menu.icon }}"></use>
-                                    </svg>
-                                {% endif %}
+                                    {% if menu.icon %}{% icon menu.icon 'icon' %}{% endif %}
                                 </span>
-                                <span class="nav-link-title"> {% translate menu.title %} </span>
+                                <span class="nav-link-title">{{ menu.title }}</span>
                             </a>
                             {% if menu.children %}
                                 <!-- Second level -->
@@ -83,24 +78,19 @@
                                                            role="button"
                                                            aria-expanded="false">
                                                             {% if child.icon %}
-                                                                <svg class="icon" fill="none" stroke="currentColor"
-                                                                     stroke-width="2" stroke-linecap="round"
-                                                                     stroke-linejoin="round">
-                                                                    <use href="{{ child.sprite_path }}#{{ child.icon }}"></use>
-                                                                </svg>
+                                                                {% icon child.icon 'icon' %}
                                                             {% else %}
                                                                 <span class="w-1">&#8226;</span>
                                                             {% endif %}
-                                                            {% translate child.title %}
+                                                            {{ child.title }}
                                                         </a>
                                                         <!-- Third level -->
                                                         <div class="dropdown-menu">
                                                             {% for cc in child.children %}
                                                                 {% if cc.url %}
-                                                                    <a href="{{ cc.url }}"
-                                                                       class="dropdown-item">{% translate cc.title %}</a>
+                                                                    <a href="{{ cc.url }}" class="dropdown-item">{{ cc.title }}</a>
                                                                 {% else %}
-                                                                    <span class="dropdown-item disabled">{% translate cc.title %}</span>
+                                                                    <span class="dropdown-item disabled">{{ cc.title }}</span>
                                                                 {% endif %}
                                                             {% endfor %}
                                                         </div>
@@ -109,18 +99,16 @@
                                                 {% elif child.url %}
                                                     <a href="{{ child.url }}" class="dropdown-item">
                                                         {% if child.icon %}
-                                                            <svg class="icon">
-                                                                <use href="{{ child.sprite_path }}#{{ child.icon }}"></use>
-                                                            </svg>
+                                                            {% icon child.icon 'icon' %}
                                                         {% else %}
                                                             <span class="w-1">&#8226;</span>
                                                         {% endif %}
-                                                        {% translate child.title %}
+                                                        {{ child.title }}
                                                     </a>
                                                 {% else %}
                                                     <span class="dropdown-item disabled">
                                                         <span class="w-1">&#8226;</span>
-                                                        {% translate child.title %}
+                                                        {{ child.title }}
                                                     </span>
                                                 {% endif %}
                                             {% endfor %}
@@ -148,7 +136,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             <div class="modal-status bg-danger"></div>
             <div class="modal-body text-center py-4">
-                {% sprite 'tabler-alert-triangle' 'icon mb-2 text-danger icon-lg' %}
+                {% icon 'tabler-alert-triangle' 'icon mb-2 text-danger icon-lg' %}
                 <h3 class="text-uppercase">{% translate 'Warning' %}</h3>
                 <div class="text-secondary text-start">
                     {% blocktranslate trimmed %}

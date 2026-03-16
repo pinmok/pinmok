@@ -1,10 +1,11 @@
 {% extends 'config/config_base.html' %}
 {% load i18n cmf_tags %}
 
+{% block page_subtitle %}{{ title }}{% endblock %}
 {% block page_title %}{% translate 'Icons in sprite' %}{% endblock %}
 {% block page_right %}
     <a href="{% url 'admin:cmfadmin:icons_manage' %}?action=add" class="btn btn-secondary">
-        {% sprite 'tabler-plus' %} {% translate 'Add' %} {% translate 'SVG Icon' %}
+        {% icon 'tabler-plus' %} {% translate 'Add' %} {% translate 'SVG Icon' %}
     </a>
 {% endblock %}
 
@@ -12,7 +13,7 @@
     <div class="w-50 mb-3">
         <div class="input-icon">
             <input type="text" value="" class="form-control" placeholder="{% translate 'Search' %}…">
-            <span class="input-icon-addon">{% sprite 'tabler-search' 'icon' %}</span>
+            <span class="input-icon-addon">{% icon 'tabler-search' 'icon' %}</span>
         </div>
     </div>
     <div class="card">
@@ -31,7 +32,7 @@
                 <li class="nav-item ms-auto" role="presentation">
                     <a href="#tabs-help" class="nav-link" title="Settings" data-bs-toggle="tab" aria-selected="false" tabindex="-1"
                        role="tab">
-                        {% sprite 'tabler-help' 'icon' %}
+                        {% icon 'tabler-help' 'icon' %}
                     </a>
                 </li>
             </ul>
@@ -44,7 +45,7 @@
                             {% for custom_icon in custom_icons %}
                                 <div class="col-3">
                                     <div class="row g-3 align-items-center">
-                                        <div class="col-auto">{% custom_sprite custom_icon size=36 %}</div>
+                                        <div class="col-auto">{% icon custom_icon size=36 %}</div>
                                         <div class="col text-truncate">
                                             <strong>{{ custom_icon }}</strong>
                                             <div class="text-secondary text-truncate mt-n1">
@@ -52,12 +53,12 @@
                                                     <a href="{% url 'admin:cmfadmin:icons_manage' %}?action=edit&symbol_id={{ custom_icon }}"
                                                        class="btn btn-sm btn-ghost-primary" data-bs-toggle="tooltip"
                                                        data-bs-placement="bottom" data-bs-original-title="{% translate 'Edit' %}">
-                                                        {% sprite 'tabler-edit' %}
+                                                        {% icon 'tabler-edit' %}
                                                     </a>
                                                     <button class="btn btn-sm btn-ghost-danger" data-bs-toggle="tooltip"
                                                             data-bs-placement="bottom" data-bs-original-title="{% translate 'Delete' %}"
                                                             onclick="deleteItem('{{ custom_icon }}',this)">
-                                                        {% sprite 'tabler-delete' %}
+                                                        {% icon 'tabler-delete' %}
                                                     </button>
                                                 </div>
                                             </div>
@@ -75,7 +76,7 @@
                         {% for icon in icons %}
                             <div class="col-3">
                                 <div class="row g-3 align-items-center">
-                                    <div class="col-auto">{% sprite icon size=36 %}</div>
+                                    <div class="col-auto">{% icon icon size=36 %}</div>
                                     <div class="col text-truncate">
                                         <strong>{{ icon }}</strong>
                                     </div>
@@ -104,6 +105,16 @@
             }
         };
 
+        const searchInput = document.querySelector('.input-icon input');
+        searchInput.addEventListener('input', function () {
+            const keyword = this.value.trim().toLowerCase();
+
+            document.querySelectorAll('.tab-pane .col-3').forEach(function (col) {
+                const name        = col.querySelector('strong').textContent.toLowerCase();
+                col.style.display = keyword === '' || name.includes(keyword) ? '' : 'none';
+            });
+        });
+
         async function deleteItem(symbol_id, btn) {
             // Ensure symbol_id is provided
             if (!symbol_id) {
@@ -117,9 +128,9 @@
 
             // Send DELETE request using fetch
             ajaxRequest({
-                url: `{% url 'admin:cmfadmin:icons_manage' %}`,
-                method: 'DELETE',
-                data: {symbol_id},
+                url:       `{% url 'admin:cmfadmin:icons_manage' %}`,
+                method:    'DELETE',
+                data:      {symbol_id},
                 onSuccess: () => {
                     location.reload()
                 },

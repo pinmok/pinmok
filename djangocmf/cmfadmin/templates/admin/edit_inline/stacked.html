@@ -47,10 +47,10 @@
                                 <a href="{% url inline_admin_form.model_admin.opts|admin_urlname:'change' inline_admin_form.original.pk|admin_urlquote %}"
                                    class="btn btn-sm btn-outline">
                                     {% if inline_admin_formset.has_change_permission %}
-                                        {% sprite 'tabler-pencil' 'icon icon-sm text-warning' %}
+                                        {% icon 'tabler-pencil' 'icon icon-sm text-warning' %}
                                         {% translate "Change" %}
                                     {% else %}
-                                        {% sprite 'tabler-eye' 'icon icon-sm text-primary' %}
+                                        {% icon 'tabler-eye' 'icon icon-sm text-primary' %}
                                         {% translate "View" %}
                                     {% endif %}
                                 </a>

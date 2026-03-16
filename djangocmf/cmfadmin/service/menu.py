@@ -12,19 +12,23 @@ Created:
 """
 import hashlib
 import importlib
-from uuid import uuid4
+from enum import StrEnum
 
 from django.apps import apps
 from django.contrib.auth.models import AbstractUser
+from django.core.cache import cache
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.http import HttpRequest
+from django.urls import reverse, NoReverseMatch
 
+from djangocmf import site
 from djangocmf.cmfadmin import constants
-from djangocmf.cmfadmin.enums import MenuSource, MenuSyncMode
-from djangocmf.cmfadmin.models import Menu, MenuPermission
-from djangocmf.cmfadmin.service.authorization import PermissionService
+from djangocmf.cmfadmin.models import Menu
 from djangocmf.cmfadmin.utils.helper import get_valid_app_labels
+from djangocmf.core.constants import DEFAULT_SORT_ORDER
 from djangocmf.core.menu import MenuNode
-from djangocmf.core.utils.tools import to_compact_case, to_snake_case
+from djangocmf.core.utils.tools import to_compact_case
 
 
 class AdminMenuImportError(Exception):
@@ -32,15 +36,29 @@ class AdminMenuImportError(Exception):
     pass
 
 
+class MenuSource(StrEnum):
+    """ Menu data sources """
+    DATABASE = 'database'
+    APP_LIST = 'app_list'
+
+
+class MenuSyncMode(StrEnum):
+    """Menu sync modes"""
+    SYNC_ALL = 'all'
+
+
 class MenuSynchronizer:
     """
     Menu synchronization service.
 
     Responsibilities:
-    1. Fetch menu definitions from a single standard source.
-    2. Normalize MenuNode instances (app_label, id, parent_id, validity).
+    1. Fetch menu definitions from each app's menus.py via the menu() factory.
+    2. Resolve url names to actual paths at sync time.
     3. Persist menus into the database.
-    4. Generate permissions exactly as in legacy implementation.
+
+    Menu items are declared via the menu() factory function in each app's
+    menus.py. Parent-child relationships are established via parent_key at
+    declaration time, so no post-processing normalization is needed.
     """
 
     @classmethod
@@ -70,16 +88,13 @@ class MenuSynchronizer:
                 if not nodes:
                     continue
 
-                # 2. Clear old menus and permissions
+                # 2. Clear old menus for this app
                 cls._clear_app_menus(app)
 
-                # 3. Normalize nodes: assign UUIDs, remap parent_id, validate
-                normalized_nodes = cls._normalize_menu_nodes(nodes)
+                # 3. Persist menus
+                total_created += cls._insert_items(nodes, parent_db_id=None)
 
-                # 4. Persist menus and permissions
-                total_created += cls._insert_items(normalized_nodes, parent_db_id=None)
-
-                inserted_menus.extend(normalized_nodes)
+                inserted_menus.extend(nodes)
 
         return {
             "total_created": total_created,
@@ -94,10 +109,14 @@ class MenuSynchronizer:
     @staticmethod
     def _get_declarations(app_label: str) -> list[MenuNode]:
         """
-        Adapter method to fetch menu definitions.
+        Fetch menu definitions from an app's menus.py and resolve url names.
 
-        Returns a list of MenuNode instances with minimal normalization:
-        - app_label added
+        Each MenuNode's url is resolved at sync time:
+          - If url starts with '/', it is treated as a literal path and used as-is.
+          - Otherwise, it is treated as a Django url name and resolved via reverse().
+            If resolution fails, AdminMenuImportError is raised immediately.
+
+        Returns a list of MenuNode instances with app_label and url filled in.
         """
         try:
             app_config = apps.get_app_config(app_label)
@@ -113,57 +132,17 @@ class MenuSynchronizer:
         nodes: list[MenuNode] = []
         for node in raw_nodes:
             if isinstance(node, MenuNode):
-                node.app_label = app_label  # fill in app_label
+                node.app_label = app_label
+                # Resolve url name to actual path if not already a path.
+                if node.url and not node.url.startswith('/'):
+                    try:
+                        node.url = reverse(node.url)
+                    except NoReverseMatch:
+                        raise AdminMenuImportError(
+                            f"Cannot reverse url {node.url!r} for menu item {node.id!r} "
+                            f"in app '{app_label}'."
+                        )
                 nodes.append(node)
-        return nodes
-
-    @classmethod
-    def _normalize_menu_nodes(cls, nodes: list[MenuNode]) -> list[MenuNode]:
-        """
-        Normalize a list of MenuNode instances for database insertion.
-
-        This method performs the following operations:
-
-        1. Assign a new unique UUID to each node's `id`.
-           - Old IDs are mapped to new UUIDs using a local `id_map`.
-           - Each app should call this independently to avoid ID conflicts.
-
-        2. Remap `parent_id` of each node to the new UUIDs.
-           - If a node's `parent_id` is missing or invalid, it is set to None (root level).
-           - This ensures the parent-child relationship remains consistent.
-
-        3. Return the updated list of nodes with normalized `id` and `parent_id`.
-
-        Args:
-            nodes (list[MenuNode]): Flat list of MenuNode instances to normalize.
-
-        Returns:
-            list[MenuNode]: The same list, with updated IDs and parent IDs.
-        """
-        if not nodes:
-            return []
-
-        # Local mapping of original ID -> new UUID
-        id_map: dict[str, str] = {}
-
-        # Step 1: remap node IDs
-        for node in nodes:
-            if node.id:
-                original_id = node.id
-                # Generate a new UUID for this node
-                new_id = str(uuid4().hex)
-                node.id = new_id
-                id_map[original_id] = new_id
-
-        # Step 2: remap parent_ids using the local id_map
-        for node in nodes:
-            if node.parent_id not in id_map:
-                # If parent_id is invalid or missing, reset to None (top-level)
-                node.parent_id = None
-            else:
-                # Map parent_id to new UUID
-                node.parent_id = id_map[node.parent_id]
-
         return nodes
 
     _MENU_ASSIGNABLE_FIELDS: frozenset[str] = frozenset(
@@ -181,7 +160,7 @@ class MenuSynchronizer:
     def _prepare_menu_obj(cls, item: MenuNode, parent_db_id: int | None) -> Menu:
         """Prepare Menu instance from MenuNode"""
         data = {
-            field: value
+            field: value  # noqa
             for field in cls._MENU_ASSIGNABLE_FIELDS
             if hasattr(item, field) and (value := getattr(item, field)) is not None
         }
@@ -198,153 +177,121 @@ class MenuSynchronizer:
     @classmethod
     def _insert_items(cls, menu_nodes: list[MenuNode], parent_db_id: int | None) -> int:
         """
-        Insert menu items into the database and generate corresponding permissions recursively.
+        Insert menu items into the database recursively.
+
+        Processes one level at a time: all nodes whose parent_id matches
+        parent_db_id are inserted together via bulk_create, then their
+        children are inserted recursively using the newly assigned DB IDs.
+
+        Args:
+            menu_nodes: Flat list of all MenuNode instances for the current app.
+            parent_db_id: The database PK of the parent menu row, or None for root level.
+
+        Returns:
+            int: Total number of menu rows created.
         """
         created_count = 0
         current_level = [item for item in menu_nodes if item.parent_id == parent_db_id]
         if not current_level:
             return 0
 
-        # Step 1: Prepare Menu objects to bulk_create
-        to_create = [cls._prepare_menu_obj(item, parent_db_id) for item in current_level]
+        # Step 1: Prepare Menu objects and sync menu_key back to each node.
+        to_create = []
+        for item in current_level:
+            menu_obj = cls._prepare_menu_obj(item, parent_db_id)
+            item.menu_key = menu_obj.menu_key  # sync back so created_map lookup works
+            to_create.append(menu_obj)
 
         # Step 2: Insert Menu objects
         Menu.objects.bulk_create(to_create, batch_size=100)
         created_items = list(Menu.objects.filter(menu_key__in=[m.menu_key for m in to_create]))
         created_count += len(created_items)
 
-        # Step 3: Build mapping from temporary ID to DB ID
+        # Step 3: Build mapping from menu_key to inserted DB row.
         created_map = {m.menu_key: m for m in created_items}
         for src in current_level:
             db = created_map[src.menu_key]
             src.db_id = db.id
-            src.menu_key = db.menu_key
+            # Remap children's parent_id from the node's logical id to the DB PK.
             for child in menu_nodes:
                 if child.parent_id == src.id:
                     child.parent_id = db.id
 
-        # Step 4: insert permissions
-        parent_code_map: dict[int, str] = {}
-        cls._generate_permissions(current_level, parent_code_map)
-
-        # Step 5: Recursively insert child nodes
+        # Step 4: Recursively insert child nodes.
         for item in current_level:
             created_count += cls._insert_items(menu_nodes=menu_nodes, parent_db_id=item.db_id)
 
         return created_count
 
-    @classmethod
-    def _generate_permissions(cls, menu_nodes: list[MenuNode], parent_code_map: dict[int, str]):
-        """
-        Generate permissions for a list of menu nodes.
-        Mixed scheme: default 'view' permission + custom permissions.
-        Updates parent_code_map in-place for recursion.
-        """
-        for src in menu_nodes:
-            # Skip root nodes
-            if src.parent_id is None:
-                continue
-
-            # Record safe id for children
-            parent_code_map[src.db_id] = to_snake_case(src.title)
-
-            # Generate default view permission
-            # build codename using app_label + compact title
-            app = getattr(src, "app_label", "")
-            safe_title = to_compact_case(src.title)
-            codename = f"view_{app}:{safe_title}" if app else f"view_{safe_title}"
-
-            # ensure uniqueness if collision still possible (rare)
-            parent_id = src.parent_id
-            while MenuPermission.objects.filter(codename=codename).exists() and parent_id:
-                parent_safe = to_compact_case(parent_code_map.get(parent_id, ""))
-                if parent_safe:  # only prepend if parent_safe is not empty
-                    codename = f"view_{app}_{parent_safe}_{safe_title}" if app else f"view_{parent_safe}_{safe_title}"
-                # Move up the tree
-                parent_node = next((p for p in menu_nodes if p.db_id == parent_id), None)
-                parent_id = getattr(parent_node, "parent_id", None) if parent_node else None
-
-            MenuPermission.objects.update_or_create(
-                codename=codename,  # use codename as lookup key
-                defaults={
-                    "menu_key": src.menu_key,  # update/overwrite menu_key as auxiliary info
-                    "name": f"Can view {src.title}"
-                }
-            )
-
-            # Generate custom permissions if defined
-            if getattr(src, "permissions", None):
-                for perm in src.permissions:
-                    perm_code = perm.get("codename")
-                    if not perm_code:
-                        continue
-                    perm_name = perm.get("name", f"Can {perm_code} {src.title}")
-                    MenuPermission.objects.update_or_create(
-                        codename=perm_code,  # perm_code is already the business codename
-                        defaults={
-                            "menu_key": src.menu_key,
-                            "name": perm_name
-                        }
-                    )
-
     @staticmethod
     def _clear_app_menus(app_label: str):
         """
-        Clear menus and permissions for a single app.
-        NOTE:
-        MenuPermission is linked to Menu by `menu_key`, NOT by ForeignKey.
+        Clear all menu rows for a single app before re-synchronizing.
+
+        Cascade delete handles child rows automatically via the ForeignKey
+        on Menu.parent.
         """
-        menu_keys = Menu.objects.filter(app_label=app_label).values_list("menu_key", flat=True)
-        MenuPermission.objects.filter(menu_key__in=menu_keys).delete()
         Menu.objects.filter(app_label=app_label).delete()
 
 
-class AdminMenu:
+class AdminMenuService:
     """
-    AdminMenu assembles MenuItems from multiple sources,
-    merges them, builds hierarchical tree and returns final menu structure.
+    Assembles menu nodes from multiple sources, merges them, applies permission
+    filtering, builds a hierarchical tree, and returns the final menu structure.
+
+    This class is the data layer for menu rendering. For request-level concerns
+    (caching, permission gating on sync), use AdminMenuManager.
     """
 
     @staticmethod
     def _load_from_database() -> list[MenuNode]:
         """
-        Fetch active menu items from database and convert to MenuItem.
+        Fetch menu items from the database and convert to MenuNode instances.
+
+        The permissions field is stored as a JSON list in the database and is
+        mapped directly onto MenuNode.permissions by build_node.
         """
-        menu_data = Menu.objects.filter(is_active=True)
+        menu_data = Menu.objects.all()
         menu_nodes: list[MenuNode] = []
-
-        all_perms = MenuPermission.objects.all()
-        perms_by_menu = {}
-
-        for perm in all_perms:
-            perms_by_menu.setdefault(perm.menu_key, []).append(perm.codename)
 
         for menu in menu_data:
             node = MenuNode.build_node(menu)
             node.source = MenuSource.DATABASE
-            # Attach permission codes
-            node.extra['perms'] = perms_by_menu.get(menu.menu_key, [])
+            # Ensure permissions is always a list regardless of DB value.
+            if not isinstance(node.permissions, list):
+                node.permissions = []
             menu_nodes.append(node)
+
         return menu_nodes
 
     @staticmethod
     def _load_from_app_list(app_list: list[dict]) -> list[MenuNode]:
         """
-        Convert Django admin app_list data to a flat list of MenuItem objects.
-        Since the 'auth' module requires customized display titles, they are hardcoded here.
-        """
+        Convert Django admin app_list data to a flat list of MenuNode objects.
 
+        The icon for each app is read from its AppConfig.icon attribute.
+        Since 'auth' is a built-in Django app whose AppConfig cannot be
+        customised, its icon is taken from constants.AUTH_APP_ICON instead.
+        All other apps fall back to constants.DEFAULT_APP_ICON if no icon
+        attribute is defined on their AppConfig.
+        """
         menu_nodes: list[MenuNode] = []
 
         for app in app_list:
-            # Top-level menu (application)
-            app_label = app.get('app_label')
+            app_label = app.get('app_label', '')
             app_config = apps.get_app_config(app_label)
+
+            # Resolve icon: auth is a special case, others read from AppConfig.
+            if app_label == 'auth':
+                icon = constants.AUTH_APP_ICON
+            else:
+                icon = getattr(app_config, 'icon', constants.DEFAULT_APP_ICON)
+
             app_item = MenuNode(
-                id=app.get('app_label'),
+                id=app_label,
                 title=app_config.verbose_name,
                 url=app.get('app_url'),
-                icon=constants.AUTH_ICON,
+                icon=icon,
                 app_label=app_label,
                 source=MenuSource.APP_LIST,
             )
@@ -358,38 +305,78 @@ class AdminMenu:
 
             menu_nodes.append(app_item)
 
-            # Process models under the application
             for model in app.get('models', []):
                 object_name = model.get('object_name')
+                model_admin = site.get_model_admin(model['model'])
+                sort_order = getattr(model_admin, 'menu_order', DEFAULT_SORT_ORDER)
+
                 model_item = MenuNode(
                     id=object_name,
-                    parent_id=app_item.id,
+                    parent_id=app_label,
                     title=model.get('name') or object_name,
                     url=model.get('admin_url'),
                     app_label=app_label,
                     source=MenuSource.APP_LIST,
+                    sort_order=sort_order,
                 )
                 menu_nodes.append(model_item)
 
         return menu_nodes
 
+    @staticmethod
+    def _filter_by_permissions(menu_nodes: list[MenuNode], user: AbstractUser) -> list[MenuNode]:
+        """
+        Filter menu nodes according to user's permissions.
+
+        Two-pass algorithm:
+          Pass 1 — collect nodes that fail their own permission check.
+          Pass 2 — propagate denial to all descendants, repeat until stable.
+
+        This ensures correct filtering regardless of node ordering in the list,
+        and that removing a parent always removes all its children too.
+        """
+        if not user.is_authenticated:
+            return []
+
+        if user.is_superuser:
+            return menu_nodes
+
+        # Pass 1: collect nodes whose own permissions are insufficient.
+        denied_ids: set = set()
+        for node in menu_nodes:
+            if node.permissions and not any(user.has_perm(perm) for perm in node.permissions):
+                denied_ids.add(node.id)
+
+        # Pass 2: propagate denial to descendants, repeat until stable.
+        while True:
+            new_denied = {
+                node.id for node in menu_nodes
+                if node.id not in denied_ids and node.parent_id in denied_ids
+            }
+            if not new_denied:
+                break
+            denied_ids |= new_denied
+
+        return [node for node in menu_nodes if node.id not in denied_ids]
+
     @classmethod
     def get_merged_nodes(cls, menu_nodes: list[MenuNode], app_list_menu_nodes: list[MenuNode]) -> list[MenuNode]:
         """
-        Merge two lists of MenuItem objects with database items taking priority.
+        Merge two lists of MenuNode objects with database items taking priority.
 
         Rules:
-            - If a top-level app_list menu has the same app_label as a database menu, discard it.
-            - If a child menu from app_list belongs to a known app_label in the database menus,
-              update its parent_id to the corresponding database menu's id.
-            - Append all valid items into the merged result.
+            - If a top-level app_list menu has the same app_label as a database menu,
+              attach it under the database menu instead of adding it as a root.
+            - If a child menu from app_list belongs to a known app_label in the database
+              menus, remap its parent_id to the corresponding database menu's id.
+            - All valid items are appended into the merged result.
 
         Returns:
             list[MenuNode]: Combined menu list for display, with conflicts resolved.
         """
         merged_nodes: list[MenuNode] = list(menu_nodes)
 
-        # Build a mapping {app_label: first_root_id} for all database top-level menus
+        # Build a mapping {app_label: first_root_id} for all database top-level menus.
         app_label_to_db_id = {}
         for item in menu_nodes:
             if item.parent_id is None and item.app_label not in app_label_to_db_id:
@@ -397,66 +384,165 @@ class AdminMenu:
 
         for app_menu_item in app_list_menu_nodes:
             if app_menu_item.parent_id is None:
-                # Skip top-level app_list menus if a database menu with the same app_label exists
                 if app_menu_item.app_label in app_label_to_db_id:
-                    # Attach to the first root
+                    # Attach under the existing database root for this app.
                     app_menu_item.parent_id = app_label_to_db_id[app_menu_item.app_label]
                 else:
                     merged_nodes.append(app_menu_item)
             else:
-                # For child menus, if their parent exists in database, remap parent_id to database id
                 if app_menu_item.parent_id in app_label_to_db_id:
                     app_menu_item.parent_id = app_label_to_db_id[app_menu_item.parent_id]
                 merged_nodes.append(app_menu_item)
 
         return merged_nodes
 
-    @staticmethod
-    def _filter_by_permissions(menu_nodes: list[MenuNode], user: AbstractUser) -> list[MenuNode]:
-        """
-        Filter menu nodes according to user's permissions.
-        """
-        if not user.is_authenticated or not user.is_active:
-            return []
-
-        # Get all permissions of current user
-        user_permissions = PermissionService.get_user_permissions(user)
-
-        # If is superuser, skip filtering
-        if user.is_superuser:
-            return menu_nodes
-
-        # Result list
-        filtered_nodes: list[MenuNode] = []
-
-        for node in menu_nodes:
-            node_perms = node.extra.get("perms", [])
-            # If no permissions defined, keep node
-            if not node_perms:
-                filtered_nodes.append(node)
-                continue
-            # Keep node if user has at least one permission
-            if any(perm in user_permissions for perm in node_perms):
-                filtered_nodes.append(node)
-
-        return filtered_nodes
+    # AdminMenuService 里加
+    @classmethod
+    def get_db_menus(cls) -> list[MenuNode]:
+        """Return database menus, using cache if available."""
+        version = cache.get(constants.ADMIN_MENU_CACHE_VERSION, 1)
+        cache_key = f"{constants.ADMIN_ALL_MENU}_v{version}"
+        db_menus = cache.get(cache_key)
+        if db_menus is None:
+            db_menus = cls._load_from_database()
+            cache.set(cache_key, db_menus, timeout=60 * 60)
+        return db_menus
 
     @classmethod
-    def get_menu(cls, app_list: list[dict], user: AbstractUser | None = None) -> list[MenuNode]:
+    def get_menu(cls, app_list: list[dict], user: AbstractUser, db_menus=None) -> list[MenuNode]:
         """
-        Get final admin menu.
-        """
-        #  Load menu from database
-        db_menus = cls._load_from_database()
+        Assemble, filter, merge and return the final admin menu tree.
 
-        # Filter menu by permissions
+        Steps:
+          1. Load database menus.
+          2. Filter by user permissions.
+          3. Load app_list menus.
+          4. Merge both sources (database takes priority).
+          5. Build and return the hierarchical tree.
+        """
+        db_menus = db_menus or cls._load_from_database()
         menu_nodes = cls._filter_by_permissions(db_menus, user)
-
-        # Load menu from app_list
-        app_list_menus_nodes = cls._load_from_app_list(app_list=app_list)
-
-        # Merge two sources (db priority)
-        merged_nodes = cls.get_merged_nodes(menu_nodes, app_list_menus_nodes)
-
-        # Build hierarchical tree
+        app_list_nodes = cls._load_from_app_list(app_list=app_list)
+        merged_nodes = cls.get_merged_nodes(menu_nodes, app_list_nodes)
         return MenuNode.build_tree(merged_nodes, sort_key='sort_order')
+
+
+# ===========================================================================
+# AdminMenuManager
+# ===========================================================================
+
+class AdminMenuManager:
+    """
+    Request-level facade for the admin menu system.
+
+    Responsibilities:
+      - Per-user menu caching with version-based invalidation.
+      - Breadcrumb generation from the menu tree.
+      - Menu synchronization with superuser permission gating.
+
+    Callers (views, context processors) should only use this class.
+    AdminMenuService and MenuSynchronizer are implementation details.
+    """
+
+    # -----------------------------------------------------------------------
+    # Cache helpers
+    # -----------------------------------------------------------------------
+
+    @staticmethod
+    def _get_cache_version() -> int:
+        return cache.get(constants.ADMIN_MENU_CACHE_VERSION, 1)
+
+    @staticmethod
+    def clear_admin_menu_cache() -> None:
+        """
+        Invalidate all per-user menu caches by incrementing the global version.
+
+        All existing per-user cache entries become stale immediately without
+        requiring pattern-based deletion, which is not supported by all cache
+        backends.
+        """
+        version = cache.get(constants.ADMIN_MENU_CACHE_VERSION, 1)
+        cache.set(constants.ADMIN_MENU_CACHE_VERSION, version + 1)
+
+    # -----------------------------------------------------------------------
+    # Public API
+    # -----------------------------------------------------------------------
+
+    @classmethod
+    def get_admin_menu(cls, request: HttpRequest, app_list: list | None = None) -> list[MenuNode]:
+        """
+        Retrieve the final backend admin menu for the current user.
+
+        The result is cached per user per cache version. Invalidate by calling
+        _clear_admin_menu_cache() (e.g., after menu sync or permission change).
+
+        Args:
+            request: The current HTTP request.
+            app_list: Use provided app_list to avoid redundant get_app_list() call
+
+        Returns:
+            list[MenuNode]: Hierarchical menu tree ready for template rendering.
+        """
+        if app_list is None:
+            app_list = site.get_app_list(request)
+        db_menus = AdminMenuService.get_db_menus()
+        return AdminMenuService.get_menu(app_list=app_list, user=request.user, db_menus=db_menus)
+
+    @classmethod
+    def synchronize_menu(cls, app_label: str, user: AbstractUser) -> dict:
+        """
+        Synchronize backend menu data with the database.
+
+        Only superusers are allowed to perform this action. The per-user menu
+        cache is invalidated after a successful sync.
+
+        Args:
+            app_label: The app label to sync, or MenuSyncMode.SYNC_ALL for all apps.
+            user: The current user performing the operation.
+
+        Raises:
+            PermissionDenied: If the user is not a superuser.
+        """
+        if not user.is_superuser:
+            raise PermissionDenied('Only superusers are allowed to perform this action.')
+
+        result = MenuSynchronizer.synchronize_menu(app_label=app_label)
+        cls.clear_admin_menu_cache()
+        return result
+
+    @staticmethod
+    def get_admin_breadcrumb(request: HttpRequest, menu_tree: list[MenuNode]) -> list[dict]:
+        """
+        Generate breadcrumb path for the current URL from the menu tree.
+        Traverses depth-first and returns the longest matching trail.
+        """
+        current_url = request.path.rstrip('/')
+
+        def search(node: MenuNode, trail: list[MenuNode]) -> list[MenuNode]:
+            new_trail = trail + [node]
+            best = []
+
+            # Check if this node matches current URL
+            if node.url:
+                node_url = node.url.rstrip('/')
+                if current_url == node_url or current_url.startswith(f"{node_url}/"):
+                    best = new_trail
+
+            # Recurse into children, keep the longest match
+            for child in node.children:
+                candidate = search(child, new_trail)
+                if len(candidate) > len(best):
+                    best = candidate
+
+            return best
+
+        path = []
+        for item in menu_tree:
+            result = search(item, [])
+            if len(result) > len(path):
+                path = result
+
+        return [
+            {'title': node.title, 'url': node.url, 'is_current': i == len(path) - 1}
+            for i, node in enumerate(path)
+        ]

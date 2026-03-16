@@ -5,14 +5,14 @@
     <form id="changelist-search" method="get" role="search" aria-labelledby="changelist-search-form">
         <div class="d-flex gap-2 align-items-center">
             <div class="input-group input-group-flat w-auto">
-                <span class="input-group-text">{% sprite 'tabler-search' 'icon' %}</span>
+                <span class="input-group-text">{% icon 'tabler-search' 'icon' %}</span>
                 <input type="text" class="form-control" size="40" name="{{ search_var }}" value="{{ cl.query }}" id="searchbar"
                         {% if cl.search_help_text %} aria-describedby="searchbar_helptext"{% endif %}>
                 <button class="btn" type="submit">{% translate 'Search' %}</button>
             </div>
             {% if cl.search_help_text %}
                 <small class="form-hint" id="searchbar_helptext" data-bs-toggle="tooltip" data-bs-placement="right"
-                       data-bs-title="{{ cl.search_help_text }}">{% sprite 'tabler-help' %}</small>
+                       data-bs-title="{{ cl.search_help_text }}">{% icon 'tabler-help' %}</small>
             {% endif %}
             {% if show_result_count %}
                 {# @formatter:off #}

@@ -11,7 +11,7 @@
             {% if form.errors %}
                 <div class="card-header">
                     <div class="alert alert-danger">
-                        <div class="alert-icon">{% sprite 'tabler-alert-circle' 'icon alert-icon' %}</div>
+                        <div class="alert-icon">{% icon 'tabler-alert-circle' 'icon alert-icon' %}</div>
                         {{ form.errors }}
                     </div>
                 </div>
@@ -84,10 +84,10 @@
         })
 
         function toggleVisibleLabel(input) {
-            const label = input.nextElementSibling;
-            const visibleText = input.dataset.visibleText;
+            const label         = input.nextElementSibling;
+            const visibleText   = input.dataset.visibleText;
             const invisibleText = input.dataset.invisibleText;
-            label.innerText = input.checked ? visibleText : invisibleText;
+            label.innerText     = input.checked ? visibleText : invisibleText;
         }
     </script>
 {% endblock %}

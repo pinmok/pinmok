@@ -65,134 +65,178 @@ function getCookie(name) {
     return cookieValue;
 }
 
+/**
+ * ajax module
+ *
+ * Description:
+ *   Provides a generic AJAX request utility and a FileManager object
+ *   for file upload operations.
+ * Author: 惠达浪
+ * Date: 2025-10-30
+ * Updated: 2026-03-12
+ */
+
+'use strict';
+
+/**
+ * Send an AJAX request using the Fetch API.
+ *
+ * @param {object} options
+ * @param {string}   options.url          - Request URL
+ * @param {string}   [options.method]     - HTTP method (default: 'POST')
+ * @param {object|FormData} [options.data] - Request payload
+ * @param {object}   [options.headers]    - Additional headers
+ * @param {string}   [options.contentType] - 'json' | 'form' | 'auto' (default: 'auto')
+ * @param {function} [options.onSuccess]  - Called with parsed response on success (code === 0)
+ * @param {function} [options.onError]    - Called with parsed response or error info on failure
+ * @param {Element}  [btn]               - Optional button element to show spinner and disable during request
+ */
 function ajaxRequest(
     {
         url,
         method = 'POST',
         data = {},
         headers = {},
-        responseType = 'json',
+        contentType = 'auto',
         onSuccess = null,
         onError = null,
-        contentType = 'auto'
-    }, btn) {
-    let spinner = null
+    },
+    btn = null
+) {
+    // Show spinner and disable button
+    const spinner = btn?.querySelector('.spinner-border') ?? null;
     if (btn) {
-        spinner = btn.querySelector('.spinner-border');
         btn.disabled = true;
-        if (spinner) spinner.classList.remove('d-none');
+        spinner?.classList.remove('d-none');
     }
+
+    const restoreBtn = () => {
+        if (btn) btn.disabled = false;
+        spinner?.classList.add('d-none');
+    };
 
     method = method.toUpperCase();
 
     let body = null;
     const finalHeaders = {
         'X-CSRFToken': getCookie('csrftoken'),
-        ...headers
+        ...headers,
     };
 
-    // === REST-style data handling ===
     if (method === 'GET') {
+        // Append data as query string
         const queryString = new URLSearchParams(data).toString();
         if (queryString) url += (url.includes('?') ? '&' : '?') + queryString;
     } else {
-        // POST/PUT/PATCH → JSON or FormData in body
-        if (contentType === 'json' || (contentType === 'auto' && typeof data === 'object' && !(data instanceof FormData))) {
+        // Determine body format
+        const isFormData = data instanceof FormData;
+        const useJson = contentType === 'json' || (contentType === 'auto' && !isFormData);
+
+        if (useJson) {
             finalHeaders['Content-Type'] = 'application/json';
             body = JSON.stringify(data);
         } else {
+            // FormData: let browser set Content-Type with boundary automatically
             body = data;
         }
     }
-
 
     fetch(url, {
         method,
         headers: finalHeaders,
         body,
-        credentials: 'same-origin'
+        credentials: 'same-origin',
     })
-        .then(res => res[responseType]())
         .then(res => {
-            if (btn) btn.disabled = false;
-            if (spinner) spinner.classList.add('d-none');
+            // Always attempt to parse JSON regardless of HTTP status.
+            // Our backend always returns JSON, even for error responses.
+            return res.json().then(parsed => ({ok: res.ok, status: res.status, data: parsed}));
+        })
+        .then(({ok, status, data: res}) => {
+            restoreBtn();
 
-            const type = res.code === 0 ? ToastType.SUCCESS : ToastType.ERROR;
-            showToast(res.message || gettext(type === ToastType.SUCCESS ? 'Success' : 'Error'), type);
+            const isSuccess = res.code === 0;
+            const toastType = isSuccess ? ToastType.SUCCESS : ToastType.ERROR;
+            showToast(res.message || gettext(isSuccess ? 'Success' : 'Error'), toastType);
 
-            if (type === ToastType.SUCCESS && typeof onSuccess === 'function') {
+            if (isSuccess && typeof onSuccess === 'function') {
                 onSuccess(res);
-            } else if (typeof onError === 'function') {
+            } else if (!isSuccess && typeof onError === 'function') {
                 onError(res);
             }
         })
         .catch(err => {
-            if (btn) btn.disabled = false;
-            if (spinner) spinner.classList.add('d-none');
+            // Reaches here only on network failure or non-JSON response
+            restoreBtn();
 
-            // Default message
-            let msg = gettext('Network error or server exception.');
-
-            // Try to use backend JSON message if exists
-            if (err?.response?.data?.message) msg = err.response.data.message;
-
+            const msg = gettext('Network error or server exception.');
             showToast(msg, ToastType.ERROR);
 
             if (typeof onError === 'function') {
-                onError({
-                    code: err.response?.data?.code ?? -1,
-                    message: msg
-                });
+                onError({code: -1, message: msg});
             }
+
+            console.error('[ajaxRequest] Unexpected error:', err);
         });
 }
 
-// Upload a single file to the backend.
+
+/**
+ * FileManager
+ *
+ * Provides file upload operations backed by ajaxRequest.
+ * Delete is reserved for a future version.
+ */
 const FileManager = {
-    upload: function (file, fileType, options = {}) {
+
+    /**
+     * Upload a single file to the backend.
+     *
+     * @param {File|Blob} file        - File or Blob to upload
+     * @param {string}    fileType    - One of: image, audio, video, document, archive
+     * @param {object}    [options]
+     * @param {string}    [options.url]       - Upload endpoint URL
+     * @param {object}    [options.extraData] - Additional FormData fields
+     * @param {Element}   [options.btn]       - Button element for spinner
+     * @param {string}    [options.fileName]  - Override filename (useful for Blob uploads)
+     * @param {function}  [options.onSuccess] - Success callback
+     * @param {function}  [options.onError]   - Error callback
+     */
+    upload(file, fileType, options = {}) {
         const {
-            url = window.APP_URLS.uploadFile,
+            url,
             extraData = {},
             btn = null,
+            fileName = null,
             onSuccess = null,
             onError = null,
-            fileName = null
         } = options;
 
+        if (!url) {
+            console.error('[FileManager.upload] url is required.');
+            return;
+        }
+
         const formData = new FormData();
-        formData.append('file', file, fileName || (file && file.name) || 'upload.dat');
+        formData.append('file', file, fileName || file?.name || 'upload.dat');
         formData.append('file_type', fileType);
 
         for (const [k, v] of Object.entries(extraData)) {
             formData.append(k, String(v));
         }
 
-        ajaxRequest({
-            url,
-            method: 'POST',
-            data: formData,
-            contentType: 'form',
-            onSuccess,
-            onError
-        }, btn);
+        ajaxRequest(
+            {
+                url,
+                method: 'POST',
+                data: formData,
+                contentType: 'form',
+                onSuccess,
+                onError,
+            },
+            btn
+        );
     },
-
-    delete: function (filePath, options = {}) {
-        const {
-            url = window.APP_URLS.uploadFile,
-            btn = null,
-            onSuccess = null,
-            onError = null
-        } = options;
-
-        ajaxRequest({
-            url,
-            method: 'DELETE',
-            data: {path: filePath},
-            onSuccess,
-            onError
-        }, btn);
-    }
 };
 
 /**

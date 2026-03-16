@@ -132,7 +132,7 @@ def to_compact_case(text: str) -> str:
         "Site Setting" -> "sitesetting"
         "User List(Admin)" -> "userlistadmin"
     """
-    cleaned = re.sub(r"[^\w\u4e00-\u9fff]", "", text, flags=re.UNICODE)
+    cleaned = re.sub(r"[^\w\u4e00-\u9fff]", "", str(text), flags=re.UNICODE)
     return cleaned.lower()
 
 

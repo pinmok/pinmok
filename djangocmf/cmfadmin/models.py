@@ -10,167 +10,283 @@ Author:
 Created:
   2025-06-08
 """
-
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import User
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from djangocmf.cmfadmin.enums import ConfigCategory, TargetChoices, MimeType
+from djangocmf.cmfadmin.enums import ConfigCategory, TargetChoices
 from djangocmf.core.constants import DEFAULT_SORT_ORDER
-from djangocmf.core.libs.upload import UploadResult
 
-User = get_user_model()
 
+# ---------------------------------------------------------------------------
+# Main menu model
+# ---------------------------------------------------------------------------
 
 class Menu(models.Model):
     """
     Backend admin menu item supporting multi-level hierarchy and permission control.
     """
-    menu_key = models.CharField(max_length=32, unique=True, db_index=True,
-                                help_text=_("Stable hash used to uniquely identify this menu item, based on URL and parent id."))
-    title = models.CharField(max_length=50, verbose_name=_("Title"),
-                             help_text=_("Menu title displayed in the admin."))
-    url = models.CharField(max_length=200, blank=True, default='', verbose_name=_("URL"),
-                           help_text=_("URL or named route for the menu item."))
-    icon = models.CharField(max_length=50, blank=True, default='', verbose_name=_("Icon"),
-                            help_text=_("Icon class for the menu item."))
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='children',
-                               verbose_name=_("Parent Menu"),
-                               help_text=_("Parent menu for hierarchical structure."))
-    app_label = models.CharField(max_length=50, blank=True, default='',
-                                 help_text=_("Application label associated with this menu item."))
-    sort_order = models.PositiveIntegerField(default=DEFAULT_SORT_ORDER, verbose_name=_("Sort Order"),
-                                             help_text=_("Order for menu sorting."))
-    is_active = models.BooleanField(default=True, verbose_name=_("Active"),
-                                    help_text=_("Whether this menu is active and visible."))
-    visible = models.BooleanField(default=True, verbose_name=_("Visible"),
-                                  help_text=_("Whether this menu is visible."))
-    remark = models.CharField(max_length=200, blank=True, default='', verbose_name=_("Remark"),
-                              help_text=_("Additional notes or comments about this menu item."))
-    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"),
-                                      help_text=_("Time when this menu item was last updated."))
+    menu_key = models.CharField(
+        max_length=32,
+        unique=True,
+        db_index=True,
+        db_comment="Stable hash used to uniquely identify this menu item, based on URL and parent id."
+    )
+    title = models.CharField(
+        max_length=50,
+        verbose_name=_("title"),
+        db_comment="Menu title displayed in the admin."
+    )
+    url = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        verbose_name=_("url"),
+        db_comment="URL or named route for the menu item."
+    )
+    icon = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        verbose_name=_("icon"),
+        db_comment="Icon class for the menu item."
+    )
+    parent = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='children',
+        verbose_name=_("parent menu"),
+        db_comment="Parent menu for hierarchical structure."
+    )
+    app_label = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        db_comment="Application label associated with this menu item."
+    )
+    permissions = models.JSONField(
+        max_length=255,
+        blank=True,
+        default=list,
+        db_comment="Permissions associated with this menu item."
+    )
+    sort_order = models.PositiveIntegerField(
+        default=DEFAULT_SORT_ORDER,
+        verbose_name=_("sort order"),
+        db_comment="Order for menu sorting."
+    )
+    remark = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        verbose_name=_("remark"),
+        db_comment="Additional notes or comments about this menu item."
+    )
 
     class Meta:
         ordering = ['sort_order']
-        verbose_name = _("Admin Menu")
-        verbose_name_plural = _("Admin Menus")
+        verbose_name = _("admin menu")
+        verbose_name_plural = _("admin menus")
 
     def __str__(self):
         return self.title
 
 
-class MenuPermission(models.Model):
+# ---------------------------------------------------------------------------
+# Config — the single key-value table
+# ---------------------------------------------------------------------------
+class ConfigManager(models.Manager):
     """
-    Custom permission definitions (business permissions).
-    These are independent of Django's auth_permission.
+    A custom manager scoped to a specific configuration category.
+
+    Overrides get_queryset() to automatically filter by the given category,
+    ensuring all queries through this manager only return records of that category.
     """
-    name = models.CharField(max_length=100)
-    codename = models.CharField(max_length=128, unique=True)  # stable identifier, e.g. "menu:reports:view"
-    menu_key = models.CharField(max_length=100, db_index=True)
 
-    # Centralized field name for dynamic relation
-    PERMISSION_RELATED_NAME = 'menu_permissions'
+    def __init__(self, category):
+        super().__init__()
+        self._category = category
 
-    class Meta:
-        verbose_name = _("Menu Permission")
-        verbose_name_plural = _("Menu Permissions")
-
-    def __str__(self):
-        return f"{self.codename} - {self.name}"
-
-
-# Extend User and Group with many-to-many to CustomPermission
-User.add_to_class(
-    MenuPermission.PERMISSION_RELATED_NAME,
-    models.ManyToManyField(
-        MenuPermission,
-        blank=True,
-        related_name=f"{MenuPermission.PERMISSION_RELATED_NAME}_user_set"
-    )
-)
-
-Group.add_to_class(
-    MenuPermission.PERMISSION_RELATED_NAME,
-    models.ManyToManyField(
-        MenuPermission,
-        blank=True,
-        related_name=f"{MenuPermission.PERMISSION_RELATED_NAME}_group_set"
-    )
-)
+    def get_queryset(self):
+        return super().get_queryset().filter(category=self._category)
 
 
 class Config(models.Model):
     """
-    Configuration item storing key-value pairs by category with a defined type.
+    Configuration item storing key-value pairs by category.
     Uniquely identified by (category, key).
+    Only keys that differ from their schema defaults are stored.
     """
-    category = models.CharField(max_length=20, choices=ConfigCategory,
-                                verbose_name=_("Category"), help_text=_("Configuration category."))
-    key = models.CharField(max_length=64, verbose_name=_("Key"), help_text=_("Unique configuration key."))
-    value = models.TextField(verbose_name=_("Value"), help_text=_("Configuration value."))
-    remark = models.CharField(max_length=255, blank=True, verbose_name=_("Remark"),
-                              help_text=_("Additional notes about this configuration item."))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"),
-                                      help_text=_("Time when this configuration was created."))
-    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"),
-                                      help_text=_("Time when this configuration was last updated."))
+
+    category = models.CharField(
+        max_length=32,
+        choices=ConfigCategory,  # noqa
+        verbose_name=_("category"),
+        db_comment="Configuration category."
+    )
+    key = models.CharField(
+        max_length=64,
+        verbose_name=_("key"),
+        db_comment="Unique configuration key.",
+    )
+    value = models.TextField(
+        verbose_name=_("value"),
+        db_comment="Configuration value.",
+    )
+    remark = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name=_("remark"),
+        db_comment="Additional notes about this configuration item.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("created at"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("updated at"))
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        category = getattr(cls, 'category', None)
+        if category is not None:
+            cls.objects = ConfigManager(category)
+            cls.objects.auto_created = True
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['category', 'key'], name='unique_config_category_key'),
+            models.UniqueConstraint(fields=["category", "key"], name="unique_config_category_key"),
         ]
-        verbose_name = _('Configuration Item')
-        verbose_name_plural = _('Configuration Items')
+        verbose_name = _("configuration item")
+        verbose_name_plural = _("configuration items")
+        # Raw Config table itself needs no custom permissions;
+        # permissions are managed per-category via proxy models below.
+        default_permissions = ()
 
     def __str__(self):
         return f"[{self.category}] {self.key}: {self.value}"
 
 
+# ---------------------------------------------------------------------------
+# Proxy Models — one per category
+#
+# Purpose:
+#   1. Independent permission management via Django's native Permission system
+#   2. Scoped Manager so queries are automatically filtered by category
+#   3. Can add category-specific methods or properties if needed
+#
+# Permissions:
+#   view   — controls menu visibility (checked by CMF menu filter)
+#   change — controls whether the config page is editable or read-only
+#
+# Note: add/delete are intentionally excluded because config keys are
+# defined in code (CONFIG_SCHEMA), not created/deleted by admin users.
+# ---------------------------------------------------------------------------
+
+
+class SiteConfig(Config):
+    category = ConfigCategory.SITE
+
+    class Meta:
+        proxy = True
+        default_permissions = ("view", "change")
+        verbose_name = _(ConfigCategory.SITE.label)
+        verbose_name_plural = _(ConfigCategory.SITE.label)
+
+
+class EmailConfig(Config):
+    category = ConfigCategory.EMAIL
+
+    class Meta:
+        proxy = True
+        default_permissions = ("view", "change")
+        verbose_name = _(ConfigCategory.EMAIL.label)
+        verbose_name_plural = _(ConfigCategory.EMAIL.label)
+
+
+class UploadConfig(Config):
+    category = ConfigCategory.UPLOAD
+
+    class Meta:
+        proxy = True
+        default_permissions = ("view", "change")
+        verbose_name = _(ConfigCategory.UPLOAD.label)
+        verbose_name_plural = _(ConfigCategory.UPLOAD.label)
+
+
+# ---------------------------------------------------------------------------
+# External links
+# ---------------------------------------------------------------------------
+
 class ExternalLink(models.Model):
     """
     Model representing a friendly external link.
     """
-    title = models.CharField(max_length=50, verbose_name=_("Title"),
-                             help_text=_("The title for the external link."))
-    url = models.URLField(verbose_name=_("URL"), blank=True,
-                          help_text=_("The URL for the external link."))
-    image = models.ImageField(upload_to='links/', blank=True, null=True, verbose_name=_("Image"),
-                              help_text=_("The image associated with the external link."))
-    status = models.BooleanField(default=True, verbose_name=_("Status"),
-                                 help_text=_("Indicates whether this link is active."))
-    sort_order = models.IntegerField(default=DEFAULT_SORT_ORDER, verbose_name=_("Sort Order"),
-                                     help_text=_("Determines the display order of the link."))
+    title = models.CharField(max_length=50, verbose_name=_("title"), help_text=_("The title for the external link."))
+    url = models.URLField(verbose_name=_("url"), blank=True, help_text=_("The URL for the external link."))
+    image = models.ImageField(
+        upload_to='links/',
+        blank=True,
+        null=True,
+        verbose_name=_("image"),
+        help_text=_("The image associated with the external link.")
+    )
+    status = models.BooleanField(
+        default=True,
+        verbose_name=_("status"),
+        help_text=_("Indicates whether this link is active.")
+    )
+    sort_order = models.PositiveIntegerField(
+        default=DEFAULT_SORT_ORDER,
+        verbose_name=_("sort order"),
+        help_text=_("Determines the display order of the link.")
+    )
 
     class Meta:
         ordering = ['sort_order']
-        verbose_name = _('External Link')
-        verbose_name_plural = _('External Links')
+        verbose_name = _(ConfigCategory.LINKS.label)
+        verbose_name_plural = _(ConfigCategory.LINKS.label)
 
     def __str__(self):
         return self.title
 
+
+# ---------------------------------------------------------------------------
+# Navigation models
+# ---------------------------------------------------------------------------
 
 class Nav(models.Model):
     """
     Navigation container table.
     Example: Top Navigation, Footer Navigation, Main Navigation.
     """
-    title = models.CharField(max_length=100, unique=True, verbose_name=_("Title"),
-                             help_text=_("The title for the navigation."))
-    slug = models.SlugField(max_length=100, unique=True, verbose_name=_("Slug"),
-                            help_text=_("A short unique identifier used in URLs and templates. "
-                                        "Only letters, numbers, hyphens, and underscores are allowed."))
-    is_active = models.BooleanField(default=True, verbose_name=_("Is Active"),
-                                    help_text=_("Whether this navigation is active."))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"),
-                                      help_text=_("Time when this navigation was created."))
-    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"),
-                                      help_text=_("Time when this navigation was last updated."))
+    title = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name=_("title"), help_text=_("The title for the navigation.")
+    )
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        verbose_name=_("slug"),
+        help_text=_("A short unique identifier used in URLs and templates. Only letters, numbers, hyphens, and underscores are allowed."))
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name=_("is active"),
+        help_text=_("Whether this navigation is active.")
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("created at"),
+        help_text=_("Time when this navigation was created.")
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_("updated at"),
+        help_text=_("Time when this navigation was last updated.")
+    )
 
     class Meta:
-        verbose_name = _("Navigation")
-        verbose_name_plural = _("Navigations")
+        verbose_name = _("navigation")
+        verbose_name_plural = _("navigations")
         ordering = ['id']
 
     def __str__(self):
@@ -182,86 +298,73 @@ class NavItem(models.Model):
     Navigation menu item table.
     Supports multi-level nesting, sorting, icons, visibility toggles, and target options.
     """
-    nav = models.ForeignKey(Nav, on_delete=models.CASCADE, related_name='items',
-                            verbose_name=_("Navigation"), help_text=_("Navigation container."))
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='children',
-                               verbose_name=_("Parent Item"), help_text=_("Parent item for hierarchical structure."))
-    name = models.CharField(max_length=100, verbose_name=_("Name"),
-                            help_text=_("Name of the navigation item."))
-    url = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("URL"),
-                           help_text=_("URL for this navigation item."))
-    icon = models.CharField(max_length=100, blank=True, null=True, verbose_name=_("Icon Class"),
-                            help_text=_("Icon class for this navigation item."))
-    target = models.CharField(max_length=10, choices=TargetChoices, default=TargetChoices.SELF,
-                              verbose_name=_("Target"), help_text=_("Target behavior when opening the link."))
-    sort_order = models.IntegerField(default=DEFAULT_SORT_ORDER, verbose_name=_("Sort Order"),
-                                     help_text=_("Order for navigation item sorting."))
-    is_visible = models.BooleanField(default=True, verbose_name=_("Is Visible"),
-                                     help_text=_("Whether this item is visible."))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"),
-                                      help_text=_("Time when this navigation item was created."))
-    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated At"),
-                                      help_text=_("Time when this navigation item was last updated."))
+    nav = models.ForeignKey(
+        Nav,
+        on_delete=models.CASCADE,
+        related_name='items',
+        verbose_name=_("navigation"),
+        help_text=_("Navigation container.")
+    )
+    parent = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='children',
+        verbose_name=_("parent item"),
+        help_text=_("Parent item for hierarchical structure.")
+    )
+    name = models.CharField(
+        max_length=100,
+        verbose_name=_("name"),
+        help_text=_("Name of the navigation item.")
+    )
+    url = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name=_("url"),
+        help_text=_("URL for this navigation item.")
+    )
+    icon = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        verbose_name=_("icon class"),
+        help_text=_("Icon class for this navigation item.")
+    )
+    target = models.CharField(
+        max_length=10,
+        choices=TargetChoices,  # noqa
+        default=TargetChoices.SELF,
+        verbose_name=_("target"),
+        help_text=_("Target behavior when opening the link.")
+    )
+    sort_order = models.PositiveIntegerField(
+        default=DEFAULT_SORT_ORDER,
+        verbose_name=_("sort order"),
+        help_text=_("Order for navigation item sorting.")
+    )
+    is_visible = models.BooleanField(
+        default=True,
+        verbose_name=_("is visible"),
+        help_text=_("Whether this item is visible.")
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("created at"),
+        help_text=_("Time when this navigation item was created.")
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_("updated at"),
+        help_text=_("Time when this navigation item was last updated.")
+    )
 
     class Meta:
-        verbose_name = _("Navigation Item")
-        verbose_name_plural = _("Navigation Items")
+        verbose_name = _("navigation item")
+        verbose_name_plural = _("navigation items")
         ordering = ['sort_order']
 
     def __str__(self):
         return self.name
-
-
-class UploadFile(models.Model):
-    """
-    Model to store metadata for each uploaded file.
-    """
-    uploader = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='uploaded_files',
-                                 verbose_name=_("Uploader"), help_text=_("The user who uploaded the file (optional)."))
-    filename = models.CharField(max_length=255, verbose_name=_("Filename"),
-                                help_text=_("Saved file name including extension."))
-    original_name = models.CharField(max_length=255, verbose_name=_("Original Name"),
-                                     help_text=_("Original file name before upload."))
-    path = models.CharField(max_length=500, verbose_name=_("Path"),
-                            help_text=_("Relative path to the saved file."))
-    mime_type = models.CharField(max_length=100, choices=MimeType, verbose_name=_("MIME Type"),
-                                 help_text=_("MIME type of the uploaded file."))
-    size = models.BigIntegerField(verbose_name=_("Size"),
-                                  help_text=_("File size in bytes."))
-    hash = models.CharField(max_length=64, db_index=True, unique=True, verbose_name=_("Hash"),
-                            help_text=_("SHA-256 hash of the file content."))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"),
-                                      help_text=_("Upload timestamp."))
-
-    class Meta:
-        verbose_name = _('Uploaded File')
-        verbose_name_plural = _('Uploaded Files')
-
-    def __str__(self):
-        return self.original_name
-
-    @classmethod
-    def create_from_result(cls, result: UploadResult, user: User = None):
-        obj, created = cls.objects.get_or_create(
-            hash=result.hash,
-            defaults={
-                'uploader': user,
-                'filename': result.filename,
-                'original_name': result.original_name,
-                'path': result.path,
-                'mime_type': result.mime_type,
-                'size': result.size,
-            }
-        )
-        return obj
-
-    def to_result(self) -> UploadResult:
-        return UploadResult(
-            path=self.path,
-            filename=self.filename,
-            size=self.size,
-            mime_type=self.mime_type,
-            original_name=self.original_name,
-            hash=self.hash,
-            create_at=self.created_at,
-        )

@@ -10,14 +10,16 @@ Author:
 Created:
   2025-06-16
 """
+import logging
 from dataclasses import dataclass
 from typing import Any
 
-from django.core.cache import cache
 from django.core.mail.backends.smtp import EmailBackend as SMTPBackend
 
 from djangocmf.cmfadmin.enums import ConfigCategory
-from djangocmf.cmfadmin.models import Config
+from djangocmf.cmfadmin.service.config import ConfigService
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -37,8 +39,8 @@ class EmailConfig:
         use_tls (bool): Whether to use TLS (default: False).
         use_ssl (bool): Whether to use SSL (default: False).
         timeout (int | None): Optional socket timeout in seconds.
-        ssl_keyfile (str | None): Path to SSL key file.
-        ssl_certfile (str | None): Path to SSL certificate file.
+        ssl_key_file (str | None): Path to SSL key file.
+        ssl_cert_file (str | None): Path to SSL certificate file.
 
     Class Methods:
         get() -> dict[str, Any]:
@@ -57,58 +59,51 @@ class EmailConfig:
     use_tls: bool = False
     use_ssl: bool = False
     timeout: int | None = None
-    ssl_keyfile: str | None = None
-    ssl_certfile: str | None = None
+    ssl_key_file: str | None = None
+    ssl_cert_file: str | None = None
 
     @classmethod
     def get(cls) -> dict[str, Any]:
         """
-        Fetch email config from database.
-        Return empty dict if not configured or incomplete.
+        Fetch SMTP configuration from the database via ConfigService.
+        Returns an empty dict if the host is not configured or
+        SSL and TLS are both enabled (invalid combination).
         """
-        cache_key = "email_backend_config"
-        cached_config = cache.get(cache_key)
-        if cached_config is not None:
-            return cached_config
-
         try:
-            email_configs_from_db = Config.objects.filter(category=ConfigCategory.EMAIL).values('key', 'value')
-            if not email_configs_from_db.exists():
+            data = ConfigService.get_category(ConfigCategory.EMAIL)
+
+            host = data.get('smtp_host', '')
+            if not host:
                 return {}
 
-            data = {r['key']: r['value'] for r in email_configs_from_db}
-            if not data.get('email_host'):
+            port = data.get('smtp_port')
+            use_ssl = data.get('smtp_use_ssl', False)
+            use_tls = data.get('smtp_use_tls', False)
+
+            # Invalid combination — refuse to proceed
+            if use_ssl and use_tls:
                 return {}
 
-            # Validate port if present
-            port = None
-            if data.get('email_port'):
-                try:
-                    port = int(data.get('email_port'))
-                    if not (0 < port <= 65535):
-                        return {}
-                except ValueError:
-                    return {}
+            timeout_raw = data.get('timeout', '0')
+            timeout = None if timeout_raw == '0' else int(timeout_raw)
+
             config_obj = cls(
-                host=data.get('email_host'),
+                host=host,
                 port=port,
-                username=data.get('email_host_user'),
-                password=data.get('email_host_password'),
-                use_tls=data.get('email_use_tls') == 'on',
-                use_ssl=data.get('email_use_ssl') == 'on',
-                timeout=int(data.get('email_timeout')) if data.get('email_timeout') else None,
+                username=data.get('smtp_username') or None,
+                password=data.get('smtp_password') or None,
+                use_tls=use_tls,
+                use_ssl=use_ssl,
+                timeout=timeout,
             )
-            if config_obj.use_tls and config_obj.use_ssl:
-                return {}
+            return config_obj.to_dict()
 
-            config_dict = config_obj.to_dict()
-            cache.set(cache_key, config_dict, timeout=3600)
-            return config_dict
         except Exception as e:
+            logger.warning('Failed to load email config: %s', e)
             return {}
 
     def to_dict(self) -> dict[str, Any]:
-        return self.__dict__
+        return {k: v for k, v in self.__dict__.items() if v is not None}
 
 
 class EmailBackend(SMTPBackend):
@@ -121,4 +116,6 @@ class EmailBackend(SMTPBackend):
         backend_config = EmailConfig.get()
         if backend_config:
             kwargs.update(backend_config)
+        # If no database config is available, fall back to Django's default
+        # settings (EMAIL_HOST, EMAIL_PORT, etc.) via the parent constructor.
         super().__init__(*args, **kwargs)

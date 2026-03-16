@@ -27,12 +27,12 @@
                                 <a href="javascript:void(0);" class="nav-link px-0 hide-theme-dark" onclick="toggleTheme()"
                                    title="{% translate 'Toggle theme (current theme: light)' %}"
                                    data-bs-toggle="tooltip" data-bs-placement="bottom">
-                                    {% sprite 'tabler-moon' 'icon' %}
+                                    {% icon 'tabler-moon' 'icon' %}
                                 </a>
                                 <a href="javascript:void(0);" class="nav-link px-0 hide-theme-light" onclick="toggleTheme()"
                                    title="{% translate 'Toggle theme (current theme: dark)' %}"
                                    data-bs-toggle="tooltip" data-bs-placement="bottom">
-                                    {% sprite 'tabler-sun' 'icon' %}
+                                    {% icon 'tabler-sun' 'icon' %}
                                 </a>
                             </div>
                             <!-- END THEME MODE -->
@@ -47,7 +47,7 @@
                                 <div class="nav-item dropdown d-none d-md-flex me-3">
                                     <a href="javascript:void(0);" class="nav-link px-0 show" data-bs-toggle="dropdown"
                                        aria-label="Show app menu" data-bs-auto-close="outside" aria-expanded="true">
-                                        {% sprite 'tabler-world' 'icon' %}
+                                        {% icon 'tabler-world' 'icon' %}
                                     </a>
                                     <div class="dropdown-menu dropdown-menu-arrow dropdown-menu-end dropdown-menu-card">
                                         <div class="card">
@@ -56,7 +56,7 @@
                                                     {% translate 'Language' %}: {{ language_info.name_local }}
                                                 </div>
                                                 <div class="card-actions">
-                                                    {% sprite 'tabler-language' 'icon' %}
+                                                    {% icon 'tabler-language' 'icon' %}
                                                 </div>
                                             </div>
                                             <div class="card-body scroll-y p-2" style="max-height: 50vh">
@@ -100,33 +100,42 @@
                                     </div>
                                 </div>
                             </a>
+                            <!-- BEGIN DROPDOWN MENU -->
                             <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                                <a href="{% url 'admin:profile' %}" class="dropdown-item">{% translate 'Profile' %}</a>
-                                {% if user.has_usable_password %}
-                                    <a href="{% url 'admin:password_change' %}"
-                                       class="dropdown-item">{% translate 'Change password' %}</a>
-                                {% endif %}
-                                <div class="dropdown-divider"></div>
-                                <form id="logout-form" method="post" action="{% url 'admin:logout' %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="dropdown-item">{% translate "Log out" %}</button>
-                                </form>
-
+                                {% block userlinks %}
+                                    <a href="{% url 'admin:profile' %}" class="dropdown-item">{% translate 'Profile' %}</a>
+                                    {% if user.has_usable_password %}
+                                        <a href="{% url 'admin:password_change' %}"
+                                           class="dropdown-item">{% translate 'Change password' %}</a>
+                                    {% endif %}
+                                    {% if user.is_active and user.is_staff %}
+                                        {% url 'django-admindocs-docroot' as docsroot %}
+                                        {% if docsroot %}
+                                            <div class="dropdown-divider"></div>
+                                            <a href="{{ docsroot }}">{% translate 'Documentation' %}</a> /
+                                        {% endif %}
+                                    {% endif %}
+                                    <div class="dropdown-divider"></div>
+                                    <form id="logout-form" method="post" action="{% url 'admin:logout' %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item">{% translate "Log out" %}</button>
+                                    </form>
+                                {% endblock %}
                             </div>
+                            <!-- END DROPDOWN MENU -->
                         </div>
                         <!-- END USER INFORMATION -->
                     </div>
-                    <ol class="breadcrumb mb-0" id="crazy-breadcrumb">
-                        <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate 'Home' %}</a></li>
-                        {% for bread in admin_breadcrumbs %}
-                            {% if bread.url %}
-                                <li class="breadcrumb-item"><a href="{{ bread.url }}">{{ bread.title }}</a></li>
-                            {% else %}
-                                <li class="breadcrumb-item link-blue">{{ bread.title }}</li>
-                            {% endif %}
-                        {% endfor %}
-                        {% block breadcrumbs %}{% endblock %}
-                    </ol>
+                    {% block breadcrumbs %}
+                        <ol class="breadcrumb breadcrumb-arrows mb-0" id="crazy-breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate 'Home' %}</a></li>
+                            {% for bread in admin_breadcrumbs %}
+                                <li class="breadcrumb-item{% if bread.is_current %} active{% endif %}">
+                                    <a href="{{ bread.url }}">{{ bread.title }}</a>
+                                </li>
+                            {% endfor %}
+                        </ol>
+                    {% endblock %}
                 </div>
             </header>
         {% endif %}

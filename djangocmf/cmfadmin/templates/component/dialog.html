@@ -1,24 +1,24 @@
 <!-- components/dialog.html -->
-{% load i18n cmf_tags static %}
+{% load i18n static cmf_tags %}
 
 <div class="modal modal-blur fade" id="cmf-dialog-template" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
         <div class="modal-content">
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% translate 'Close' %}"></button>
-            <div class="modal-status" id="dialogStatus"></div>
+            <div class="dialog-status"></div>
             <div class="modal-body text-center py-4">
-                <div id="dialogIcon"></div>
-                <h3 id="dialogTitle" class="text-uppercase"></h3>
-                <div id="dialogMessage" class="text-secondary"></div>
+                <div class="dialog-icon"></div>
+                <h5 class="dialog-title text-uppercase"></h5>
+                <div class="dialog-message text-secondary"></div>
             </div>
             <div class="modal-footer">
                 <div class="w-100">
                     <div class="row">
-                        <div class="col">
-                            <button id="dialogCancelBtn" class="btn w-100" data-bs-dismiss="modal"></button>
+                        <div class="col dialog-cancel-col">
+                            <button class="dialog-cancel-btn btn w-100" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="col">
-                            <button id="dialogOkBtn" class="btn w-100"></button>
+                            <button class="dialog-ok-btn btn w-100"></button>
                         </div>
                     </div>
                 </div>
@@ -27,12 +27,13 @@
     </div>
 </div>
 <script>
-    // SVG icons
+    // Pre-render SVG icons from the sprite at template time.
+    // These are referenced by Dialog.show() when setting the dialog icon.
     const DIALOG_ICONS = {
-        success: `{% sprite 'tabler-check' 'icon mb-2 text-success icon-lg' %}`,
-        danger: `{% sprite 'tabler-alert-octagon' 'icon mb-2 text-danger icon-lg' %}`,
-        warning: `{% sprite 'tabler-alert-triangle' 'icon mb-2 text-warning icon-lg' %}`,
-        info: `{% sprite 'tabler-info-circle' 'icon mb-2 text-info icon-lg' %}`
+        success: `{% icon 'tabler-check' 'icon mb-2 text-success icon-lg' %}`,
+        danger:  `{% icon 'tabler-alert-octagon' 'icon mb-2 text-danger icon-lg' %}`,
+        warning: `{% icon 'tabler-alert-triangle' 'icon mb-2 text-warning icon-lg' %}`,
+        info:    `{% icon 'tabler-info-circle' 'icon mb-2 text-info icon-lg' %}`
     };
 </script>
 <script src="{% static 'admin/js/components/dialog.js' %}"></script>

@@ -12,8 +12,7 @@ Created:
 from dataclasses import dataclass, field
 from typing import Any
 
-from django.conf import settings
-from django.templatetags.static import static
+from django.utils.functional import Promise
 
 from djangocmf.core.constants import DEFAULT_SORT_ORDER
 from djangocmf.core.libs.tree import TreeNode
@@ -29,8 +28,6 @@ class MenuNode(TreeNode["MenuNode"]):
         url (str): The URL that the menu item points to.
         icon (str|None): Optional icon class for the menu item.
         sort_order (int): Sorting order within the group. Lower values appear first.
-        is_active (bool): Whether the menu item is active.
-        visible (bool): Whether the menu item is visible.
         remark (str | None): Optional remark or note for the menu item.
         source (str | None): Data source identifier for the menu item.
         app_label (str | None): App label this menu item belongs to.
@@ -40,8 +37,6 @@ class MenuNode(TreeNode["MenuNode"]):
     url: str | None = None
     icon: str | None = None
     sort_order: int = DEFAULT_SORT_ORDER
-    is_active: bool = True
-    visible: bool = True
     remark: str | None = None
     source: str | None = None
     app_label: str | None = None
@@ -73,28 +68,7 @@ class MenuNode(TreeNode["MenuNode"]):
             ValueError: If both `include` and `exclude` are provided.
         """
         data = super().to_dict(include=include, exclude=exclude, depth=depth)
-        data['sprite_path'] = self.sprite_path
         return data
-
-    @property
-    def sprite_path(self) -> str:
-        """
-        Return the sprite file path for the current menu item's icon.
-
-        Rules:
-            - If the icon name starts with "tabler-", it uses the built-in system sprite.
-            - Otherwise, it uses the user-defined custom sprite file.
-
-        The custom sprite file path can be configured via the `CMF_CUSTOM_SPRITE`
-        setting in Django settings. If not defined, it defaults to 'svg/custom_sprite.svg'.
-
-        Returns:
-            str: URL path to the corresponding sprite file.
-        """
-        if self.icon and self.icon.startswith("tabler-"):
-            return static('admin/svg/sprite.svg')
-        else:
-            return static(getattr(settings, 'CMF_CUSTOM_SPRITE', 'svg/custom_sprite.svg'))
 
 
 def menu(
@@ -105,6 +79,7 @@ def menu(
         parent_key: str | None = None,
         sort_order: int = DEFAULT_SORT_ORDER,
         icon: str | None = None,
+        permissions: list[str] | None = None,
         remark: str | None = None,
         extra: dict[str, Any] | None = None,
 ) -> MenuNode:
@@ -125,7 +100,7 @@ def menu(
     if not isinstance(key, str) or not key:
         raise ValueError("menu(): 'key' must be a non-empty string")
 
-    if not isinstance(title, str) or not title:
+    if not title or not isinstance(title, (str, Promise)):
         raise ValueError("menu(): 'title' must be a non-empty string")
 
     if parent_key is not None and not isinstance(parent_key, str):
@@ -149,6 +124,7 @@ def menu(
         parent_id=parent_key,
         sort_order=sort_order,
         icon=icon,
+        permissions=permissions or [],
         remark=remark,
         extra=extra or {},
     )

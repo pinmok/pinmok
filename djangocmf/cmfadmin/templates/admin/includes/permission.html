@@ -16,7 +16,7 @@
             wrapper.classList.add('form-check', 'form-check-inline', 'me-2', 'mb-1'); // horizontal
 
             const input = document.createElement('input');
-            input.type = 'checkbox';
+            input.type  = 'checkbox';
             input.classList.add('form-check-input', 'permission-checkbox');
 
             const model_type = '{{ model_type }}';
@@ -56,12 +56,12 @@
                 iconsCol.style.maxWidth = '36px';
 
                 const hasMenuChildren = Array.isArray(node.children) && node.children.some(c => !isPermissionNode(c));
-                const toggle = document.createElement('span');
+                const toggle          = document.createElement('span');
                 toggle.classList.add('me-1', 'cursor-pointer', 'toggle-icon');
-                toggle.innerHTML = hasMenuChildren ? '{% sprite "tabler-chevron-right" "icon" %}' : '<span style="display:inline-block;width:18px"></span>';
+                toggle.innerHTML = hasMenuChildren ? '{% icon "tabler-chevron-right" "icon" %}' : '<span style="display:inline-block;width:18px"></span>';
 
                 const groupCheckbox = document.createElement('input');
-                groupCheckbox.type = 'checkbox';
+                groupCheckbox.type  = 'checkbox';
                 groupCheckbox.classList.add('form-check-input', 'group-checkbox');
                 groupCheckbox.style.margin = '0 6px 0 0';
 
@@ -94,14 +94,14 @@
 
                 const menuChildren = Array.isArray(node.children) ? node.children.filter(c => !isPermissionNode(c)) : [];
                 if (menuChildren.length) {
-                    const childUl = buildTree(menuChildren);
+                    const childUl         = buildTree(menuChildren);
                     childUl.style.display = 'none';
                     li.appendChild(childUl);
 
                     toggle.addEventListener('click', () => {
-                        const hidden = childUl.style.display === 'none';
+                        const hidden          = childUl.style.display === 'none';
                         childUl.style.display = hidden ? 'block' : 'none';
-                        toggle.innerHTML = hidden ? '{% sprite "tabler-chevron-down" "icon" %}' : '{% sprite "tabler-chevron-right" "icon" %}';
+                        toggle.innerHTML      = hidden ? '{% icon "tabler-chevron-down" "icon" %}' : '{% icon "tabler-chevron-right" "icon" %}';
                     });
                 }
 
@@ -135,24 +135,24 @@
             const li = cb.closest('li');
             if (!li) return;
             const groupCb = li.querySelector(':scope > div .group-checkbox');
-            const desc = li.querySelectorAll(':scope .permission-checkbox');
+            const desc    = li.querySelectorAll(':scope .permission-checkbox');
             if (!groupCb || !desc.length) return;
 
-            const allChecked = Array.from(desc).every(p => p.checked);
+            const allChecked  = Array.from(desc).every(p => p.checked);
             const noneChecked = Array.from(desc).every(p => !p.checked);
 
-            groupCb.checked = allChecked;
+            groupCb.checked       = allChecked;
             groupCb.indeterminate = !allChecked && !noneChecked;
         }
 
         // Init group states
         document.querySelectorAll('#permission-tree li').forEach(li => {
             const groupCb = li.querySelector(':scope > div .group-checkbox');
-            const desc = li.querySelectorAll(':scope .permission-checkbox');
+            const desc    = li.querySelectorAll(':scope .permission-checkbox');
             if (!groupCb || !desc.length) return;
-            const allChecked = Array.from(desc).every(p => p.checked);
-            const noneChecked = Array.from(desc).every(p => !p.checked);
-            groupCb.checked = allChecked;
+            const allChecked      = Array.from(desc).every(p => p.checked);
+            const noneChecked     = Array.from(desc).every(p => !p.checked);
+            groupCb.checked       = allChecked;
             groupCb.indeterminate = !allChecked && !noneChecked;
         });
 

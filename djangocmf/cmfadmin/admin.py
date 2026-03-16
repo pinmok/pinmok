@@ -13,76 +13,128 @@ Author:
 Created:
   2025-06-08
 """
-import json
-
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
+from django.contrib.auth.models import User, Group
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from djangocmf import cmfadmin
-from djangocmf.cmfadmin.models import ExternalLink, Nav
-from djangocmf.cmfadmin.options import CMFModelAdmin
-from djangocmf.cmfadmin.service.authorization import PermissionService
+from djangocmf.cmfadmin.enums import ConfigCategory, UploadConfigKey
+from djangocmf.cmfadmin.forms.config_forms import EmailConfigForm, UploadConfigForm
+from djangocmf.cmfadmin.forms.forms import CMFAdminPasswordResetForm, CMFAdminUserCreationForm
+from djangocmf.cmfadmin.models import ExternalLink, Nav, SiteConfig, EmailConfig, UploadConfig
+from djangocmf.cmfadmin.options import CMFModelAdmin, CMFModelAdminMixin, ConfigModelAdmin, ExtraPanel
 
 
-class CmfUserAdmin(UserAdmin, CMFModelAdmin):
+@cmfadmin.register(User)
+class CmfUserAdmin(CMFModelAdminMixin, UserAdmin):
     """
     Custom admin for Django's User model with CMF enhancements.
-
-    Note: This is registered in apps.py, not here.
     """
-    add_form_template = "admin/auth/user/user_add.html"
-    change_form_template = "admin/auth/user/user_change_form.html"
-
-    def render_change_form(self, request, context, add=..., change=..., form_url=..., obj=..., ):
-        """
-       Render the change/add form with dynamic field metadata.
-       """
-        # Attach permission tree if applicable
-        perms_tree = PermissionService.get_permission_tree_for_instance(obj)
-        permissions = json.dumps([node.to_dict() for node in perms_tree])
-
-        context.update({'permissions': permissions, 'model_type': 'user'})
-
-        return super().render_change_form(request, context, add, change, form_url, obj)
-
-    def save_model(self, request, obj, form, change):
-        """
-        Save extra permissions for the user.
-
-        - Basic user fields are automatically handled by Admin.
-        - Only custom logic (menu permissions, business permissions) is needed here.
-        """
-        super().save_model(request, obj, form, change)
-        # Save menu permissions
-        PermissionService.save_menu_permissions(obj, request.POST.getlist("menu_permissions[]"))
-        # Save custom permissions
-        PermissionService.save_custom_permissions(obj, request.POST.getlist("custom_permissions[]"))
+    fieldsets = (
+        (None, {"fields": ("username", "password")}),
+        (_("Personal info"), {"fields": (("first_name", "last_name"), "email")}),
+        (
+            _("Permissions"),
+            {
+                "fields": (
+                    ("is_active", "is_staff", "is_superuser"),
+                    "groups",
+                    "user_permissions",
+                ),
+            },
+        ),
+        (_("Important dates"), {"fields": (("last_login", "date_joined"),)}),
+    )
+    readonly_fields = ("last_login", "date_joined")
+    add_form = CMFAdminUserCreationForm
+    change_password_form = CMFAdminPasswordResetForm
 
 
-class CmfGroupAdmin(GroupAdmin, CMFModelAdmin):
+@cmfadmin.register(Group)
+class CmfGroupAdmin(CMFModelAdminMixin, GroupAdmin):
     """
     Custom admin for Django's Group model with CMF enhancements.
-
-    Note: This is registered in apps.py, not here.
     """
-    add_form_template = "admin/auth/user/group_add.html"
-    change_form_template = "admin/auth/user/group_add.html"
+    pass
 
-    def render_change_form(self, request, context, add=..., change=..., form_url=..., obj=..., ):
-        perms_tree = PermissionService.get_permission_tree_for_instance(obj)
-        permissions = json.dumps([node.to_dict() for node in perms_tree])
 
-        context.update({'permissions': permissions, 'model_type': 'group'})
-        return super().render_change_form(request, context, add, change, form_url, obj)
+@cmfadmin.register(SiteConfig)
+class SiteConfigAdmin(ConfigModelAdmin):
+    menu_order = 1000
+    category = ConfigCategory.SITE
+    fieldsets = [
+        (_("Site Information"), {
+            "fields": [
+                ("site_name", "site_slogan"),
+                ("site_logo", "icp", "pns"),
+            ]
+        }),
+        (_("Contact Information"), {
+            "fields": [
+                ("service_phone", "service_email"),
+                "contact_address",
+                ("wechat_qrcode", "wechat_mini_program", "wechat_official_account"),
+            ]
+        }),
+        (_("Social Media"), {
+            "fields": [
+                ("facebook_link", "x_link"),
+                ("linkedin_link", "instagram_link")
+            ],
+            'classes': ('collapse',),
+        }),
+        (_("SEO Settings"), {
+            "fields": [
+                ("seo_title", "seo_keywords"),
+                "seo_description",
+            ],
+            'classes': ('collapse',),
+        }),
+    ]
 
-    def save_model(self, request, obj, form, change):
-        super().save_model(request, obj, form, change)
-        # Save menu permissions
-        PermissionService.save_menu_permissions(obj, request.POST.getlist("menu_permissions[]"))
-        # Save custom permissions
-        PermissionService.save_custom_permissions(obj, request.POST.getlist("custom_permissions[]"))
+
+@cmfadmin.register(EmailConfig)
+class EmailConfigAdmin(ConfigModelAdmin):
+    menu_order = 2000
+    category = ConfigCategory.EMAIL
+    form = EmailConfigForm
+    extra_panels = [ExtraPanel(label=_("Test Email Sending"), template="config/test_email.html", icon='tabler-mail-check')]
+    fieldsets = [
+        (_("Base Settings"), {
+            "fields": [
+                "default_from_email",
+                ("smtp_host", "smtp_port", "smtp_username", "smtp_password"),
+                ("smtp_use_ssl", "smtp_use_tls", "timeout")
+            ]
+        }),
+        (_("Email Template"), {
+            "fields": [
+                "template_from_name",
+                "template_subject",
+                "template_content",
+                "template_variables"
+            ], 'classes': ('collapse',),
+        }),
+    ]
+
+
+@cmfadmin.register(UploadConfig)
+class UploadConfigAdmin(ConfigModelAdmin):
+    menu_order = 3000
+    category = ConfigCategory.UPLOAD
+    form = UploadConfigForm
+    fieldsets = [
+        (None, {"fields": [
+            (UploadConfigKey.UPLOAD_MAX_FILES, UploadConfigKey.UPLOAD_PATH_RULE),
+            (UploadConfigKey.IMAGE_SIZE, UploadConfigKey.IMAGE_TYPE),
+            (UploadConfigKey.AUDIO_SIZE, UploadConfigKey.AUDIO_TYPE),
+            (UploadConfigKey.VIDEO_SIZE, UploadConfigKey.VIDEO_TYPE),
+            (UploadConfigKey.ARCHIVE_SIZE, UploadConfigKey.ARCHIVE_TYPE),
+            (UploadConfigKey.DOCUMENT_SIZE, UploadConfigKey.DOCUMENT_TYPE),
+        ]})
+    ]
 
 
 @cmfadmin.register(ExternalLink)

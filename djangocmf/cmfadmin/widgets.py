@@ -16,6 +16,9 @@ from django.conf import settings
 from django.contrib.admin.widgets import (
     AdminUUIDInputWidget, AdminRadioSelect, ForeignKeyRawIdWidget, AdminFileWidget,
     AutocompleteMixin, ManyToManyRawIdWidget, AdminURLFieldWidget, )
+from django.core.files.storage import default_storage
+from django.templatetags.static import static
+from django.urls import reverse
 
 
 class CMFWidgetMixin:
@@ -91,6 +94,10 @@ class CMFTextarea(CMFWidgetMixin, forms.Textarea):
     pass
 
 
+class CMFPassword(CMFWidgetMixin, forms.PasswordInput):
+    pass
+
+
 # Select
 class CMFSelect(CMFWidgetMixin, forms.Select):
     default_css_class = 'form-select'
@@ -100,9 +107,42 @@ class CMFSelectMultiple(CMFWidgetMixin, forms.SelectMultiple):
     default_css_class = 'form-select'
 
 
+class CMFSelectTags(forms.SelectMultiple):
+    def __init__(self, *args, attrs=None, **kwargs):
+        # Set default class; user-provided attrs will override defaults
+        attrs = {'class': 'form-select', **(attrs or {})}
+        user_class = attrs.get('class')
+        attrs['class'] = f'{user_class} select-multiple-tags'.strip()
+
+        # User attrs override default class
+        super().__init__(*args, attrs=attrs, **kwargs)
+
+    @property
+    def media(self):
+        extra = "" if settings.DEBUG else ".min"
+        return forms.Media(
+            js=(
+                "admin/js/vendor/jquery/jquery%s.js" % extra,
+                "libs/tom-select/js/tom-select.complete%s.js" % extra,
+                "admin/js/widgets/select_tags_input.js",
+            ),
+            css={
+                "screen": (
+                    "libs/tom-select/css/tom-select.tabler%s.css" % extra,
+                ),
+            },
+        )
+
+
 # Checkbox / Radio
-class CMFCheckboxInput(CMFWidgetMixin, forms.CheckboxInput):
+class CMFCheckbox(CMFWidgetMixin, forms.CheckboxInput):
     default_css_class = 'form-check-input'
+
+
+class CMFCheckboxSelectMultiple(CMFWidgetMixin, forms.CheckboxSelectMultiple):
+    default_css_class = 'form-selectgroup-input'
+    template_name = 'forms/widgets/checkbox_select_multiple.html'
+    option_template_name = 'forms/widgets/checkbox_select_multiple_option.html'
 
 
 class CMFRadioSelect(CMFWidgetMixin, AdminRadioSelect):
@@ -167,36 +207,91 @@ class CMFAutocompleteSelectMultiple(CMFAutocompleteMixin, forms.SelectMultiple):
 
 class CMFFileInput(CMFWidgetMixin, AdminFileWidget):
     template_name = "admin/widgets/clearable_file_input.html"
-    default_css_class = 'form-control'
 
 
-class CMFImageFileInput(CMFFileInput):
-    # TODO 添加裁切
-    pass
+class CMFImageFileInput(CMFWidgetMixin, forms.FileInput):
+    """
+    Image upload widget with built-in cropper support.
+
+    Renders a preview image, a hidden input for the file path,
+    and a trigger button that opens the cropper modal.
+
+    The cropper modal is injected into the DOM by the widget's JS.
+    The file is uploaded on form submit, not when the user finishes cropping.
+
+    Attributes passed via attrs:
+        data-crop          : 'true' | 'false' — enable/disable cropper (default: true)
+        data-aspect-ratio  : e.g. '16:9', '1:1', '1.5' — fixed crop ratio (default: free)
+        data-target-width  : max output width in pixels (default: 1920)
+        data-target-height : max output height in pixels (default: none)
+    """
+    template_name = "admin/widgets/image_cropper.html"
+    default_css_class = ''
+
+    class Media:
+        css = {
+            'all': ('libs/cropperjs/cropper.min.css',)
+        }
+        js = (
+            'libs/cropperjs/cropper.min.js',
+            'admin/js/widgets/cropper.js',
+        )
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+
+        final_attrs = context['widget']['attrs']
+        context['widget']['crop'] = final_attrs.get('data-crop', 'true')
+        context['widget']['aspect_ratio'] = final_attrs.get('data-aspect-ratio', '')
+        context['widget']['target_width'] = final_attrs.get('data-target-width', '1920')
+        context['widget']['target_height'] = final_attrs.get('data-target-height', '')
+
+        # Upload URL — resolved at render time
+        context['widget']['upload_url'] = reverse('admin:cmfadmin:upload_file')
+
+        # Placeholder shown when no image is set
+        context['widget']['placeholder'] = static('admin/svg/photo-up.svg')
+
+        # Current image URL (for preview)
+        if value and hasattr(value, 'url'):
+            context['widget']['preview_url'] = value.url
+        elif value and isinstance(value, str) and value:
+            context['widget']['preview_url'] = default_storage.url(value)
+        else:
+            context['widget']['preview_url'] = None
+
+        return context
 
 
 class BaseCMFDateTimeMixin(CMFWidgetMixin):
     template_name = "admin/widgets/datetime.html"
 
-    def __init__(self, attrs=None, format=None):  # noqa
+    def __init__(self, attrs=None, format=None):  # noqa A003
         # Handle style merging: user styles are appended, not overridden
         attributes = attrs or {}
         style = attributes.pop("style", '')
-        merged_style = f'{style} max-width: 12rem;'.strip()
+        merged_style = f'{style} max-width: 13rem;'.strip()
         attrs = {'style': merged_style, **attributes}
+
+        if format is None:
+            format = getattr(self, 'format', None)  # noqa A003
+
         super().__init__(attrs=attrs, format=format)
 
 
 class CMFDateInput(BaseCMFDateTimeMixin, forms.DateInput):
     input_type = 'date'
     icon_name = 'tabler-calendar'
+    format = '%Y-%m-%d'
 
 
 class CMFTimeInput(BaseCMFDateTimeMixin, forms.TimeInput):
     input_type = 'time'
     icon_name = 'tabler-clock-hour'
+    format = '%H:%M'
 
 
 class CMFDateTimeInput(BaseCMFDateTimeMixin, forms.DateTimeInput):
     input_type = 'datetime-local'
     icon_name = 'tabler-calendar-time'
+    format = '%Y-%m-%dT%H:%M'

@@ -17,11 +17,14 @@ import importlib
 import warnings
 
 from django.apps import apps
+from django.conf import settings
 from django.contrib.admin import AdminSite
 from django.core.cache import cache
+from django.template.response import TemplateResponse
 from django.urls import path, include, URLPattern, URLResolver
 from django.views.i18n import JavaScriptCatalog
 
+import djangocmf
 from djangocmf.cmfadmin.utils.helper import get_system_info, get_disk_info
 
 
@@ -37,6 +40,42 @@ class DjangoCmfAdminSite(AdminSite):
     """
     site_header = 'DjangoCMF'
     site_title = 'DjangoCMF Admin'
+
+    @property
+    def password_change_form(self):
+        """
+        Originally a class attribute, converted to a property to avoid
+        AppRegistryNotReady error caused by early import of AdminChangePasswordForm,
+        which transitively imports models before Django's app registry is ready.
+        """
+        from djangocmf.cmfadmin.forms.forms import CMFAdminPasswordChangeForm
+        return CMFAdminPasswordChangeForm
+
+    def admin_view(self, view, cacheable=False):
+        """
+        Wrap an admin view to inject shared context if not already present.
+
+        Overrides the default admin_view to ensure every TemplateResponse
+        contains the shared context data (e.g. admin_menu) provided by
+        each_context(). If the response is not a TemplateResponse, or the
+        context already contains 'admin_menu', it is left untouched.
+
+        Args:
+            view (callable): The view function to wrap.
+            cacheable (bool): Whether the view's response may be cached.
+                              Passed through to the parent implementation.
+
+        Returns:
+            callable: The wrapped view.
+        """
+
+        def inner(request, *args, **kwargs):
+            response = view(request, *args, **kwargs)
+            if isinstance(response, TemplateResponse) and 'admin_menu' not in response.context_data:
+                response.context_data.update(self.each_context(request))
+            return response
+
+        return super().admin_view(inner, cacheable=cacheable)
 
     def i18n_javascript(self, request, extra_context=None):
         """
@@ -74,7 +113,7 @@ class DjangoCmfAdminSite(AdminSite):
             try:
                 mod = importlib.import_module(f"{app.name}.urls")
             except ModuleNotFoundError:
-                # App doesn't have a urls.py, skip it
+                # App doesn't have urls.py, skip it
                 continue
 
             # Look for admin_urlpatterns
@@ -126,6 +165,25 @@ class DjangoCmfAdminSite(AdminSite):
 
         # Append Django's default admin URLs
         return urlpatterns + super().get_urls()
+
+    def each_context(self, request):
+        """
+        Extend the default admin context with CMF-specific data,
+        including menu tree, breadcrumbs, and global settings.
+        """
+        from djangocmf.cmfadmin.service.menu import AdminMenuManager
+
+        context = super().each_context(request)
+
+        menu_tree = AdminMenuManager.get_admin_menu(request, app_list=context['available_apps'])
+        breadcrumbs = AdminMenuManager.get_admin_breadcrumb(request, menu_tree)
+        context.update({
+            'SOFTWARE_NAME': djangocmf.__name__,
+            'USE_I18N': settings.USE_I18N,
+            'admin_menu': menu_tree,
+            'admin_breadcrumbs': breadcrumbs
+        })
+        return context
 
     def index(self, request, extra_context=None):
         """

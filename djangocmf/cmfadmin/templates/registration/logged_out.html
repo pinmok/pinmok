@@ -1,0 +1,18 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block body %}
+    <div class="page page-center">
+        <div class="container-tight py-4">
+            <div class="empty">
+                <p class="empty-title">{% translate "Log out" %}</p>
+                <p class="empty-subtitle text-secondary">
+                    {% translate "Thanks for spending some quality time with the web site today." %}
+                </p>
+                <div class="empty-action">
+                    <a href="{% url 'admin:index' %}" class="btn btn-primary">{% translate 'Log in again' %}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

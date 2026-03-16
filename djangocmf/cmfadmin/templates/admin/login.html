@@ -26,30 +26,28 @@
                         <div class="card card-md">
                             {% if form.non_field_errors %}
                                 <div class="card-header">
-                                    {% for error in form.non_field_errors %}
-                                        <p class="alert alert-danger">{{ error }}</p>
-                                    {% endfor %}
+                                    {% for error in form.non_field_errors %}{% alert error %}{% endfor %}
                                 </div>
                             {% endif %}
                             {% if form.errors and not form.non_field_errors %}
                                 <div class="card-header">
-                                    <p class="alert alert-danger">
+                                    <div class="alert alert-danger">
+                                        <div class="alert-icon">{% icon 'tabler-alert-circle' 'icon alert-icon' %}</div>
                                         {% blocktranslate trimmed count counter=form.errors.items|length %}
-                                            Please correct the error below.
-                                        {% plural %}
-                                            Please correct the errors below.
+                                            Please correct the error below.{% plural %}Please correct the errors below.
                                         {% endblocktranslate %}
-                                    </p>
+                                    </div>
                                 </div>
                             {% endif %}
                             {% if user.is_authenticated %}
                                 <div class="card-header">
-                                    <p class="alert alert-danger">
+                                    <div class="alert alert-danger">
+                                        <div class="alert-icon">{% icon 'tabler-alert-circle' 'icon alert-icon' %}</div>
                                         {% blocktranslate trimmed %}
                                             You are authenticated as {{ username }}, but are not authorized to
                                             access this page. Would you like to login to a different account?
                                         {% endblocktranslate %}
-                                    </p>
+                                    </div>
                                 </div>
                             {% endif %}
                             <div class="card-body">

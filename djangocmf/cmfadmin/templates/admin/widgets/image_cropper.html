@@ -1,0 +1,23 @@
+{% load i18n static %}
+<div class="image-cropper-widget"
+     data-field-name="{{ widget.name }}"
+     data-upload-url="{{ widget.upload_url }}"
+     data-crop="{{ widget.crop|default:'true' }}"
+     data-aspect-ratio="{{ widget.aspect_ratio }}"
+     data-target-width="{{ widget.target_width }}"
+     data-target-height="{{ widget.target_height }}">
+
+    {# Hidden input — stores the file path, submitted with the form #}
+    <input type="hidden" name="{{ widget.name }}" id="id_{{ widget.name }}" value="{{ widget.value|default:'' }}">
+
+    <div class="d-flex align-items-center gap-2 mt-1">
+        {# Preview image #}
+        <img src="{% if widget.preview_url %}{{ widget.preview_url }}{% else %}{{ widget.placeholder }}{% endif %}"
+             class="cropper-widget-preview icon icon-lg mb-2" id="preview_{{ widget.name }}" alt="{% translate 'Preview' %}">
+
+        {# Trigger button #}
+        <button type="button" class="btn btn-outline-primary btn-sm cropper-widget-trigger">
+            {% translate "Select Image" %}
+        </button>
+    </div>
+</div>

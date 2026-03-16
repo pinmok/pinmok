@@ -29,6 +29,10 @@
                                     <table class="table table-sm table-borderless table-striped" style="max-width: 22rem">
                                         <tbody>
                                         <tr>
+                                            <td class="fw-bold">{{ sys_info.cmf_name }} {% translate 'version' %}</td>
+                                            <td class="text-end">{{ sys_info.cmf_version }}</td>
+                                        </tr>
+                                        <tr>
                                             <td class="fw-bold">{% translate 'Operating System' %}</td>
                                             <td class="text-end">{{ sys_info.os }}</td>
                                         </tr>
@@ -39,10 +43,6 @@
                                         <tr>
                                             <td class="fw-bold">Django {% translate 'version' %}</td>
                                             <td class="text-end">{{ sys_info.django_version }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="fw-bold">{{ sys_info.cmf_name }} {% translate 'version' %}</td>
-                                            <td class="text-end">{{ sys_info.cmf_version }}</td>
                                         </tr>
                                         <tr>
                                             <td class="fw-bold">{% translate 'Database' %}</td>
@@ -116,11 +116,11 @@
                                     <div class="text-truncate {% if entry.is_addition %}text-success{% endif %}{% if entry.is_change %}text-primary{% endif %}{% if entry.is_deletion %}text-danger{% endif %}">
                                         <strong>
                                             {% if entry.is_addition %}
-                                                {% sprite 'tabler-square-add' 'icon' %} {% translate 'Added:' %}
+                                                {% icon 'tabler-square-add' 'icon' %} {% translate 'Added:' %}
                                             {% elif entry.is_change %}
-                                                {% sprite 'tabler-edit' 'icon' %} {% translate 'Changed:' %}
+                                                {% icon 'tabler-edit' 'icon' %} {% translate 'Changed:' %}
                                             {% elif entry.is_deletion %}
-                                                {% sprite 'tabler-delete' 'icon' %} {% translate 'Deleted:' %}
+                                                {% icon 'tabler-delete' 'icon' %} {% translate 'Deleted:' %}
                                             {% endif %}
                                         </strong>
                                         <small>
