@@ -21,6 +21,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import HttpRequest
 from django.urls import reverse, NoReverseMatch
+from django.utils.translation import gettext as _
 
 from djangocmf import site
 from djangocmf.cmfadmin import constants
@@ -256,6 +257,7 @@ class AdminMenuService:
 
         for menu in menu_data:
             node = MenuNode.build_node(menu)
+            node.title = _(node.title)
             node.source = MenuSource.DATABASE
             # Ensure permissions is always a list regardless of DB value.
             if not isinstance(node.permissions, list):

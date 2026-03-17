@@ -77,9 +77,8 @@ class ConfigCategory(models.TextChoices):
     TEMPLATE = 'template', 'Template Management'
     SYSTEM = 'system', 'System Settings'
     LOG = 'log', 'Log Management'
-    NAV = 'nav', 'Navigation'
+    NAV = 'nav', 'Navigations'
     LINKS = 'links', 'External Links'
-    TEST = 'test', 'Test Management'
 
 
 class UploadConfigKey(StrEnum):

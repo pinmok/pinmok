@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DjangoCMF 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-08 13:03+0800\n"
+"POT-Creation-Date: 2026-03-17 21:53+0800\n"
 "PO-Revision-Date: 2025-11-17 00:54+0800\n"
 "Last-Translator: 惠达浪 <crazys@126.com>\n"
 "Language-Team: DjangoCMF Team\n"
@@ -18,77 +18,94 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: .\cmfadmin\static\admin\js\SelectFilter2.js:50
-#, javascript-format
-msgid "Choose %s by selecting them and then select the \"Choose\" arrow button."
-msgstr "先选择 %s，然后点击“选择”箭头按钮以加入。"
-
-#: .\cmfadmin\static\admin\js\SelectFilter2.js:74
-#, javascript-format
-msgid "Choose all %s"
-msgstr "选择全部%s"
-
-#: .\cmfadmin\static\admin\js\SelectFilter2.js:86
-#, javascript-format
-msgid "Choose selected %s"
-msgstr "选择已选中的%s"
-
-#: .\cmfadmin\static\admin\js\SelectFilter2.js:94
-#, javascript-format
-msgid "Remove selected %s"
-msgstr "移除已选中的%s"
-
-#: .\cmfadmin\static\admin\js\SelectFilter2.js:110
-#, javascript-format
-msgid "Remove %s by selecting them and then select the \"Remove\" arrow button."
-msgstr "选中%s，然后点击“移除”箭头按钮即可移除。"
-
-#: .\cmfadmin\static\admin\js\SelectFilter2.js:143
-msgid "(click to clear)"
-msgstr "(点击清除)"
-
-#: .\cmfadmin\static\admin\js\SelectFilter2.js:147
-#, javascript-format
-msgid "Remove all %s"
-msgstr "移除全部的%s"
-
-#: .\cmfadmin\static\admin\js\admin.js:121
-#: .\cmfadmin\static\admin\js\components\dialog.js:15
+#: .\static\admin\js\admin.js:160
 msgid "Success"
 msgstr "成功"
 
-#: .\cmfadmin\static\admin\js\admin.js:134
+#: .\static\admin\js\admin.js:172
 msgid "Network error or server exception."
 msgstr "网络错误或服务器异常。"
 
-#: .\cmfadmin\static\admin\js\admin.js:231
+#: .\static\admin\js\admin.js:275
 msgid "Are you sure you want to delete this file?"
 msgstr "你确定要删除此文件吗？"
 
-#: .\cmfadmin\static\admin\js\admin.js:231
+#: .\static\admin\js\admin.js:275
 msgid "Confirm to delete"
 msgstr "确认删除"
 
-#: .\cmfadmin\static\admin\js\components\cropper.js:91
-msgid "Missing cropper parameters."
-msgstr "缺少裁切的参数"
+#: .\static\admin\js\autocomplete.js:12
+msgid "Select"
+msgstr "选择"
 
-#: .\cmfadmin\static\admin\js\components\dialog.js:12
+#: .\static\admin\js\widgets\cropper.js:34
+msgid "Crop Image"
+msgstr "裁剪图片"
+
+#: .\static\admin\js\widgets\cropper.js:35
+msgid "Close"
+msgstr "关闭"
+
+#: .\static\admin\js\widgets\cropper.js:41
+msgid "Crop Preview"
+msgstr "裁剪预览"
+
+#: .\static\admin\js\widgets\cropper.js:45
+msgid "Crop Ratio"
+msgstr "裁剪比例"
+
+#: .\static\admin\js\widgets\cropper.js:56
+msgid "Free"
+msgstr "自由"
+
+#: .\static\admin\js\widgets\cropper.js:59
+msgid "Custom"
+msgstr "自定义"
+
+#: .\static\admin\js\widgets\cropper.js:60
+msgid "Width"
+msgstr "宽度"
+
+#: .\static\admin\js\widgets\cropper.js:62
+msgid "Height"
+msgstr "高度"
+
+#: .\static\admin\js\widgets\cropper.js:63
 msgid "OK"
 msgstr "确认"
 
-#: .\cmfadmin\static\admin\js\components\dialog.js:14
-msgid "Info"
-msgstr "信息"
+#: .\static\admin\js\widgets\cropper.js:65
+msgid "Rotate Left"
+msgstr "向左旋转"
 
-#: .\cmfadmin\static\admin\js\components\dialog.js:16
-msgid "Warning"
-msgstr "警告"
+#: .\static\admin\js\widgets\cropper.js:66
+msgid "Rotate Right"
+msgstr "向右旋转"
 
-#: .\cmfadmin\static\admin\js\components\dialog.js:17
-msgid "Error"
-msgstr "错误"
+#: .\static\admin\js\widgets\cropper.js:67
+msgid "Flip H"
+msgstr "水平翻转"
 
-#: .\cmfadmin\static\admin\js\components\dialog.js:18
-msgid "Input"
-msgstr "输入"
+#: .\static\admin\js\widgets\cropper.js:68
+msgid "Flip V"
+msgstr "垂直翻转"
+
+#: .\static\admin\js\widgets\cropper.js:69
+msgid "Zoom In"
+msgstr "放大"
+
+#: .\static\admin\js\widgets\cropper.js:70
+msgid "Zoom Out"
+msgstr "缩小"
+
+#: .\static\admin\js\widgets\cropper.js:73
+msgid "Use Original Dimensions"
+msgstr "使用原始尺寸"
+
+#: .\static\admin\js\widgets\cropper.js:80
+msgid "Confirm"
+msgstr "确认"
+
+#: .\static\admin\js\widgets\cropper.js:370
+msgid "Upload failed."
+msgstr "上传失败。"

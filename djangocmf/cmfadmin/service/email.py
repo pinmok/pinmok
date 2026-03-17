@@ -132,8 +132,7 @@ class EmailService:
 
         missing = [var for var in allowed_vars if var not in template_params]
         if missing:
-            raise EmailValueError(_('Missing required template variables: {}').format(', '.join(missing)))
-
+            raise EmailValueError(_('Missing required template variables: %s') % ', '.join(missing))
         subject = self._render(subject_template, template_params)
         content = self._render(content_template, template_params)
 
