@@ -16,7 +16,7 @@ from django.utils.version import get_version
 from djangocmf.core.menu import menu
 from djangocmf.core.sites import site
 
-VERSION = (1, 0, 0, 'final', 0)
+VERSION = (1, 0, 0, 'alpha', 1)
 __version__ = get_version(VERSION)
 
 __author__ = "惠达浪"

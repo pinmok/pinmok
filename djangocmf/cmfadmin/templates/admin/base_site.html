@@ -125,16 +125,16 @@
                         </div>
                         <!-- END USER INFORMATION -->
                     </div>
-                    {% block breadcrumbs %}
-                        <ol class="breadcrumb breadcrumb-arrows mb-0" id="crazy-breadcrumb">
-                            <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate 'Home' %}</a></li>
+                    <ol class="breadcrumb breadcrumb-arrows mb-0" id="crazy-breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate 'Home' %}</a></li>
+                        {% block breadcrumbs %}
                             {% for bread in admin_breadcrumbs %}
                                 <li class="breadcrumb-item{% if bread.is_current %} active{% endif %}">
                                     <a href="{{ bread.url }}">{{ bread.title }}</a>
                                 </li>
                             {% endfor %}
-                        </ol>
-                    {% endblock %}
+                        {% endblock %}
+                    </ol>
                 </div>
             </header>
         {% endif %}

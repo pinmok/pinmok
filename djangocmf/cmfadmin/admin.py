@@ -15,8 +15,10 @@ Created:
 """
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import User, Group
+from django.forms import TypedChoiceField
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from djangocmf import cmfadmin
@@ -25,6 +27,8 @@ from djangocmf.cmfadmin.forms.config_forms import EmailConfigForm, UploadConfigF
 from djangocmf.cmfadmin.forms.forms import CMFAdminPasswordResetForm, CMFAdminUserCreationForm
 from djangocmf.cmfadmin.models import ExternalLink, Nav, SiteConfig, EmailConfig, UploadConfig, NavItem
 from djangocmf.cmfadmin.options import CMFModelAdmin, CMFModelAdminMixin, ConfigModelAdmin, ExtraPanel
+from djangocmf.cmfadmin.service.navigation import NavService
+from djangocmf.cmfadmin.widgets import CMFSelect
 
 
 @cmfadmin.register(User)
@@ -184,7 +188,7 @@ class NavAdmin(CMFModelAdmin):
 @cmfadmin.register(NavItem)
 class NavItemAdmin(CMFModelAdmin):
     """Admin for navigation item management."""
-    list_display = ('name', 'nav', 'parent', 'url', 'sort_order', 'is_visible')
+    list_display = ('sort_order', 'name', 'nav', 'parent', 'url', 'is_visible')
     list_display_links = ('name',)
     list_filter = ('nav',)
     list_editable = ('sort_order', 'is_visible')
@@ -203,14 +207,23 @@ class NavItemAdmin(CMFModelAdmin):
         return {}
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        """Filter parent choices to same nav, with tree indentation."""
         if db_field.name == 'parent':
             nav_id = self._get_nav_id(request)
             if nav_id:
-                kwargs['queryset'] = NavItem.objects.filter(nav_id=nav_id)
-                kwargs['empty_label'] = _('Top Level')
+                items = NavService.get_items(nav_id)
+                choices = [('', _('Top Level'))] + [
+                    (item.id, mark_safe(item.title)) for item in items
+                ]
+                return TypedChoiceField(
+                    choices=choices,
+                    coerce=lambda val: int(val) if val else None,
+                    required=False,
+                    label=NavItem._meta.get_field('parent').verbose_name,
+                    widget=CMFSelect()
+                )
             else:
                 kwargs['queryset'] = NavItem.objects.none()
+                kwargs['empty_label'] = _('Top Level')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
@@ -247,9 +260,10 @@ class NavItemAdmin(CMFModelAdmin):
     def save_model(self, request, obj, form, change):
         if not change:
             nav_id = self._get_nav_id(request)
-            print("nav_id:", nav_id)
-            print("GET:", request.GET)
-            print("POST:", request.POST)
             if nav_id:
                 obj.nav_id = nav_id
         super().save_model(request, obj, form, change)
+
+    @property
+    def back_url(self):
+        return reverse('admin:cmfadmin_navitem_changelist')

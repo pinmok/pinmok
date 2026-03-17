@@ -154,7 +154,13 @@ class CMFModelAdminMixin(BaseModelAdmin):
 
 
 class CMFModelAdmin(CMFModelAdminMixin, ModelAdmin):
-    pass
+    back_url = None
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        extra_context = extra_context or {}
+        if self.back_url:
+            extra_context['back_url'] = self.back_url
+        return super().changeform_view(request, object_id, form_url, extra_context)
 
 
 class CMFStackedInline(CMFModelAdminMixin, StackedInline):
