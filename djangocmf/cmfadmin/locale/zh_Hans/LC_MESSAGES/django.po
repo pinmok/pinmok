@@ -1005,3 +1005,51 @@ msgstr "友情链接"
 #: .\menus.py:19
 msgid "Site Settings"
 msgstr "站点设置"
+
+#: .\models.py:396
+msgid "Relative path for local files, full URL for external resources."
+msgstr "本地文件用相对路径，外部文件用完整URL。"
+
+#: .\models.py:403
+msgid "The original file name of the uploaded file."
+msgstr "上传文件的原始文件名。"
+
+#: .\models.py:407
+msgid "File size in bytes. 0 for external resources."
+msgstr "文件大小（以字节为单位）。对于外部资源，该值为0。"
+
+#: .\models.py:416
+msgid "SHA-256 hex digest. Empty for external resources."
+msgstr "SHA-256哈希值，外部资源留空。"
+
+#: .\models.py:424
+msgid "uploaded by"
+msgstr "上传者"
+
+#: .\models.py:399
+msgid "original name"
+msgstr "原名"
+
+#: .\models.py:406
+msgid "size"
+msgstr "大小"
+
+#: .\models.py:411
+msgid "hash"
+msgstr "哈希值"
+
+#: .\models.py:429
+msgid "resource"
+msgstr "资源"
+
+#: .\models.py:430
+msgid "resources"
+msgstr "资源"
+
+#: .\models.py:419
+msgid "file type"
+msgstr "文件类型"
+
+#: .\models.py:424
+msgid "MIME type"
+msgstr "MIME类型"

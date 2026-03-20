@@ -324,9 +324,14 @@ class UploadFileView(CMFPermissionMixin, View):
             return api.error(ErrorCode.BAD_REQUEST, _('Invalid file_type: %(value)s') % {'value': file_type_str})
 
         try:
-            service = UploadService(file_type)
-            result = service.save(uploaded_file)
-            return api.success(_('Upload successful.'), result.to_dict())
+            service = UploadService(file_type, user=request.user)
+            resource = service.save(uploaded_file)
+            return api.success(_('Upload successful.'), {
+                'id': resource.id,
+                'url': resource.url,
+                'original_name': resource.original_name,
+                'size': resource.size,
+            })
         except ValidationError as e:
             return api.error(ErrorCode.VALIDATION_ERROR, e.message)
         except Exception as e:

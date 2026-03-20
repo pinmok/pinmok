@@ -186,7 +186,7 @@ def alert(title, level='danger', description=None, variant='', dismiss=False, ex
     }
 
     level_key = level.lower() if level.lower() in categories else 'danger'
-    icon = sprite(categories[level_key], 'icon alert-icon')
+    alert_icon = icon(categories[level_key], 'icon alert-icon')
     variant = f'alert-{variant.lower()}' if variant.lower() in {'important', 'minor'} else ''
     dismiss_class = 'alert-dismissible' if dismiss else ''
     class_attrs = ' '.join(filter(None, [f'alert-{level_key}', variant, extra_class, dismiss_class]))
@@ -197,6 +197,6 @@ def alert(title, level='danger', description=None, variant='', dismiss=False, ex
         'description': description,
         'class_attrs': class_attrs,
         'dismiss': dismiss,
-        'icon': icon,
+        'icon': alert_icon,
         'link': link,
     }

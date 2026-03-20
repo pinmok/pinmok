@@ -20,6 +20,7 @@ from django.core.files.uploadedfile import UploadedFile
 from django.utils.translation import gettext_lazy as _
 
 from djangocmf.cmfadmin.enums import FileType, UploadConfigKey, ConfigCategory, UploadPathRule
+from djangocmf.cmfadmin.models import Resource
 from djangocmf.cmfadmin.service.config import ConfigService
 from djangocmf.core.libs.upload import Upload, UploadResult
 
@@ -106,24 +107,25 @@ class UploadValidator:
 
 class UploadService:
     """
-    Orchestrates file upload: validation + storage.
+    Orchestrates file upload: validation, storage, and database persistence.
 
     Responsibilities:
       - Detect real MIME type via Upload utility
       - Validate against configured rules via UploadValidator
       - Delegate storage to Upload utility
-      - Return UploadResult to the caller
-
-    Does not write to the database. DB operations are the caller's responsibility.
+      - Deduplicate by SHA-256 hash via Resource table
+      - Return Resource instance to the caller
     """
 
     def __init__(
             self,
             file_type: FileType,
             use_unique_name: bool = True,
-            upload_to: str | None = None
+            upload_to: str | None = None,
+            user=None
     ):
         self.file_type = file_type
+        self.user = user
         upload_to = self._resolve_upload_to(upload_to)
         self._uploader = Upload(use_unique_name=use_unique_name, upload_to=upload_to)
         self._validator = UploadValidator(file_type)
@@ -149,17 +151,37 @@ class UploadService:
             case _:
                 return today.strftime('%Y/%m')
 
-    def save(self, file: UploadedFile) -> UploadResult:
+    def save(self, file: UploadedFile) -> Resource:
         """
-        Detect MIME type, validate, and save the file.
-        Returns UploadResult on success.
+        Detect MIME type, validate, save file, and persist to database.
+        Deduplicates by SHA-256 hash — returns existing Resource if hash matches.
+        Returns Resource instance on success.
         Raises ValidationError if validation fails.
         """
+
         # Detect real MIME type from magic bytes before validation
         detected_mime = Upload.detect_mime(file)
 
         # Validate type and size against config
         self._validator.validate(file, detected_mime)
 
-        # Persist file and return result
-        return self._uploader.save(file)
+        # Persist file to storage
+        result: UploadResult = self._uploader.save(file)
+
+        # Resolve uploaded_by — AnonymousUser is treated as None
+        uploaded_by = self.user if (self.user and self.user.is_authenticated) else None
+
+        # Deduplicate by hash, create if not exists
+        resource, _ = Resource.objects.get_or_create(
+            hash=result.hash,
+            defaults={
+                'url': result.path,
+                'original_name': result.original_name,
+                'size': result.size,
+                'file_type': self.file_type.value,
+                'mime_type': detected_mime,
+                'uploaded_by': uploaded_by,
+            }
+        )
+
+        return resource
