@@ -25,7 +25,7 @@ from django.urls import path, include, URLPattern, URLResolver
 from django.views.i18n import JavaScriptCatalog
 
 import djangocmf
-from djangocmf.cmfadmin.utils.helper import get_system_info, get_disk_info
+from djangocmf.core.utils.helper import get_system_info, get_disk_info
 
 
 class DjangoCmfAdminSite(AdminSite):

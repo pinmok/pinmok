@@ -149,3 +149,23 @@ def get_valid_app_labels(exclude_prefixes: list[str] | None = None) -> set[str]:
         if not any(app.name.startswith(prefix) for prefix in exclude_prefixes)
     }
     return valid_labels
+
+
+def get_translated_name(obj, related_name='translations', language=None, fallback=None):
+    """
+    Get the translated name for a model instance.
+    Works with or without prefetch_related.
+
+    Args:
+        obj: Model instance with a translations related manager.
+        related_name: Name of the translations related manager.
+        language: Language code to look up. Defaults to settings.LANGUAGE_CODE.
+        fallback: Fallback string if no translation found.
+    """
+    language = language or settings.LANGUAGE_CODE
+    fallback = fallback or f'{obj.__class__.__name__}({obj.pk})'
+    translations = getattr(obj, related_name).all()
+    translation = next((t for t in translations if t.language == language), None)
+    if not translation:
+        translation = next(iter(translations), None)
+    return translation.name if translation else fallback

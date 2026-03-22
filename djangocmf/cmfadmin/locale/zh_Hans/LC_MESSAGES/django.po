@@ -465,16 +465,14 @@ msgstr "导航的最后更新时间。"
 #: .\models.py:296 .\models.py:313 .\models.py:297
 msgid "navigation"
 msgstr "导航"
-msgid "navigations"
-msgstr "导航"
 
 #: .\models.py:314
 msgid "Navigation container."
 msgstr "导航容器。"
 
 #: .\models.py:322
-msgid "parent item"
-msgstr "父项"
+msgid "parent nav item"
+msgstr "上级导航项"
 
 #: .\models.py:323
 msgid "Parent item for hierarchical structure."
@@ -969,9 +967,13 @@ msgstr "上传失败：%(error)s"
 #: .\enums.py:73
 msgid "Email Settings"
 msgstr "邮箱设置"
+msgid "Email Setting"
+msgstr "邮箱设置"
 
 #: .\enums.py:74
 msgid "Upload Settings"
+msgstr "上传设置"
+msgid "Upload Setting"
 msgstr "上传设置"
 
 #: .\enums.py:75
@@ -999,6 +1001,8 @@ msgid "Navigations"
 msgstr "导航管理"
 
 #: .\enums.py:81
+msgid "External Link"
+msgstr "友情链接"
 msgid "External Links"
 msgstr "友情链接"
 
@@ -1053,3 +1057,10 @@ msgstr "文件类型"
 #: .\models.py:424
 msgid "MIME type"
 msgstr "MIME类型"
+
+#: .\config_schema.py:320
+msgid "Determines the directory structure for uploaded files on the server."
+msgstr "上传文件的目录结构规则，影响文件在服务器上的存储路径。"
+
+msgid "Run"
+msgstr "执行"

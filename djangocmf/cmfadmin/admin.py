@@ -108,8 +108,9 @@ class EmailConfigAdmin(ConfigModelAdmin):
         (_("Base Settings"), {
             "fields": [
                 "default_from_email",
-                ("smtp_host", "smtp_port", "smtp_username", "smtp_password"),
-                ("smtp_use_ssl", "smtp_use_tls", "timeout")
+                ("smtp_username", "smtp_password"),
+                ("smtp_host", "smtp_port"),
+                ("timeout", "smtp_use_ssl", "smtp_use_tls")
             ]
         }),
         (_("Email Template"), {
@@ -143,6 +144,7 @@ class UploadConfigAdmin(ConfigModelAdmin):
 @cmfadmin.register(ExternalLink)
 class ExternalLinksAdmin(CMFModelAdmin):
     """Admin for external links management."""
+    menu_order = 5000
     list_display = ('sort_order', 'image_thumb', 'title', 'url_link', 'status')
     list_display_links = ('title',)
     list_editable = ('sort_order',)
@@ -174,6 +176,7 @@ class ExternalLinksAdmin(CMFModelAdmin):
 @cmfadmin.register(Nav)
 class NavAdmin(CMFModelAdmin):
     """Admin for navigation menu management."""
+    menu_order = 6000
     list_display = ('title', 'slug', 'is_active', 'created_at', 'edit_items')
     list_display_links = ('title', 'slug')
 
@@ -194,8 +197,8 @@ class NavItemAdmin(CMFModelAdmin):
     exclude = ('nav',)
     fieldsets = [
         (None, {'fields': [
+            'parent',
             ('name', 'url'),
-            ('parent',),
             ('icon', 'target'),
             ('sort_order', 'is_visible'),
         ]})
@@ -223,18 +226,6 @@ class NavItemAdmin(CMFModelAdmin):
                     **kwargs,
                 )
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-    def formfield_for_dbfield(self, db_field, request, **kwargs):
-        """Remove related widget action buttons and set parent choices with tree indentation."""
-        formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
-
-        if db_field.name in ('nav', 'parent') and formfield:
-            if hasattr(formfield.widget, 'can_add_related'):
-                formfield.widget.can_add_related = False
-                formfield.widget.can_change_related = False
-                formfield.widget.can_delete_related = False
-                formfield.widget.can_view_related = False
-        return formfield
 
     def _get_nav_id(self, request):
         """Extract nav_id from request in all contexts."""

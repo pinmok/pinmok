@@ -162,6 +162,21 @@ class CMFModelAdmin(CMFModelAdminMixin, ModelAdmin):
             extra_context['back_url'] = self.back_url
         return super().changeform_view(request, object_id, form_url, extra_context)
 
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        """Remove related widget action buttons and set parent choices with tree indentation."""
+        formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if (
+                formfield
+                and hasattr(db_field, 'related_model')
+                and db_field.related_model == db_field.model
+                and hasattr(formfield.widget, 'can_add_related')
+        ):
+            formfield.widget.can_add_related = False
+            formfield.widget.can_change_related = False
+            formfield.widget.can_delete_related = False
+            formfield.widget.can_view_related = False
+        return formfield
+
 
 class CMFStackedInline(CMFModelAdminMixin, StackedInline):
     pass

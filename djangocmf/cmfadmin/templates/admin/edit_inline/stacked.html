@@ -37,7 +37,7 @@
         <div class="card-body{% if inline_admin_formset.is_collapsible %} accordion-collapse collapse{% endif %}" id="stacked">
             {% alert inline_admin_formset.formset.non_form_errors %}
             {% for inline_admin_form in inline_admin_formset %}
-                <div class="inline-related{% if inline_admin_form.original or inline_admin_form.show_url %} has_original{% endif %}{% if forloop.last and inline_admin_formset.has_add_permission %} empty-form last-related{% endif %}"
+                <div class="inline-related form-fieldset{% if inline_admin_form.original or inline_admin_form.show_url %} has_original{% endif %}{% if forloop.last and inline_admin_formset.has_add_permission %} empty-form last-related{% endif %}"
                      id="{{ inline_admin_formset.formset.prefix }}-{% if forloop.last and inline_admin_formset.has_add_permission %}empty{% else %}{{ forloop.counter0 }}{% endif %}">
                     <div class="mb-2 d-flex align-items-center gap-2">
                         <strong>{{ inline_admin_formset.opts.verbose_name|capfirst }}:</strong>

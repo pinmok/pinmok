@@ -25,10 +25,10 @@ from django.utils.translation import gettext as _
 
 from djangocmf.cmfadmin import constants
 from djangocmf.cmfadmin.models import Menu
-from djangocmf.cmfadmin.utils.helper import get_valid_app_labels
 from djangocmf.core.constants import DEFAULT_SORT_ORDER
 from djangocmf.core.menu import MenuNode
 from djangocmf.core.sites import site
+from djangocmf.core.utils.helper import get_valid_app_labels
 from djangocmf.core.utils.tools import to_compact_case
 
 

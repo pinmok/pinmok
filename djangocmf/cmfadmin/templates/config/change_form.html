@@ -62,7 +62,7 @@
 
             <div class="card-body{% if fieldset.is_collapsible %} accordion-collapse collapse{% endif %}" id="{{ name }}">
                 {% for line in fieldset.fields %}
-                    <div class="row mb-3 d-flex align-items-end{% if not line.has_visible_field %} d-none{% endif %}">
+                    <div class="row mb-3 d-flex align-items-center{% if not line.has_visible_field %} d-none{% endif %}">
                         {% for field in line %}
                             <div class="col-md">
                                 {% if field.is_checkbox %}

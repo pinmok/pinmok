@@ -1,0 +1,124 @@
+(function (window) {
+    /**
+     * ToastType enum
+     * Django's level_tag values (debug, info, success, warning, error) are mapped
+     * here. 'debug' has no direct equivalent and falls back to INFO via
+     * normalizeToastType().
+     */
+    const ToastType = {
+        INFO:    "info",
+        SUCCESS: "success",
+        WARNING: "warning",
+        ERROR:   "error",
+    };
+
+    // Cache DOM references once — avoids repeated querySelector calls on every
+    // showToast() invocation.
+    const _container = document.querySelector('.toast-container');
+    const _template  = document.querySelector('.toast-template');
+
+    /**
+     * normalizeToastType
+     * Accepts any string and returns a valid ToastType value.
+     * Unknown or empty values default to INFO.
+     * @param type
+     * @returns {string|string}
+     */
+    function normalizeToastType(type) {
+        const t = String(type || '').trim().toLowerCase();
+        return Object.values(ToastType).includes(t) ? t : ToastType.INFO;
+    }
+
+    /**
+     * showToast
+     *
+     * Clones the hidden template, fills in content, appends to the container,
+     * and initialises a Tabler Toast instance. The cloned element is removed
+     * from the DOM automatically after the hide animation completes.
+     *
+     * @param message {string}  — Body text. Supports plain text only (not HTML).
+     * @param type    {string}  — One of ToastType.*. Defaults to INFO.
+     * @param tip     {string}  — Small secondary text shown in the header.
+     * @param delay   {number}  — Override auto-dismiss delay in milliseconds.
+     */
+    function showToast(message, type = ToastType.INFO, {tip = '', delay} = {}) {
+        if (!_template || !_container) return;
+
+        const toast_type = normalizeToastType(type);
+
+        // Per-type display configuration
+        const titles        = {
+            [ToastType.SUCCESS]: gettext('Success'),
+            [ToastType.ERROR]:   gettext('Error'),
+            [ToastType.WARNING]: gettext('Warning'),
+            [ToastType.INFO]:    gettext('Info'),
+        };
+        const colors        = {
+            [ToastType.SUCCESS]: 'bg-success',
+            [ToastType.ERROR]:   'bg-danger',
+            [ToastType.WARNING]: 'bg-warning',
+            [ToastType.INFO]:    'bg-info',
+        };
+        const defaultDelays = {
+            [ToastType.SUCCESS]: 2000,
+            [ToastType.ERROR]:   7000,
+            [ToastType.WARNING]: 5000,
+            [ToastType.INFO]:    3000,
+        };
+
+        // Clone the hidden template and remove the marker class so it
+        // participates in the normal toast lifecycle.
+        const toastEl = _template.cloneNode(true);
+        toastEl.classList.remove('toast-template');
+        _container.appendChild(toastEl);
+
+        // Populate content
+        toastEl.querySelector('.toast-title').textContent = titles[toast_type];
+        toastEl.querySelector('.toast-tip').textContent   = tip || '';
+        // Use innerHTML to support HTML messages from Django admin
+        toastEl.querySelector('.toast-message').innerHTML = message || titles[toast_type];
+
+        // Apply type colour to header
+        const header = toastEl.querySelector('.toast-header');
+        header.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'bg-info');
+        header.classList.add(colors[toast_type]);
+
+        // Initialise and show
+        const instance = new tabler.Toast(toastEl, {
+            delay: delay || defaultDelays[toast_type],
+        });
+        instance.show();
+
+        // Remove from DOM after the hide animation completes to prevent
+        // an ever-growing list of hidden toast elements.
+        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+    }
+
+    /**
+     * parseExtras
+     *
+     * Parses the extra_tags string attached to a Django message into a plain
+     * options object. Only standard JSON is supported — pass extra_tags as a
+     * JSON string from the Django view for reliable parsing.
+     *
+     * Example (Django view):
+     *   messages.success(request, "Saved", extra_tags='{"delay": 4000}')
+     *
+     * Returns {} for empty or unparseable input rather than throwing.
+     */
+    function parseExtras(rawExtra) {
+        if (!rawExtra) return {};
+        try {
+            const obj = JSON.parse(rawExtra);
+            if (typeof obj === 'object' && obj !== null) return obj;
+        } catch (_) {
+            // Non-JSON extra_tags are treated as having no options.
+        }
+        return {};
+    }
+
+    // Export to global scope so other scripts can call showToast / ToastType.
+    window.ToastType   = ToastType;
+    window.showToast   = showToast;
+    window.parseExtras = parseExtras;
+})(window);

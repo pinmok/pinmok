@@ -296,7 +296,7 @@ class Nav(models.Model):
 
     class Meta:
         verbose_name = _("navigation")
-        verbose_name_plural = _("navigations")
+        verbose_name_plural = _("Navigations")
         ordering = ['id']
 
     def __str__(self):
@@ -321,7 +321,7 @@ class NavItem(models.Model):
         blank=True,
         on_delete=models.CASCADE,
         related_name='children',
-        verbose_name=_("parent item"),
+        verbose_name=_("parent nav item"),
         help_text=_("Parent item for hierarchical structure.")
     )
     name = models.CharField(

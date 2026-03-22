@@ -316,8 +316,9 @@ CONFIG_SCHEMA = {
             "type": ConfigType.STR,
             "default": UploadPathRule.MONTH,
             "label": _("Upload path rule"),
-            "choices": [(r, r.label) for r in UploadPathRule]
-        }
+            "choices": [(r, r.label) for r in UploadPathRule],
+            "help_text": _("Determines the directory structure for uploaded files on the server.")
+        },
     },
     # Other configs
 }
