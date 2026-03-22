@@ -307,3 +307,59 @@ class TreeNode(Generic[T]):
         kwargs = {key: data.get(key) for key in field_names if key in data}
 
         return cls(**kwargs)
+
+    @classmethod
+    def flatten_with_indent(
+            cls: type[T],
+            nodes: list[T],
+            label_func: Callable[[T], str],
+            prefix: str | None = None,
+            sort_key: str | None = None,
+    ) -> list[tuple[T, str]]:
+        """
+        Flatten a list of nodes into DFS pre-order with indented labels.
+
+        Two modes:
+
+        - ``prefix=None`` (default): box-drawing tree (├── / └──)
+        - ``prefix="　"``: repeat prefix string once per depth level
+
+        Args:
+            nodes: Flat list of TreeNode instances with parent_id set.
+            label_func: Returns the display label for a node.
+            prefix: Indent string per level. ``None`` uses box-drawing mode.
+            sort_key: Attribute name to sort children and roots by.
+
+        Returns:
+            List of ``(node, indented_label)`` pairs in DFS pre-order.
+        """
+        roots = cls.build_tree(nodes, sort_key=sort_key)
+        result: list[tuple[T, str]] = []
+
+        if prefix is not None:
+            def _dfs_prefix(node: T, level: int) -> None:
+                result.append((node, prefix * level + label_func(node)))
+                for child in node.children:
+                    _dfs_prefix(child, level + 1)
+
+            for root in roots:
+                _dfs_prefix(root, 0)
+
+        else:
+            def _dfs_tree(node: T, is_last_stack: list[bool]) -> None:
+                if not is_last_stack:
+                    indent, connector = "", ""
+                else:
+                    indent = "".join("  " if last else "│ " for last in is_last_stack[:-1])
+                    connector = "└ " if is_last_stack[-1] else "├ "
+
+                result.append((node, indent + connector + label_func(node)))
+
+                child_count = len(node.children)
+                for i, child in enumerate(node.children):
+                    _dfs_tree(child, is_last_stack + [i == child_count - 1])
+
+            for root in roots:
+                _dfs_tree(root, [])
+
+        return result

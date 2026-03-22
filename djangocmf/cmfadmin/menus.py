@@ -11,8 +11,8 @@ Created:
   2025-06-11
 """
 
-from djangocmf import menu
 from djangocmf.cmfadmin.enums import ConfigCategory
+from djangocmf.core.menu import menu
 
 # Define CmfAdmin menu
 admin_menu = [

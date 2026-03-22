@@ -30,7 +30,7 @@ Created:
 
 from django.utils.translation import gettext_lazy as _
 
-import djangocmf
+from djangocmf import core
 from djangocmf.cmfadmin.enums import MimeType, UploadConfigKey, ConfigCategory, ConfigType, UploadPathRule
 
 CONFIG_SCHEMA = {
@@ -41,7 +41,7 @@ CONFIG_SCHEMA = {
     ConfigCategory.SITE: {
         "site_name": {
             "type": ConfigType.STR,
-            "default": djangocmf.__title__,
+            "default": core.__title__,
             "label": _("Site name"),
             "required": True,
             "help_text": _("The name of the site, displayed next to the logo in the top-left corner."),

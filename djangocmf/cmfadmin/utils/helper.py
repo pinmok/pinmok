@@ -17,12 +17,9 @@ import shutil
 from django import get_version
 from django.apps import apps
 from django.conf import settings
-from django.contrib import admin
-from django.contrib.admin import autodiscover
 from django.db import connection, utils
 
-import djangocmf
-from djangocmf.cmfadmin.options import CMFModelAdmin, CMFModelAdminMixin
+from djangocmf import core
 from djangocmf.core.utils.tools import int_to_bytes
 
 logger = logging.getLogger(__name__)
@@ -54,8 +51,8 @@ def get_system_info() -> dict[str, str]:
         'django_version': get_version(),
         'db_vendor': db_vendor,
         'db_version': db_version,
-        'cmf_name': djangocmf.__title__,
-        'cmf_version': djangocmf.__version__,
+        'cmf_name': core.__title__,
+        'cmf_version': core.__version__,
     }
     return system_info
 
@@ -152,48 +149,3 @@ def get_valid_app_labels(exclude_prefixes: list[str] | None = None) -> set[str]:
         if not any(app.name.startswith(prefix) for prefix in exclude_prefixes)
     }
     return valid_labels
-
-
-def cmf_autodiscover_and_register():
-    """
-    Automatically discover all app admin.py files and convert their
-    ModelAdmin classes to CMF-enabled versions.
-
-    The process ensures that all user-defined ModelAdmin classes
-    automatically benefit from CMF enhancements without requiring
-    any code changes from the user.
-
-    Note:
-        This function should be called from AppConfig.ready() to ensure
-        all apps are properly initialized before processing.
-    """
-
-    # Step 1: Trigger Django's autodiscover to load all admin.py files
-    autodiscover()
-
-    # Step 2-5: Process all registered models
-    # Use list() to avoid dictionary modification during iteration
-    for model, admin_class in list(admin.site._registry.items()):
-        # Skip models that are already registered in cmf_site
-        # (e.g., User and Group which have custom implementations)
-        if djangocmf.site.is_registered(model):
-            continue
-
-        if issubclass(admin_class.__class__, (CMFModelAdmin, CMFModelAdminMixin)):
-            continue
-
-        # Step 3: Dynamically create a CMF-enabled admin class
-        # Use a factory approach to ensure proper MRO (method resolution order)
-        class _CMFAdmin(CMFModelAdminMixin, admin_class.__class__):
-            """Dynamically created CMF admin class."""
-            pass
-
-        # Preserve original class metadata for debugging and introspection
-        _CMFAdmin.__name__ = f'CMF{admin_class.__class__.__name__}'
-        _CMFAdmin.__module__ = admin_class.__module__
-
-        # Step 4: Register the converted class with the CMF site
-        djangocmf.site.register(model, _CMFAdmin)
-
-        # Step 5: Unregister from Django's default admin site
-        admin.site.unregister(model)

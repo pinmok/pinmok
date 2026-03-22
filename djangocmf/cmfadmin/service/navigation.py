@@ -34,73 +34,41 @@ class NavNode(TreeNode['NavNode']):
 
 
 class NavService:
-    @classmethod
-    def _flatten_with_level(cls, nav_items: list[NavNode]) -> list[NavNode]:
-        """
-        Flatten the tree structure of `nav_items` and assign a `level` to each node.
-
-        This method recursively traverses the tree, assigning a `level` value starting
-        from 0 for the root nodes and incrementing by 1 for each subsequent level.
-
-        Args:
-            nav_items (list[NavNode]): A list of `NavItem` instances to be flattened.
-
-        Returns:
-            list[NavNode]: A flat list of `NavItem` instances with assigned `level` values.
-        """
-
-        roots = NavNode.build_tree(nav_items)
-        result: list[NavNode] = []
-
-        def _assign_level(node: NavNode, level: int) -> None:
-            """
-            Recursively assigns a `level` to a node and its children, and adds them to the result.
-
-            Args:
-                node (NavNode): The current `NavItem` node being processed.
-                level (int): The current level to assign to the node.
-            """
-
-            # Assign level and add to result
-            node.level = level
-            node.title = "&emsp;" * level + node.name
-            result.append(node)
-
-            # Recursively assign level to child nodes
-            for child in sorted(node.children, key=lambda x: x.sort_order):
-                _assign_level(child, level + 1)
-
-        # Start assigning levels from the root nodes
-        for root in sorted(roots, key=lambda x: x.sort_order):
-            _assign_level(root, 0)
-
-        return result
 
     @classmethod
-    def get_items(cls, nav: int | Nav) -> list[NavNode]:
+    def _load_nodes(cls, nav: int | Nav) -> list[NavNode]:
+        """Fetch nav items from database and convert to NavNode instances."""
+        nav_items = NavItemModel.objects.filter(
+            nav_id=nav.id if isinstance(nav, Nav) else nav
+        ).values("id", "parent_id", "name", "url", "icon", "target", "sort_order", "is_visible")
+        return [NavNode(**item) for item in nav_items]
+
+    @classmethod
+    def get_items(cls, nav: int | Nav) -> list[tuple[NavNode, str]]:
         """
-        Retrieve and flatten the nav items for the specified `nav` or `nav_id`.
+        Retrieve nav items and flatten in DFS pre-order with indented labels.
 
         Args:
-            nav (int | Nav): Either a `Nav` instance or a `nav_id` (integer or string).
+            nav: Either a ``Nav`` instance or a nav_id.
 
         Returns:
-            list[NavNode]: A flattened list of `NavItem` instances with assigned levels.
+            List of ``(NavNode, indented_label)`` pairs in DFS pre-order.
         """
-        nav_items = NavItemModel.objects.filter(nav_id=nav.id if isinstance(nav, Nav) else nav).values(
-            "id", "parent_id", "name", "url", "icon", "target", "sort_order", "is_visible"
+        return NavNode.flatten_with_indent(
+            cls._load_nodes(nav),
+            label_func=lambda n: n.name,
+            sort_key="sort_order",
         )
-        return cls._flatten_with_level([NavNode(**item) for item in nav_items])
 
     @classmethod
     def build_tree(cls, nav: int | Nav) -> list[NavNode]:
         """
-        Build the tree structure from the nav items for the specified `nav` or `nav_id`.
+        Build the tree structure from the nav items for the specified nav.
 
         Args:
-            nav (int | Nav): Either a `Nav` instance or a `nav_id` (integer or string).
+            nav: Either a ``Nav`` instance or a nav_id.
 
         Returns:
-            list[NavNode]: A tree structure of `NavItem` instances.
+            Root nodes of the constructed tree.
         """
-        return NavNode.build_tree(cls.get_items(nav))
+        return NavNode.build_tree(cls._load_nodes(nav), sort_key="sort_order")

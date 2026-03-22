@@ -11,3 +11,12 @@ Author:
 Created:
   2025-11-25
 """
+from django import get_version
+
+VERSION = (1, 0, 0, 'alpha', 1)
+__version__ = get_version(VERSION)
+__author__ = "惠达浪"
+__author_email = "crazys@126.com"
+__title__ = "DjangoCMF"
+__license__ = "MIT"
+__description__ = "A modular backend framework for Django."

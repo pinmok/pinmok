@@ -18,7 +18,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
 
-from djangocmf import site
+from djangocmf.core.sites import site
 
 urlpatterns = [
     path('admin/', site.urls),

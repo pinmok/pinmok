@@ -15,14 +15,13 @@ Created:
 """
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import User, Group
-from django.forms import TypedChoiceField
 from django.urls import reverse
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from djangocmf import cmfadmin
 from djangocmf.cmfadmin.enums import ConfigCategory, UploadConfigKey
+from djangocmf.cmfadmin.fields import IndentedModelChoiceField
 from djangocmf.cmfadmin.forms.config_forms import EmailConfigForm, UploadConfigForm
 from djangocmf.cmfadmin.forms.forms import CMFAdminPasswordResetForm, CMFAdminUserCreationForm
 from djangocmf.cmfadmin.models import ExternalLink, Nav, SiteConfig, EmailConfig, UploadConfig, NavItem
@@ -209,21 +208,20 @@ class NavItemAdmin(CMFModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'parent':
             nav_id = self._get_nav_id(request)
+            kwargs['empty_label'] = _('Top Level')
+            kwargs['queryset'] = NavItem.objects.filter(nav_id=nav_id) if nav_id else NavItem.objects.none()
             if nav_id:
                 items = NavService.get_items(nav_id)
-                choices = [('', _('Top Level'))] + [
-                    (item.id, mark_safe(item.title)) for item in items
-                ]
-                return TypedChoiceField(
-                    choices=choices,
-                    coerce=lambda val: int(val) if val else None,
-                    required=False,
+                # Use IndentedModelChoiceField to control option order and display.
+                # queryset is kept for FK validation; choices drives the actual
+                # display and DFS order from flatten_with_indent.
+                return IndentedModelChoiceField(
+                    pairs=items,
+                    widget=CMFSelect(),
                     label=NavItem._meta.get_field('parent').verbose_name,
-                    widget=CMFSelect()
+                    required=False,
+                    **kwargs,
                 )
-            else:
-                kwargs['queryset'] = NavItem.objects.none()
-                kwargs['empty_label'] = _('Top Level')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
