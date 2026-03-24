@@ -8,4 +8,4 @@ __pycache__/
 .git/
 *.sqlite3
 .DS_Store
-media/
+/media/

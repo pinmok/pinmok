@@ -11,14 +11,21 @@ Author:
 Created:
   2026/2/1
 """
+import json
+
 from django import forms
 from django.conf import settings
 from django.contrib.admin.widgets import (
     AdminUUIDInputWidget, AdminRadioSelect, ForeignKeyRawIdWidget, AdminFileWidget,
     AutocompleteMixin, ManyToManyRawIdWidget, AdminURLFieldWidget, )
 from django.core.files.storage import default_storage
+from django.forms.widgets import Widget
 from django.templatetags.static import static
 from django.urls import reverse
+from django.utils.safestring import mark_safe
+from django.utils.translation import get_language
+
+from djangocmf.cmfadmin.constants import HUGERTE_LANG_MAP
 
 
 class CMFWidgetMixin:
@@ -295,3 +302,43 @@ class CMFDateTimeInput(BaseCMFDateTimeMixin, forms.DateTimeInput):
     input_type = 'datetime-local'
     icon_name = 'tabler-calendar-time'
     format = '%Y-%m-%dT%H:%M'
+
+
+class HugeRTEWidget(Widget):
+    """
+    Textarea widget that initializes the Hugerte rich-text editor.
+    """
+    template_name = "django/forms/widgets/textarea.html"
+
+    def __init__(self, extra_config=None, attrs=None):
+        self.extra_config = extra_config or {}
+        super().__init__(attrs=attrs)
+
+    def render(self, name, value, attrs=None, renderer=None):
+        # Let Django render the standard <textarea>
+        html = super().render(name, value, attrs=attrs, renderer=renderer)
+
+        # Resolve the actual element id that Django assigned
+        final_attrs = self.build_attrs(self.attrs, attrs or {})
+        element_id = final_attrs.get('id', f'id_{name}')
+
+        config = {'selector': f'#{element_id}'}
+
+        # Convert a Django language code to a Hugerte RFC 5646 language value.
+        lang_code = get_language()
+        hugerte_lang = None if lang_code is None else HUGERTE_LANG_MAP.get(lang_code.lower())
+        if hugerte_lang:
+            config['language'] = hugerte_lang
+
+        config.update(self.extra_config)
+        config_json = json.dumps(config, ensure_ascii=False)
+
+        # Inline init script scoped to this specific textarea instance.
+        # Using DOMContentLoaded so the script is safe even if placed in <head>.
+        init_script = (
+            f'<script>document.addEventListener("DOMContentLoaded", function() {{ hugerte.init({config_json});}});</script>'
+        )
+        return mark_safe(html + init_script)
+
+    class Media:
+        js = ('libs/hugerte/hugerte.min.js',)
