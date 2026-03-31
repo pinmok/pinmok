@@ -16,6 +16,6 @@ from djangocmf.cmfadmin.views import SpriteManagerView, UploadFileView, TestEmai
 
 admin_urlpatterns = [
     path('icons/', SpriteManagerView.as_view(), name='icons_manage'),
-    path('upload-file/', UploadFileView.as_view(), name='upload_file'),  # File upload URL, used by AJAX
     path('test-email/', TestEmailView.as_view(), name='test_email'),
+    path('upload-file/', UploadFileView.as_view(), name='upload_file'),  # File upload URL, used by AJAX
 ]

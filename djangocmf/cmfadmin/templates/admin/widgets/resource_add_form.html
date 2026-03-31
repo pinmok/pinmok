@@ -1,0 +1,54 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_modify %}
+
+{% block content %}
+    {% if is_popup %}
+        {# Popup mode: compact layout, no breadcrumbs #}
+    {% endif %}
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible mb-3">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" action="{{ form_url }}">
+                {% csrf_token %}
+                {% if is_popup %}
+                    <input type="hidden" name="{{ IS_POPUP_VAR }}" value="1">
+                {% endif %}
+
+                <div class="mb-3">
+                    <label class="form-label required">{% trans "File" %}</label>
+                    <input
+                            type="file"
+                            name="file"
+                            class="form-control"
+                            {% if accepted_mimes %}accept="{{ accepted_mimes }}"{% endif %}
+                            required
+                    >
+                    <small class="form-hint">
+                        {% trans "Allowed types:" %} {{ accepted_extensions }}
+                    </small>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        {% trans "Upload" %}
+                    </button>
+                    {% if not is_popup %}
+                        <a href="{% url 'admin:'|add:opts.app_label|add:'_'|add:opts.model_name|add:'_changelist' %}"
+                           class="btn btn-secondary">
+                            {% trans "Cancel" %}
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

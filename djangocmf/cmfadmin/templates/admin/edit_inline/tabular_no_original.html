@@ -40,7 +40,6 @@
                 <table class="table table-vcenter card-table">
                     <thead>
                     <tr>
-                        <th class="original"></th>
                         {% for field in inline_admin_formset.fields %}
                             {# @formatter:off #}
                             <th class="column-{{ field.name }}{% if field.required %} required{% endif %}{% if field.widget.is_hidden %} d-none{% endif %}">
@@ -72,32 +71,6 @@
                         {% endif %}
                         <tr class="form-row {% if inline_admin_form.original or inline_admin_form.show_url %}has_original{% endif %}{% if forloop.last and inline_admin_formset.has_add_permission %} empty-form{% endif %}"
                             id="{{ inline_admin_formset.formset.prefix }}-{% if forloop.last and inline_admin_formset.has_add_permission %}empty{% else %}{{ forloop.counter0 }}{% endif %}">
-                            <td class="original">
-                                {% if inline_admin_form.original or inline_admin_form.show_url %}
-                                    {% if inline_admin_form.original %}
-                                        {{ inline_admin_form.original }}
-                                        {% if inline_admin_form.model_admin.show_change_link and inline_admin_form.model_admin.has_registered_model %}
-                                            <a href="{% url inline_admin_form.model_admin.opts|admin_urlname:'change' inline_admin_form.original.pk|admin_urlquote %}"
-                                               class="btn btn-sm btn-outline">
-                                                {% if inline_admin_formset.has_change_permission %}
-                                                    {% icon 'tabler-pencil' 'icon icon-sm text-warning' %}
-                                                    {% translate "Change" %}
-                                                {% else %}
-                                                    {% icon 'tabler-eye' 'icon icon-sm text-primary' %}
-                                                    {% translate "View" %}
-                                                {% endif %}
-                                            </a>
-                                        {% endif %}
-                                    {% endif %}
-                                    {% if inline_admin_form.show_url %}
-                                        <a href="{{ inline_admin_form.absolute_url }}" class="btn btn-sm btn-outline">
-                                            {% translate "View on site" %}
-                                        </a>
-                                    {% endif %}
-                                {% endif %}
-                                {% if inline_admin_form.needs_explicit_pk_field %}{{ inline_admin_form.pk_field.field }}{% endif %}
-                                {% if inline_admin_form.fk_field %}{{ inline_admin_form.fk_field.field }}{% endif %}
-                            </td>
                             {% for fieldset in inline_admin_form %}
                                 {% for line in fieldset %}
                                     {% for field in line %}

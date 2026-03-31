@@ -2,7 +2,9 @@
 <div class="image-cropper-widget"
      data-field-name="{{ widget.name }}"
      data-upload-url="{{ widget.upload_url }}"
+     data-mode="{{ widget.mode|default:'path' }}"
      data-crop="{{ widget.crop|default:'true' }}"
+     data-lock-ratio="{{ widget.lock_ratio|default:'false' }}"
      data-aspect-ratio="{{ widget.aspect_ratio }}"
      data-target-width="{{ widget.target_width }}"
      data-target-height="{{ widget.target_height }}">
@@ -13,7 +15,7 @@
     <div class="d-flex align-items-center gap-2 mt-1">
         {# Preview image #}
         <img src="{% if widget.preview_url %}{{ widget.preview_url }}{% else %}{{ widget.placeholder }}{% endif %}"
-             class="cropper-widget-preview icon icon-lg mb-2" id="preview_{{ widget.name }}" alt="{% translate 'Preview' %}">
+             class="cropper-widget-preview mb-2" id="preview_{{ widget.name }}" alt="{% translate 'Preview' %}">
 
         {# Trigger button #}
         <button type="button" class="btn btn-outline-primary btn-sm cropper-widget-trigger">

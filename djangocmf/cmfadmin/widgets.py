@@ -19,13 +19,14 @@ from django.contrib.admin.widgets import (
     AdminUUIDInputWidget, AdminRadioSelect, ForeignKeyRawIdWidget, AdminFileWidget,
     AutocompleteMixin, ManyToManyRawIdWidget, AdminURLFieldWidget, )
 from django.core.files.storage import default_storage
-from django.forms.widgets import Widget
+from django.forms import Widget
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import get_language
 
 from djangocmf.cmfadmin.constants import HUGERTE_LANG_MAP
+from djangocmf.cmfadmin.enums import ImageWidgetMode
 
 
 class CMFWidgetMixin:
@@ -47,13 +48,13 @@ class CMFWidgetMixin:
         super().__init__(*args, attrs=attrs, **kwargs)
 
     def get_context(self, name, value, attrs):
+        """ Provide icons name for input fields that include built-in icons. """
         context = super().get_context(name, value, attrs)
         if self.icon_name:
             context['widget']['icon_name'] = self.icon_name
         return context
 
 
-# Text input series
 class CMFTextInput(CMFWidgetMixin, forms.TextInput):
     pass
 
@@ -96,16 +97,15 @@ class CMFGenericIPAddress(CMFWidgetMixin, forms.TextInput):
         js = ('admin/js/imask.min.js',)
 
 
-# Textarea
 class CMFTextarea(CMFWidgetMixin, forms.Textarea):
-    pass
+    def __init__(self):
+        super().__init__(attrs={"rows": "3"})
 
 
 class CMFPassword(CMFWidgetMixin, forms.PasswordInput):
     pass
 
 
-# Select
 class CMFSelect(CMFWidgetMixin, forms.Select):
     default_css_class = 'form-select'
 
@@ -216,7 +216,7 @@ class CMFFileInput(CMFWidgetMixin, AdminFileWidget):
     template_name = "admin/widgets/clearable_file_input.html"
 
 
-class CMFImageFileInput(CMFWidgetMixin, forms.FileInput):
+class CMFImageFileInput(Widget):
     """
     Image upload widget with built-in cropper support.
 
@@ -233,7 +233,7 @@ class CMFImageFileInput(CMFWidgetMixin, forms.FileInput):
         data-target-height : max output height in pixels (default: none)
     """
     template_name = "admin/widgets/image_cropper.html"
-    default_css_class = ''
+    needs_multipart_form = True
 
     class Media:
         css = {
@@ -244,14 +244,24 @@ class CMFImageFileInput(CMFWidgetMixin, forms.FileInput):
             'admin/js/widgets/cropper.js',
         )
 
+    def __init__(self, attrs=None, mode: str = ImageWidgetMode.PATH):
+        # mode: 'path' for ImageField, 'resource' for ForeignKey(Resource)
+        if mode not in ImageWidgetMode:
+            raise ValueError("mode must be 'path' or 'resource'")
+        self.mode = mode
+        super().__init__(attrs)
+
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
 
         final_attrs = context['widget']['attrs']
-        context['widget']['crop'] = final_attrs.get('data-crop', 'true')
-        context['widget']['aspect_ratio'] = final_attrs.get('data-aspect-ratio', '')
-        context['widget']['target_width'] = final_attrs.get('data-target-width', '1920')
-        context['widget']['target_height'] = final_attrs.get('data-target-height', '')
+        context['widget']['crop'] = final_attrs.get('crop', 'true')
+        context['widget']['aspect_ratio'] = final_attrs.get('aspectRatio', '')
+        context['widget']['target_width'] = final_attrs.get('targetWidth', '1900')
+        context['widget']['target_height'] = final_attrs.get('targetHeight', '')
+        context['widget']['mode'] = self.mode
+        lock_ratio_raw = final_attrs.get('lockRatio', 'false')
+        context['widget']['lock_ratio'] = 'true' if lock_ratio_raw == 'true' else 'false'
 
         # Upload URL — resolved at render time
         context['widget']['upload_url'] = reverse('admin:cmfadmin:upload_file')
@@ -259,14 +269,25 @@ class CMFImageFileInput(CMFWidgetMixin, forms.FileInput):
         # Placeholder shown when no image is set
         context['widget']['placeholder'] = static('admin/svg/photo-up.svg')
 
-        # Current image URL (for preview)
-        if value and hasattr(value, 'url'):
-            context['widget']['preview_url'] = value.url
-        elif value and isinstance(value, str) and value:
-            context['widget']['preview_url'] = default_storage.url(value)
+        # Resolve preview URL depending on mode
+        preview_url = None
+        if self.mode == 'resource':
+            # value is a Resource pk (int or string digit)
+            if value and str(value).isdigit():
+                from djangocmf.cmfadmin.models import Resource
+                try:
+                    resource = Resource.objects.get(pk=int(value))
+                    preview_url = default_storage.url(resource.url)
+                except Resource.DoesNotExist:
+                    pass
         else:
-            context['widget']['preview_url'] = None
+            # Original 'path' mode
+            if value and hasattr(value, 'url'):
+                preview_url = value.url
+            elif value and isinstance(value, str) and value:
+                preview_url = default_storage.url(value)
 
+        context['widget']['preview_url'] = preview_url
         return context
 
 
@@ -304,14 +325,15 @@ class CMFDateTimeInput(BaseCMFDateTimeMixin, forms.DateTimeInput):
     format = '%Y-%m-%dT%H:%M'
 
 
-class HugeRTEWidget(Widget):
+class HugeRTEWidget(forms.Textarea):
     """
     Textarea widget that initializes the Hugerte rich-text editor.
     """
-    template_name = "django/forms/widgets/textarea.html"
+    default_config = {}
 
     def __init__(self, extra_config=None, attrs=None):
-        self.extra_config = extra_config or {}
+        # extra_config: configuration options used to initialize HugeRTE editor instance
+        self.extra_config = extra_config or self.default_config
         super().__init__(attrs=attrs)
 
     def render(self, name, value, attrs=None, renderer=None):
@@ -322,7 +344,7 @@ class HugeRTEWidget(Widget):
         final_attrs = self.build_attrs(self.attrs, attrs or {})
         element_id = final_attrs.get('id', f'id_{name}')
 
-        config = {'selector': f'#{element_id}'}
+        config = {'selector': f'#{element_id}', 'branding': False}
 
         # Convert a Django language code to a Hugerte RFC 5646 language value.
         lang_code = get_language()
@@ -342,3 +364,23 @@ class HugeRTEWidget(Widget):
 
     class Media:
         js = ('libs/hugerte/hugerte.min.js',)
+
+
+class ResourceWidget(CMFForeignKeyRawId):
+    """
+    Enhanced raw-id widget for ForeignKey(Resource) fields.
+
+    Inherits all standard behaviour from ForeignKeyRawIdWidget:
+    - The magnifier button opens the resource selector popup
+    - The add button opens the resource upload popup (add_view)
+    - Popup callback and value writing are handled by Django's admin JS
+
+    Visual enhancements added by this widget:
+    - The raw ID input is hidden (still present in DOM for Django's JS)
+    - Selected resource is shown as thumbnail (image) or filename (other types)
+    - A clear button sets the hidden input to empty
+    """
+    template_name = "admin/widgets/resource_foreign_key_raw_id.html"
+
+    class Media:
+        js = ('admin/js/widgets/resource_widget.js',)

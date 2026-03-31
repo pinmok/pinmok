@@ -30,7 +30,7 @@ Author:
 Created:
   2025-11-25
 """
-
+import copy
 import json
 from typing import Any
 
@@ -58,7 +58,7 @@ _FIELD_MAP: dict[ConfigType, tuple[type[forms.Field], type[forms.Widget] | None]
     ConfigType.IP: (forms.GenericIPAddressField, widgets.CMFGenericIPAddress),
     ConfigType.URL: (forms.URLField, widgets.CMFURLInput),
     ConfigType.EMAIL: (forms.EmailField, widgets.CMFEmailInput),
-    ConfigType.IMAGE: (forms.FileField, widgets.CMFImageFileInput),
+    ConfigType.IMAGE: (forms.CharField, widgets.CMFImageFileInput),
     ConfigType.FILE: (forms.FileField, widgets.CMFFileInput),
     ConfigType.MULTI_SELECT: (forms.MultipleChoiceField, widgets.CMFSelectTags),
 }
@@ -168,6 +168,14 @@ class ConfigForm(forms.Form):
             kwargs["initial"] = ConfigService.get_category_raw(self.category)
 
         super().__init__(data=data, files=files, **kwargs)
+
+        # Deep-copy all fields so each form instance has independent field/widget objects.
+        # This prevents widget state from leaking between instances when fields are
+        # defined at class level (as in __init_subclass__).
+        self.fields = {
+            key: copy.deepcopy(field)
+            for key, field in self.fields.items()
+        }
 
     def __init_subclass__(cls, **kwargs):
         """

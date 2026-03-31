@@ -25,7 +25,8 @@ from django.utils.functional import Promise
 from django.utils.translation import gettext_lazy as _
 
 from djangocmf.cmfadmin import widgets
-from djangocmf.cmfadmin.widgets import CMFTextarea
+from djangocmf.cmfadmin.enums import ImageWidgetMode
+from djangocmf.cmfadmin.fields import CMFImagePathField
 from djangocmf.core.constants import DEFAULT_SORT_ORDER
 
 
@@ -50,18 +51,19 @@ class CMFModelAdminMixin(BaseModelAdmin):
         models.DecimalField: {"widget": widgets.CMFDecimalInput},
         models.FloatField: {"widget": widgets.CMFNumberInput},
         models.CharField: {"widget": widgets.CMFTextInput},
-        models.ImageField: {"widget": widgets.CMFImageFileInput},
+        models.ImageField: {"widget": widgets.CMFFileInput},
         models.FileField: {"widget": widgets.CMFFileInput},
         models.EmailField: {"widget": widgets.CMFEmailInput},
         models.UUIDField: {"widget": widgets.CMFUUIDInput},
         models.BooleanField: {"widget": widgets.CMFCheckbox},
         models.GenericIPAddressField: {"widget": widgets.CMFGenericIPAddress},
-        models.JSONField: {'widget': CMFTextarea},
+        models.JSONField: {'widget': widgets.CMFTextarea},
     }
 
     # Controls the sort position of this model in the admin menu.
     # Lower values appear first. Defaults to DEFAULT_SORT_ORDER (10000).
     menu_order: int = DEFAULT_SORT_ORDER
+    image_crop_fields: list = []
 
     @property
     def action_form(self):
@@ -93,8 +95,19 @@ class CMFModelAdminMixin(BaseModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         """
         Get a form Field for a ForeignKey.
+        ForeignKey fields pointing to Resource are automatically rendered
+        with CMFForeignKeyRawId widget, requiring no configuration from the developer.
         """
         db = kwargs.get("using")
+
+        # Auto-apply raw_id widget for all Resource FK fields.
+        # This takes precedence over all other widget configurations.
+        from djangocmf.cmfadmin.models import Resource  # avoid circular import
+        if db_field.related_model is Resource and "widget" not in kwargs:
+            kwargs["widget"] = widgets.ResourceWidget(
+                db_field.remote_field, self.admin_site, using=db
+            )
+            return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
         if "widget" not in kwargs:
             if db_field.name in self.get_autocomplete_fields(request):
@@ -152,6 +165,50 @@ class CMFModelAdminMixin(BaseModelAdmin):
 
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
+    def _apply_crop_fields(self, base_fields):
+        """
+        Replace widget (and form field where necessary) for fields listed in
+        image_crop_fields.
+
+        Accepts list (no config) or dict (with per-field config).
+
+        Dict values may contain:
+            mode        : 'path' (default) or 'resource'
+            data-*      : HTML attrs forwarded to the widget
+
+        In path mode, if the original form field is forms.ImageField, it is
+        replaced with CMFImagePathField so that a string path passes validation.
+        In resource mode, the form field is left unchanged (ModelChoiceField
+        handles string PKs natively).
+        """
+        if isinstance(self.image_crop_fields, dict):
+            items = self.image_crop_fields.items()
+        else:
+            items = ((field_name, {}) for field_name in self.image_crop_fields)
+
+        for field_name, config in items:
+            if field_name not in base_fields:
+                continue
+
+            # Separate mode from HTML attrs
+            mode = config.get('mode', ImageWidgetMode.PATH)
+            extra_attrs = {k: v for k, v in config.items() if k != 'mode'}
+
+            form_field = base_fields[field_name]
+            existing_attrs = getattr(form_field.widget, 'attrs', {})
+            merged_attrs = {**existing_attrs, **extra_attrs}
+
+            form_field.widget = widgets.CMFImageFileInput(attrs=merged_attrs, mode=mode)
+
+            # In path mode, forms.ImageField rejects string paths — replace it
+            if mode == ImageWidgetMode.PATH and isinstance(form_field, forms.ImageField):
+                base_fields[field_name] = CMFImagePathField(
+                    required=form_field.required,
+                    label=form_field.label,
+                    help_text=form_field.help_text,
+                    widget=form_field.widget,
+                )
+
 
 class CMFModelAdmin(CMFModelAdminMixin, ModelAdmin):
     back_url = None
@@ -177,12 +234,24 @@ class CMFModelAdmin(CMFModelAdminMixin, ModelAdmin):
             formfield.widget.can_view_related = False
         return formfield
 
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        self._apply_crop_fields(form.base_fields)
+        return form
 
-class CMFStackedInline(CMFModelAdminMixin, StackedInline):
+
+class CMFInlineMixin(CMFModelAdminMixin):
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        self._apply_crop_fields(formset.form.base_fields)
+        return formset
+
+
+class CMFStackedInline(CMFInlineMixin, StackedInline):
     pass
 
 
-class CMFTabularInline(CMFModelAdminMixin, TabularInline):
+class CMFTabularInline(CMFInlineMixin, TabularInline):
     pass
 
 
@@ -366,7 +435,7 @@ class ConfigModelAdmin(CMFModelAdminMixin, ModelAdmin):
         if request.method == "POST":
             form = form_class(data=request.POST, files=request.FILES)
             if form.is_valid():
-                form.save()
+                form.save_resource()
                 messages.success(request, _("Configuration saved successfully."))
                 return HttpResponseRedirect(request.path)
         else:

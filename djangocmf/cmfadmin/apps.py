@@ -15,7 +15,6 @@ from django.apps import AppConfig
 from django.contrib import admin
 from django.contrib.admin import autodiscover
 
-from djangocmf.cmfadmin.options import CMFModelAdmin, CMFModelAdminMixin
 from djangocmf.core.sites import site
 
 
@@ -51,6 +50,7 @@ class CmfadminConfig(AppConfig):
 
         # Step 2-5: Process all registered models
         # Use list() to avoid dictionary modification during iteration
+        from djangocmf.cmfadmin.options import CMFModelAdmin, CMFModelAdminMixin
         for model, admin_class in list(admin.site._registry.items()):
             # Skip models that are already registered in cmf_site
             # (e.g., User and Group which have custom implementations)

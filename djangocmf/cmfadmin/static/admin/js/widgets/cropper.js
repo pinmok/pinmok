@@ -38,7 +38,7 @@ function ensureCropperModal() {
                 <div class="row">
                     <!-- Image container -->
                     <div class="col-md-8 mb-3 mb-md-0 text-center">
-                        <img id="cropperImage" class="img-fluid d-none" alt="${gettext('Crop Preview')}">
+                        <img id="cropperImage" class="img-fluid d-none" alt="${gettext('Crop Preview')}" style="max-height: 60vh;">
                     </div>
                     <!-- Controls -->
                     <div class="col-md-4 d-flex flex-column gap-2 ps-md-3">
@@ -56,7 +56,7 @@ function ensureCropperModal() {
                             <label class="btn btn-outline-secondary" for="cropperRatio-free">${gettext('Free')}</label>
                         </div>
                         <div class="d-flex align-items-center gap-2">
-                            <label class="col-form-label">${gettext('Custom')}</label>
+                            <label class="col-form-label text-nowrap">${gettext('Custom')}</label>
                             <input type="number" class="form-control" id="cropperCustomW" min="1" placeholder="${gettext('Width')}">
                             <strong>:</strong>
                             <input type="number" class="form-control" id="cropperCustomH" min="1" placeholder="${gettext('Height')}">
@@ -110,9 +110,67 @@ function parseAspectRatio(value) {
 // ---------------------------------------------------------------------------
 // Widget state — one active widget at a time (modal is shared)
 // ---------------------------------------------------------------------------
-let _cropper = null;
-let _modal = null;
+let _cropper      = null;
+let _modal        = null;
 let _activeWidget = null; // currently open widget context
+
+// ---------------------------------------------------------------------------
+// Initialize a single widget instance.
+// Called both on page load (for existing widgets) and when a new inline row
+// is added (formset:added). Guards against double-binding via _cropperInitialized.
+// ---------------------------------------------------------------------------
+function initSingleWidget(widget) {
+    const fileInput = document.getElementById('cropperSharedFileInput');
+    const trigger   = widget.querySelector('.cropper-widget-trigger');
+
+    // Skip if no trigger button found, or already initialized
+    if (!trigger || widget._cropperInitialized) return;
+    widget._cropperInitialized = true;
+
+    // Bind trigger button — sets _activeWidget context and opens file picker
+    trigger.addEventListener('click', () => {
+        _activeWidget = {
+            container:       widget,
+            hiddenInput:     widget.querySelector('input[type="hidden"]'),
+            preview:         widget.querySelector('.cropper-widget-preview'),
+            uploadUrl:       widget.dataset.uploadUrl,
+            crop:            widget.dataset.crop !== 'false',
+            aspectRatio:     parseAspectRatio(widget.dataset.aspectRatio),
+            targetWidth:     parseInt(widget.dataset.targetWidth) || 1920,
+            targetHeight:    parseInt(widget.dataset.targetHeight) || null,
+            pendingBlob:     null,
+            pendingFileName: null,
+        };
+
+        fileInput.value = '';
+        fileInput.click();
+    });
+
+    // Bind form submit interception — guarded so each form is only bound once
+    // even if multiple widgets share the same form
+    const form = widget.closest('form');
+    if (form && !form._cropperSubmitBound) {
+        form._cropperSubmitBound = true;
+
+        form.addEventListener('submit', async function (e) {
+            // Collect all widgets in this form that have a pending blob
+            const pending = Array.from(
+                form.querySelectorAll('.image-cropper-widget')
+            ).filter(w => w._pendingBlob);
+
+            if (pending.length === 0) return; // Nothing to upload, submit normally
+
+            e.preventDefault();
+
+            // Upload all pending blobs sequentially
+            for (const w of pending) {
+                await uploadPendingBlob(w);
+            }
+
+            form.submit();
+        });
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Initialize all widgets on the page
@@ -121,42 +179,21 @@ function initImageCropperWidgets() {
     ensureCropperModal();
 
     const modalEl = document.getElementById('cropperModal');
-    _modal = new tabler.Modal(modalEl);
+    _modal        = new tabler.Modal(modalEl);
 
     // Shared file input (hidden, reused by all widgets)
     let fileInput = document.getElementById('cropperSharedFileInput');
     if (!fileInput) {
-        fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.id = 'cropperSharedFileInput';
-        fileInput.accept = 'image/*';
+        fileInput           = document.createElement('input');
+        fileInput.type      = 'file';
+        fileInput.id        = 'cropperSharedFileInput';
+        fileInput.accept    = 'image/*';
         fileInput.className = 'd-none';
         document.body.appendChild(fileInput);
     }
 
-    // Bind trigger buttons for all widgets
-    document.querySelectorAll('.image-cropper-widget').forEach(widget => {
-        const trigger = widget.querySelector('.cropper-widget-trigger');
-        if (!trigger) return;
-
-        trigger.addEventListener('click', () => {
-            _activeWidget = {
-                container: widget,
-                hiddenInput: widget.querySelector('input[type="hidden"]'),
-                preview: widget.querySelector('.cropper-widget-preview'),
-                uploadUrl: widget.dataset.uploadUrl,
-                crop: widget.dataset.crop !== 'false',
-                aspectRatio: parseAspectRatio(widget.dataset.aspectRatio),
-                targetWidth: parseInt(widget.dataset.targetWidth) || 1920,
-                targetHeight: parseInt(widget.dataset.targetHeight) || null,
-                pendingBlob: null,
-                pendingFileName: null,
-            };
-
-            fileInput.value = '';
-            fileInput.click();
-        });
-    });
+    // Initialize all widgets already present in the DOM
+    document.querySelectorAll('.image-cropper-widget').forEach(initSingleWidget);
 
     // File selected
     fileInput.addEventListener('change', function () {
@@ -165,18 +202,18 @@ function initImageCropperWidgets() {
 
         // SVG or crop disabled → store blob directly, skip modal
         if (file.type === 'image/svg+xml' || !_activeWidget.crop) {
-            _activeWidget.container._pendingBlob = file;
+            _activeWidget.container._pendingBlob     = file;
             _activeWidget.container._pendingFileName = file.name;
-            _activeWidget.preview.src = URL.createObjectURL(file);
+            _activeWidget.preview.src                = URL.createObjectURL(file);
             return;
         }
 
         // Raster image → open cropper modal
         const imageEl = document.getElementById('cropperImage');
-        imageEl.src = URL.createObjectURL(file);
+        imageEl.src   = URL.createObjectURL(file);
         imageEl.classList.remove('d-none');
         _activeWidget._originalFile = file;
-        imageEl.onload = () => _modal.show();
+        imageEl.onload              = () => _modal.show();
     });
 
     // Initialize Cropper when modal is shown
@@ -185,28 +222,32 @@ function initImageCropperWidgets() {
         if (_cropper) _cropper.destroy();
 
         const imageEl = document.getElementById('cropperImage');
-        let cropRatio = _activeWidget.aspectRatio;
 
-        if (_activeWidget.targetWidth && _activeWidget.targetHeight) {
-            cropRatio = _activeWidget.targetWidth / _activeWidget.targetHeight;
-        }
+        // Crop ratio comes from aspectRatio only — targetWidth/Height are output size limits only
+        const cropRatio = _activeWidget.aspectRatio;
 
         // Lock ratio controls if ratio is fixed
+        const lockRatio = _activeWidget.container.dataset.lockRatio === 'true';
+
         modalEl.querySelectorAll('input[name="cropperAspectRatio"]').forEach(radio => {
-            radio.disabled = !isNaN(cropRatio);
+            radio.disabled = lockRatio;
             if (!radio.disabled) radio.checked = radio.value === 'NaN';
         });
 
+        // Lock custom ratio inputs too
+        const customW     = document.getElementById('cropperCustomW');
+        const customH     = document.getElementById('cropperCustomH');
+        const applyBtn    = document.getElementById('cropperApplyRatio');
+        customW.disabled  = lockRatio;
+        customH.disabled  = lockRatio;
+        applyBtn.disabled = lockRatio;
+
         _cropper = new Cropper(imageEl, {
-            viewMode: 0,
-            aspectRatio: cropRatio,
+            viewMode:     1,
+            aspectRatio:  cropRatio,
             autoCropArea: 1,
-            movable: true,
-            rotatable: true,
-            scalable: true,
-            zoomable: true,
-            responsive: true,
-            dragMode: 'move',
+            rotatable:    true,
+            dragMode:     'move',
         });
     });
 
@@ -265,34 +306,19 @@ function initImageCropperWidgets() {
     document.getElementById('cropperConfirmBtn').addEventListener('click', async () => {
         if (!_activeWidget?._originalFile || !_cropper) return;
 
-        const file = _activeWidget._originalFile;
+        const file        = _activeWidget._originalFile;
         const useOriginal = document.getElementById('cropperUseOriginal')?.checked || false;
 
         let blob;
         if (useOriginal) {
             blob = file;
         } else {
-            let canvas = _cropper.getCroppedCanvas();
-            let targetW = canvas.width;
-            let targetH = canvas.height;
-
-            if (_activeWidget.targetWidth && targetW > _activeWidget.targetWidth) {
-                const ratio = targetH / targetW;
-                targetW = _activeWidget.targetWidth;
-                targetH = _activeWidget.targetHeight || Math.round(targetW * ratio);
-            } else if (_activeWidget.targetHeight && targetH > _activeWidget.targetHeight) {
-                const ratio = targetW / targetH;
-                targetH = _activeWidget.targetHeight;
-                targetW = Math.round(targetH * ratio);
-            }
-
-            if (targetW !== canvas.width || targetH !== canvas.height) {
-                const tmp = document.createElement('canvas');
-                tmp.width = targetW;
-                tmp.height = targetH;
-                tmp.getContext('2d').drawImage(canvas, 0, 0, targetW, targetH);
-                canvas = tmp;
-            }
+            const canvas = _cropper.getCroppedCanvas({
+                maxWidth:              _activeWidget.targetWidth || undefined,
+                maxHeight:             _activeWidget.targetHeight || undefined,
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high',
+            });
 
             const mimeType = ['image/png', 'image/jpeg', 'image/webp'].includes(file.type)
                 ? file.type
@@ -301,12 +327,9 @@ function initImageCropperWidgets() {
             blob = await new Promise(resolve => canvas.toBlob(b => resolve(b), mimeType));
         }
 
-        // Store in memory — upload happens on form submit
-        _activeWidget.container._pendingBlob = blob;
+        _activeWidget.container._pendingBlob     = blob;
         _activeWidget.container._pendingFileName = file.name;
-
-        // Update preview immediately
-        _activeWidget.preview.src = URL.createObjectURL(blob);
+        _activeWidget.preview.src                = URL.createObjectURL(blob);
 
         _modal.hide();
     });
@@ -320,30 +343,11 @@ function initImageCropperWidgets() {
     });
 
     // ---------------------------------------------------------------------------
-    // Intercept form submit — upload all pending blobs before submitting
+    // Listen for Django inline new row events — re-initialize any cropper widgets
+    // that appear inside the newly added row
     // ---------------------------------------------------------------------------
-    document.querySelectorAll('.image-cropper-widget').forEach(widget => {
-        const form = widget.closest('form');
-        if (!form || form._cropperSubmitBound) return;
-        form._cropperSubmitBound = true;
-
-        form.addEventListener('submit', async function (e) {
-            // Collect all widgets in this form that have a pending blob
-            const pending = Array.from(
-                form.querySelectorAll('.image-cropper-widget')
-            ).filter(w => w._pendingBlob);
-
-            if (pending.length === 0) return; // Nothing to upload, submit normally
-
-            e.preventDefault();
-
-            // Upload all pending blobs sequentially
-            for (const w of pending) {
-                await uploadPendingBlob(w);
-            }
-
-            form.submit();
-        });
+    document.addEventListener('formset:added', (e) => {
+        e.target.querySelectorAll('.image-cropper-widget').forEach(initSingleWidget);
     });
 }
 
@@ -353,20 +357,22 @@ function initImageCropperWidgets() {
 function uploadPendingBlob(widgetEl) {
     return new Promise((resolve, reject) => {
         const hiddenInput = widgetEl.querySelector('input[type="hidden"]');
-        const uploadUrl = widgetEl.dataset.uploadUrl;
-        const blob = widgetEl._pendingBlob;
-        const fileName = widgetEl._pendingFileName || 'image.jpg';
+        const uploadUrl   = widgetEl.dataset.uploadUrl;
+        const blob        = widgetEl._pendingBlob;
+        const fileName    = widgetEl._pendingFileName || 'image.jpg';
 
         FileManager.upload(blob, 'image', {
-            url: uploadUrl,
+            url:       uploadUrl,
             fileName,
             onSuccess: res => {
-                hiddenInput.value = res.data.path;
-                widgetEl._pendingBlob = null;
+                const mode                = widgetEl.dataset.mode || 'path'
+                // Write resource id or file path depending on widget mode
+                hiddenInput.value         = mode === 'resource' ? res.data.id : res.data.url;
+                widgetEl._pendingBlob     = null;
                 widgetEl._pendingFileName = null;
                 resolve();
             },
-            onError: err => {
+            onError:   err => {
                 showToast(err.message || gettext('Upload failed.'), ToastType.ERROR);
                 reject(err);
             },

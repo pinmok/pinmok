@@ -36,3 +36,8 @@ th.required:after {
 .empty-form {
     display: none;
 }
+
+.cropper-widget-preview {
+    max-width: 4rem;
+    max-height: 5rem;
+}

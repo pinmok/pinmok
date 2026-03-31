@@ -10,6 +10,7 @@ Author:
 Created:
   2026/02/14
 """
+import os
 import re
 
 from django import template
@@ -200,3 +201,18 @@ def alert(title, level='danger', description=None, variant='', dismiss=False, ex
         'icon': alert_icon,
         'link': link,
     }
+
+
+@register.filter
+def truncate_filename(value, max_len=20):
+    """
+    Truncate a filename to a max length while preserving its extension.
+
+    If the filename exceeds `max_len`, the base name is shortened and replaced
+    with an ellipsis (…); the file extension is kept intact when possible.
+    """
+    name, ext = os.path.splitext(value)
+    if len(value) <= max_len:
+        return value
+    keep = max_len - len(ext) - 1  # 1 for '…'
+    return f'{name[:keep]}…{ext}' if keep > 0 else f'…{ext}'

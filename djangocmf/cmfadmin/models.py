@@ -388,7 +388,6 @@ class Resource(models.Model):
     External resources store the full URL directly.
     Deduplication: local files by SHA-256 hash, external resources by url.
     """
-
     url = models.CharField(
         'URL',
         max_length=2048,

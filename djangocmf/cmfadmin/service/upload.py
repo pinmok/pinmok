@@ -7,6 +7,10 @@ Description:
   Provides UploadValidator and UploadService for handling file uploads.
   UploadValidator reads allowed types and size limits from ConfigService.
   UploadService orchestrates validation and storage via the Upload utility.
+
+  When file_type is None, all configured file types are accepted and the
+  largest configured size limit is used. This mode is intended for the
+  Resource admin upload form where the type is not known in advance.
 Author:
   惠达浪 <crazys@126.com>
 Created:
@@ -56,16 +60,37 @@ class UploadValidator:
     Reads allowed MIME types and max file size from ConfigService.
     ConfigService falls back to schema defaults if no DB value is set.
 
+    When file_type is None, all configured types are merged and the largest
+    size limit across all types is used.
+
     Does not touch storage or the database.
     """
 
-    def __init__(self, file_type: FileType):
+    def __init__(self, file_type: FileType | None):
         self.file_type = file_type
         self._allowed_mimes, self._max_size = self._load_config()
 
     def _load_config(self) -> tuple[list[str], int]:
-        """Load allowed MIME types and max size from ConfigService."""
-        keys = _FILE_TYPE_CONFIG_KEYS[self.file_type]
+        """
+        Load allowed MIME types and max size from ConfigService.
+        When file_type is None, merge all types and use the largest size limit.
+        """
+        if self.file_type is not None:
+            return self._load_single_type(self.file_type)
+
+        # All-types mode: union of all MIME lists, max of all size limits
+        all_mimes: set[str] = set()
+        max_size = 0
+        for ft in _FILE_TYPE_CONFIG_KEYS:
+            mimes, size = self._load_single_type(ft)
+            all_mimes.update(mimes)
+            max_size = max(max_size, size)
+        return list(all_mimes), max_size
+
+    @staticmethod
+    def _load_single_type(file_type: FileType) -> tuple[list[str], int]:
+        """Load allowed MIME types and max size for a single FileType."""
+        keys = _FILE_TYPE_CONFIG_KEYS[file_type]
 
         # Allowed MIME types — stored as comma-separated string in DB
         raw = ConfigService.get(ConfigCategory.UPLOAD, keys['type_key'])
@@ -104,6 +129,13 @@ class UploadValidator:
                 _("File size exceeds the %(limit)s MB limit.") % {'limit': max_mb}
             )
 
+    def get_accepted_mimes(self) -> list[str]:
+        """
+        Return the list of allowed MIME types.
+        Used by the upload form to populate the <input accept> attribute.
+        """
+        return list(self._allowed_mimes)
+
 
 class UploadService:
     """
@@ -115,11 +147,14 @@ class UploadService:
       - Delegate storage to Upload utility
       - Deduplicate by SHA-256 hash via Resource table
       - Return Resource instance to the caller
+
+    When file_type is None, all configured file types are accepted. The actual
+    FileType written to the Resource record is inferred from the detected MIME.
     """
 
     def __init__(
             self,
-            file_type: FileType,
+            file_type: FileType | None,
             use_unique_name: bool = True,
             upload_to: str | None = None,
             user=None
@@ -151,6 +186,39 @@ class UploadService:
             case _:
                 return today.strftime('%Y/%m')
 
+    @staticmethod
+    def _infer_file_type(detected_mime: str):
+        """
+        Infer FileType value from a detected MIME type.
+        Falls back to empty string if no match is found.
+        Used when the service is initialized in all-types mode (file_type=None).
+        """
+        mime_lower = detected_mime.lower()
+        if mime_lower.startswith('image/'):
+            return FileType.IMAGE.value
+        if mime_lower.startswith('audio/'):
+            return FileType.AUDIO.value
+        if mime_lower.startswith('video/'):
+            return FileType.VIDEO.value
+        if mime_lower in ('application/pdf',):
+            return FileType.DOCUMENT.value
+        if mime_lower in (
+                'application/zip',
+                'application/x-rar-compressed',
+                'application/x-7z-compressed',
+                'application/x-tar',
+                'application/gzip',
+        ):
+            return FileType.ARCHIVE.value
+        return ''
+
+    def get_accepted_mimes(self) -> list[str]:
+        """
+        Return the list of allowed MIME types for this service instance.
+        Delegates to the validator. Used to populate <input accept>.
+        """
+        return self._validator.get_accepted_mimes()
+
     def save(self, file: UploadedFile) -> Resource:
         """
         Detect MIME type, validate, save file, and persist to database.
@@ -171,6 +239,13 @@ class UploadService:
         # Resolve uploaded_by — AnonymousUser is treated as None
         uploaded_by = self.user if (self.user and self.user.is_authenticated) else None
 
+        # Resolve file_type: use configured value or infer from MIME in all-types mode
+        file_type_value = (
+            self.file_type.value
+            if self.file_type is not None
+            else self._infer_file_type(detected_mime)
+        )
+
         # Deduplicate by hash, create if not exists
         resource, _ = Resource.objects.get_or_create(
             hash=result.hash,
@@ -178,7 +253,7 @@ class UploadService:
                 'url': result.path,
                 'original_name': result.original_name,
                 'size': result.size,
-                'file_type': self.file_type.value,
+                'file_type': file_type_value,
                 'mime_type': detected_mime,
                 'uploaded_by': uploaded_by,
             }

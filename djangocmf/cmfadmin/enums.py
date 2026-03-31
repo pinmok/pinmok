@@ -67,6 +67,19 @@ class MimeType(models.TextChoices):
     TAR = 'application/x-tar', 'TAR'
     GZIP = 'application/gzip', 'GZ'
 
+    @classmethod
+    def to_extensions(cls, mimes: list[str]) -> list[str]:
+        """Convert a list of MIME strings to human-readable extension labels."""
+        mime_map = {str(m.value): m.label for m in cls}
+        result = []
+        for mime in mimes:
+            if mime in mime_map:
+                result.append(mime_map[mime])
+            else:
+                # Fallback: strip prefix, e.g. 'application/pdf' -> 'pdf'
+                result.append(mime.split('/')[-1])
+        return result
+
 
 class ConfigCategory(models.TextChoices):
     SITE = "site", "Site Information"
@@ -149,3 +162,8 @@ class TargetChoices(models.TextChoices):
     """ HTML a tag target attribute """
     SELF = '_self', 'Self Window'
     BLANK = '_blank', 'Blank Window'
+
+
+class ImageWidgetMode(StrEnum):
+    PATH = 'path'
+    RESOURCE = 'resource'

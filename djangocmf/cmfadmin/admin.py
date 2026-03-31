@@ -13,20 +13,27 @@ Author:
 Created:
   2025-06-08
 """
+from django.contrib import admin, messages
+from django.contrib.admin.options import IS_POPUP_VAR
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import User, Group
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.files.storage import default_storage
+from django.http import HttpResponseRedirect
+from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from djangocmf import cmfadmin
-from djangocmf.cmfadmin.enums import ConfigCategory, UploadConfigKey
+from djangocmf.cmfadmin.enums import ConfigCategory, UploadConfigKey, FileType, MimeType
 from djangocmf.cmfadmin.fields import IndentedModelChoiceField
 from djangocmf.cmfadmin.forms.config_forms import EmailConfigForm, UploadConfigForm
 from djangocmf.cmfadmin.forms.forms import CMFAdminPasswordResetForm, CMFAdminUserCreationForm
-from djangocmf.cmfadmin.models import ExternalLink, Nav, SiteConfig, EmailConfig, UploadConfig, NavItem
+from djangocmf.cmfadmin.models import ExternalLink, Nav, SiteConfig, EmailConfig, UploadConfig, NavItem, Resource
 from djangocmf.cmfadmin.options import CMFModelAdmin, CMFModelAdminMixin, ConfigModelAdmin, ExtraPanel
 from djangocmf.cmfadmin.service.navigation import NavService
+from djangocmf.cmfadmin.service.upload import UploadService
 from djangocmf.cmfadmin.widgets import CMFSelect
 
 
@@ -177,14 +184,14 @@ class ExternalLinksAdmin(CMFModelAdmin):
 class NavAdmin(CMFModelAdmin):
     """Admin for navigation menu management."""
     menu_order = 6000
-    list_display = ('title', 'slug', 'is_active', 'created_at', 'edit_items')
+    list_display = ('title', 'slug', 'is_active', 'created_at', 'items_action')
     list_display_links = ('title', 'slug')
 
-    def edit_items(self, obj):
+    def items_action(self, obj):
         url = reverse('admin:cmfadmin_navitem_changelist') + f'?nav__id__exact={obj.pk}'
         return format_html('<a href="{}">{}</a>', url, _('Edit Nav Items'))
 
-    edit_items.short_description = _('Items')
+    items_action.short_description = _('Items')
 
 
 @cmfadmin.register(NavItem)
@@ -256,3 +263,145 @@ class NavItemAdmin(CMFModelAdmin):
     @property
     def back_url(self):
         return reverse('admin:cmfadmin_navitem_changelist')
+
+
+@cmfadmin.register(Resource)
+class ResourceAdmin(CMFModelAdmin):
+    """
+    Admin interface for the Resource model.
+
+    Dual purpose:
+    1. Standalone management interface for uploaded files and external resources.
+    2. Popup selector for all ForeignKey(Resource) fields across the entire admin,
+       served automatically via the raw_id widget mechanism — no per-admin
+       configuration required.
+
+    Customization guide:
+    - list_display   : add/remove column names freely
+    - list_filter    : add/remove filter classes or field names freely
+    - search_fields  : add/remove field names freely
+    - readonly_fields: controls which fields are editable on the change form
+    """
+    # --- Upload form template for add view ---
+    add_form_template = 'admin/widgets/resource_add_form.html'
+
+    # --- List display ---
+    list_display = [
+        'thumbnail_preview',
+        'original_name',
+        'file_type',
+        'mime_type',
+        'size',
+        'uploaded_by',
+        'created_at',
+    ]
+    list_display_links = ['original_name']
+
+    # --- Filters (add/remove entries freely) ---
+    list_filter = [
+        'file_type',
+    ]
+
+    # --- Search (add/remove field names freely) ---
+    search_fields = [
+        'original_name',
+        'url',
+    ]
+
+    # --- Read-only fields on change form ---
+    readonly_fields = [
+        'original_name',
+        'thumbnail_preview',
+        'url',
+        'hash',
+        'size',
+        'mime_type',
+        'file_type',
+        'uploaded_by',
+        'created_at',
+    ]
+
+    ordering = ['-created_at']
+
+    @admin.display(description=_('preview'))
+    def thumbnail_preview(self, obj):
+        """
+        Render a thumbnail for image-type resources.
+        Non-image types render a dash placeholder.
+        """
+        if obj.file_type == FileType.IMAGE:
+            if obj.url.startswith(('http://', 'https://')):
+                src = obj.url
+            else:
+                src = default_storage.url(obj.url)
+            return format_html(
+                '<img src="{}" style="height:40px;width:auto;'
+                'object-fit:cover;border-radius:3px;" alt="">',
+                src,
+            )
+        return '—'
+
+    def add_view(self, request, form_url='', extra_context=None):
+        """
+        Replace the standard add form with a file upload form.
+
+        GET:  Render upload form with allowed MIME types for <input accept>.
+        POST: Receive uploaded file, delegate to UploadService, then follow
+              standard admin success flow (redirect to list or dismiss popup).
+        """
+        # Permission check — reuse admin's built-in mechanism
+        if not self.has_add_permission(request):
+            raise PermissionDenied
+
+        # Build service in all-types mode (file_type=None)
+        service = UploadService(file_type=None, user=request.user)
+
+        if request.method == 'POST':
+            uploaded_file = request.FILES.get('file')
+            if not uploaded_file:
+                messages.error(request, _('No file was uploaded.'))
+                return self._render_upload_form(request, service, form_url, extra_context)
+
+            try:
+                resource = service.save(uploaded_file)
+            except ValidationError as e:
+                messages.error(request, e.message)
+                return self._render_upload_form(request, service, form_url, extra_context)
+            except Exception as e:
+                messages.error(request, _('Upload failed: %(error)s') % {'error': e})
+                return self._render_upload_form(request, service, form_url, extra_context)
+
+            # Popup mode — notify opener and close window
+            if IS_POPUP_VAR in request.POST:
+                return self.response_add(request, resource)
+
+            # Normal mode — redirect to change list with success message
+            messages.success(request, _('Resource uploaded successfully.'))
+            return HttpResponseRedirect(
+                reverse(
+                    'admin:%s_%s_changelist' % (
+                        self.model._meta.app_label,
+                        self.model._meta.model_name,
+                    )
+                )
+            )
+
+        return self._render_upload_form(request, service, form_url, extra_context)
+
+    def _render_upload_form(self, request, service, form_url='', extra_context=None):
+        """Render the upload form with accepted MIME types in template context."""
+        # Convert MIME list to comma-separated string for <input accept>
+        accepted_mimes = service.get_accepted_mimes()
+
+        context = {
+            **self.admin_site.each_context(request),
+            'title': _('Upload Resource'),
+            'accepted_mimes': ','.join(accepted_mimes),
+            'accepted_extensions': ', '.join(MimeType.to_extensions(accepted_mimes)),
+            'form_url': form_url,
+            'is_popup': IS_POPUP_VAR in request.GET or IS_POPUP_VAR in request.POST,
+            'opts': self.model._meta,
+            'app_label': self.model._meta.app_label,
+            **(extra_context or {}),
+        }
+        return TemplateResponse(request, self.add_form_template, context)
