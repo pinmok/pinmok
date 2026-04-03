@@ -5,7 +5,7 @@
 <div class="flex-grow-1">
     <div class="d-none">{% include 'django/forms/widgets/input.html' %}</div>
 </div>
-{% if link_label %}<span class="resource-label">{{ link_label|truncate_filename }}</span>{% endif %}
+<span class="resource-label">{% if link_label %}{{ link_label|truncate_filename }}{% endif %}</span>
 {% if related_url %}
     <a href="{{ related_url }}" class="related-lookup btn btn-icon" id="lookup_id_{{ widget.name }}" title="{{ link_title }}">
         {% icon 'tabler-search' 'icon' %}

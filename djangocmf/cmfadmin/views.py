@@ -325,7 +325,7 @@ class UploadFileView(CMFPermissionMixin, View):
 
         try:
             service = UploadService(file_type, user=request.user)
-            resource = service.save_resource(uploaded_file)
+            resource = service.save(uploaded_file)
             return api.success(_('Upload successful.'), {
                 'id': resource.id,
                 'url': resource.url,
