@@ -216,6 +216,17 @@ function initImageCropperWidgets() {
         imageEl.onload              = () => _modal.show();
     });
 
+    // Set ratio button state before the modal animation starts (show vs shown).
+    // Using 'show.bs.modal' (no 'n') is intentional — it fires before the animation
+    // begins, so the correct radio is already checked when the modal becomes visible.
+    // Using 'shown.bs.modal' would cause a visible jump from Free to the actual ratio.
+    modalEl.addEventListener('show.bs.modal', () => {
+        const currentRatio = _activeWidget?.container.dataset.aspectRatio || 'NaN';
+        modalEl.querySelectorAll('input[name="cropperAspectRatio"]').forEach(radio => {
+            radio.checked = radio.value === currentRatio;
+        });
+    });
+
     // Initialize Cropper when modal is shown
     modalEl.addEventListener('shown.bs.modal', () => {
         if (!_activeWidget?._originalFile) return;
@@ -231,7 +242,10 @@ function initImageCropperWidgets() {
 
         modalEl.querySelectorAll('input[name="cropperAspectRatio"]').forEach(radio => {
             radio.disabled = lockRatio;
-            if (!radio.disabled) radio.checked = radio.value === 'NaN';
+            if (!radio.disabled) {
+                const currentRatio = _activeWidget.container.dataset.aspectRatio || 'NaN';
+                radio.checked      = radio.value === currentRatio;
+            }
         });
 
         // Lock custom ratio inputs too

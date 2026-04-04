@@ -344,7 +344,23 @@ class HugeRTEWidget(forms.Textarea):
         final_attrs = self.build_attrs(self.attrs, attrs or {})
         element_id = final_attrs.get('id', f'id_{name}')
 
-        config = {'selector': f'#{element_id}', 'branding': False}
+        config = {
+            'selector': f'#{element_id}',
+            'branding': False,
+            'menubar': False,
+            'plugins': [
+                'advlist', 'anchor', 'lists', 'link', 'image', 'table', 'code', 'fullscreen', 'preview',
+                'searchreplace', 'autoresize', 'wordcount', 'help', 'media'
+            ],
+            'toolbar': (
+                'code|undo redo|styles|bold italic underline strikethrough|forecolor backcolor|'
+                'subscript superscript|alignleft aligncenter alignright alignjustify|'
+                'anchor removeformat|bullist numlist|outdent indent|link image media table|fullscreen preview help'
+            ),
+            'toolbar_mode': 'wrap',
+            'min_height': 300,
+            'images_upload_handler': '__UPLOAD_HANDLER__',
+        }
 
         # Convert a Django language code to a Hugerte RFC 5646 language value.
         lang_code = get_language()
@@ -353,7 +369,12 @@ class HugeRTEWidget(forms.Textarea):
             config['language'] = hugerte_lang
 
         config.update(self.extra_config)
+
+        # json.dumps cannot serialize a JS function reference directly.
+        # Use a placeholder string, then replace it with the actual function name
+        # after serialization so HugeRTE receives a real function reference, not a string.
         config_json = json.dumps(config, ensure_ascii=False)
+        config_json = config_json.replace('"__UPLOAD_HANDLER__"', 'hugerteImageHandler')
 
         # Inline init script scoped to this specific textarea instance.
         # Using DOMContentLoaded so the script is safe even if placed in <head>.
@@ -363,7 +384,10 @@ class HugeRTEWidget(forms.Textarea):
         return mark_safe(html + init_script)
 
     class Media:
-        js = ('libs/hugerte/hugerte.min.js',)
+        js = (
+            'libs/hugerte/hugerte.min.js',
+            'admin/js/widgets/hugerte_upload.js',
+        )
 
 
 class ResourceWidget(CMFForeignKeyRawId):

@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
         themeToggle.addEventListener("click", function (e) {
             e.preventDefault();
             const currentTheme = document.documentElement.getAttribute("data-bs-theme");
-            const newTheme = currentTheme === "dark" ? "light" : "dark";
+            const newTheme     = currentTheme === "dark" ? "light" : "dark";
             document.documentElement.setAttribute("data-bs-theme", newTheme);
             localStorage.setItem("bs-theme", newTheme);
         });
@@ -117,7 +117,7 @@ function ajaxRequest(
 
     method = method.toUpperCase();
 
-    let body = null;
+    let body           = null;
     const finalHeaders = {
         'X-CSRFToken': getCookie('csrftoken'),
         ...headers,
@@ -130,11 +130,11 @@ function ajaxRequest(
     } else {
         // Determine body format
         const isFormData = data instanceof FormData;
-        const useJson = contentType === 'json' || (contentType === 'auto' && !isFormData);
+        const useJson    = contentType === 'json' || (contentType === 'auto' && !isFormData);
 
         if (useJson) {
             finalHeaders['Content-Type'] = 'application/json';
-            body = JSON.stringify(data);
+            body                         = JSON.stringify(data);
         } else {
             // FormData: let browser set Content-Type with boundary automatically
             body = data;
@@ -143,7 +143,7 @@ function ajaxRequest(
 
     fetch(url, {
         method,
-        headers: finalHeaders,
+        headers:     finalHeaders,
         body,
         credentials: 'same-origin',
     })
@@ -204,13 +204,13 @@ const FileManager = {
      */
     upload(file, fileType, options = {}) {
         const {
-            url,
-            extraData = {},
-            btn = null,
-            fileName = null,
-            onSuccess = null,
-            onError = null,
-        } = options;
+                  url,
+                  extraData = {},
+                  btn       = null,
+                  fileName  = null,
+                  onSuccess = null,
+                  onError   = null,
+              } = options;
 
         if (!url) {
             console.error('[FileManager.upload] url is required.');
@@ -228,8 +228,8 @@ const FileManager = {
         ajaxRequest(
             {
                 url,
-                method: 'POST',
-                data: formData,
+                method:      'POST',
+                data:        formData,
                 contentType: 'form',
                 onSuccess,
                 onError,
@@ -245,7 +245,7 @@ const FileManager = {
  * @param {string} adminHome - URL of the admin/back-end home page
  */
 function goBackOrHome(frontendHome = "/", adminHome = "/admin") {
-    const referrer = document.referrer;
+    const referrer    = document.referrer;
     const currentHost = window.location.host;
 
     if (referrer) {
@@ -264,39 +264,3 @@ function goBackOrHome(frontendHome = "/", adminHome = "/admin") {
         window.location.href = frontendHome;
     }
 }
-
-document.addEventListener('DOMContentLoaded', function () {
-// Delete file button
-    document.querySelectorAll('.delete-file-btn').forEach(deleteEl => {
-        deleteEl.addEventListener('click', async function () {
-            const filePath = deleteEl.dataset.path;
-            if (!filePath) return;
-
-            if (!await Dialog.warning(gettext('Are you sure you want to delete this file?'), gettext('Confirm to delete'))) return;
-
-            const previewId = deleteEl.dataset.preview;
-            const inputId = deleteEl.dataset.input;
-
-            if (previewId) {
-                const imgEl = document.querySelector(previewId);
-                if (imgEl) imgEl.src = window.DEFAULT_IMG;
-            }
-
-            if (inputId) {
-                const inputEl = document.querySelector(inputId);
-                if (inputEl) inputEl.value = "";
-            }
-
-            FileManager.delete(filePath, {
-                btn: deleteEl,
-                onSuccess: () => {
-                    // Optional: trigger event for page-level refresh or other logic
-                    document.dispatchEvent(new CustomEvent('fileDeleted', {detail: {filePath}}));
-                },
-                onError: (err) => {
-                    showToast(err, ToastType.ERROR);
-                }
-            });
-        });
-    });
-});

@@ -16,11 +16,13 @@ Author:
 Created:
   2026-03-12
 """
-
+import io
 from datetime import datetime
+from pathlib import Path
 
+from PIL import Image
 from django.core.exceptions import ValidationError
-from django.core.files.uploadedfile import UploadedFile
+from django.core.files.uploadedfile import UploadedFile, InMemoryUploadedFile
 from django.utils.translation import gettext_lazy as _
 
 from djangocmf.cmfadmin.enums import FileType, UploadConfigKey, ConfigCategory, UploadPathRule
@@ -212,6 +214,36 @@ class UploadService:
             return FileType.ARCHIVE.value
         return ''
 
+    @staticmethod
+    def _compress_image(file: UploadedFile) -> UploadedFile:
+        """
+        Re-compress image using Pillow to reduce file size.
+        PNG with transparency is kept as PNG with optimize=True.
+        Everything else is converted to JPEG at quality=85.
+        """
+        img = Image.open(file)
+        output = io.BytesIO()
+
+        has_transparency = img.mode in ('RGBA', 'LA') or (
+                img.mode == 'P' and 'transparency' in img.info
+        )
+
+        if has_transparency:
+            img.save(output, format='PNG', optimize=True)
+            content_type = 'image/png'
+            ext = '.png'
+        else:
+            img = img.convert('RGB')
+            img.save(output, format='JPEG', quality=85, optimize=True)
+            content_type = 'image/jpeg'
+            ext = '.jpg'
+
+        output.seek(0)
+        new_name = Path(file.name).stem + ext
+        return InMemoryUploadedFile(
+            output, 'file', new_name, content_type, output.getbuffer().nbytes, None
+        )
+
     def get_accepted_mimes(self) -> list[str]:
         """
         Return the list of allowed MIME types for this service instance.
@@ -232,6 +264,9 @@ class UploadService:
 
         # Validate type and size against config
         self._validator.validate(file, detected_mime)
+
+        if self.file_type == FileType.IMAGE:
+            file = self._compress_image(file)
 
         # Persist file to storage
         result: UploadResult = self._uploader.save(file)
