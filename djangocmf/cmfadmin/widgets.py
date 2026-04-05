@@ -22,7 +22,6 @@ from django.core.files.storage import default_storage
 from django.forms import Widget
 from django.templatetags.static import static
 from django.urls import reverse
-from django.utils.safestring import mark_safe
 from django.utils.translation import get_language
 
 from djangocmf.cmfadmin.constants import HUGERTE_LANG_MAP
@@ -327,66 +326,53 @@ class CMFDateTimeInput(BaseCMFDateTimeMixin, forms.DateTimeInput):
 
 class HugeRTEWidget(forms.Textarea):
     """
-    Textarea widget that initializes the Hugerte rich-text editor.
+    Textarea widget that initializes the HugeRTE rich-text editor.
+    Config is serialized to a data attribute and picked up by hugerte.js.
     """
-    default_config = {}
+    BASE_CONFIG = {
+        'branding': False,
+        'menubar': False,
+        'plugins': [
+            'advlist', 'anchor', 'lists', 'link', 'image', 'table', 'code', 'fullscreen', 'preview',
+            'searchreplace', 'autoresize', 'wordcount', 'help', 'media'
+        ],
+        'toolbar': (
+            'code|undo redo|styles|bold italic underline strikethrough|forecolor backcolor|'
+            'subscript superscript|alignleft aligncenter alignright alignjustify|'
+            'anchor removeformat|bullist numlist|outdent indent|link image media table|fullscreen preview help'
+        ),
+        'toolbar_mode': 'wrap',
+        'min_height': 300,
+    }
 
     def __init__(self, extra_config=None, attrs=None):
-        # extra_config: configuration options used to initialize HugeRTE editor instance
-        self.extra_config = extra_config or self.default_config
+        # extra_config: user-supplied options that override BASE_CONFIG
+        self.extra_config = extra_config or {}
         super().__init__(attrs=attrs)
 
     def render(self, name, value, attrs=None, renderer=None):
-        # Let Django render the standard <textarea>
-        html = super().render(name, value, attrs=attrs, renderer=renderer)
+        config = {**self.BASE_CONFIG}
 
-        # Resolve the actual element id that Django assigned
-        final_attrs = self.build_attrs(self.attrs, attrs or {})
-        element_id = final_attrs.get('id', f'id_{name}')
-
-        config = {
-            'selector': f'#{element_id}',
-            'branding': False,
-            'menubar': False,
-            'plugins': [
-                'advlist', 'anchor', 'lists', 'link', 'image', 'table', 'code', 'fullscreen', 'preview',
-                'searchreplace', 'autoresize', 'wordcount', 'help', 'media'
-            ],
-            'toolbar': (
-                'code|undo redo|styles|bold italic underline strikethrough|forecolor backcolor|'
-                'subscript superscript|alignleft aligncenter alignright alignjustify|'
-                'anchor removeformat|bullist numlist|outdent indent|link image media table|fullscreen preview help'
-            ),
-            'toolbar_mode': 'wrap',
-            'min_height': 300,
-            'images_upload_handler': '__UPLOAD_HANDLER__',
-        }
-
-        # Convert a Django language code to a Hugerte RFC 5646 language value.
+        # Convert Django language code to HugeRTE RFC 5646 language value
         lang_code = get_language()
         hugerte_lang = None if lang_code is None else HUGERTE_LANG_MAP.get(lang_code.lower())
         if hugerte_lang:
             config['language'] = hugerte_lang
 
+        # User-supplied config overrides BASE_CONFIG
         config.update(self.extra_config)
 
-        # json.dumps cannot serialize a JS function reference directly.
-        # Use a placeholder string, then replace it with the actual function name
-        # after serialization so HugeRTE receives a real function reference, not a string.
-        config_json = json.dumps(config, ensure_ascii=False)
-        config_json = config_json.replace('"__UPLOAD_HANDLER__"', 'hugerteImageHandler')
+        final_attrs = self.build_attrs(self.attrs, attrs or {})
+        existing_class = final_attrs.get('class', '')
+        final_attrs['class'] = (existing_class + ' hugerte-editor').strip()
+        final_attrs['data-hugerte-config'] = json.dumps(config, ensure_ascii=False)
 
-        # Inline init script scoped to this specific textarea instance.
-        # Using DOMContentLoaded so the script is safe even if placed in <head>.
-        init_script = (
-            f'<script>document.addEventListener("DOMContentLoaded", function() {{ hugerte.init({config_json});}});</script>'
-        )
-        return mark_safe(html + init_script)
+        return super().render(name, value, attrs=final_attrs, renderer=renderer)
 
     class Media:
         js = (
             'libs/hugerte/hugerte.min.js',
-            'admin/js/widgets/hugerte_upload.js',
+            'admin/js/widgets/hugerte.js',
         )
 
 

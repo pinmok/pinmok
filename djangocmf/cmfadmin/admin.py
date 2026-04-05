@@ -162,22 +162,19 @@ class ExternalLinksAdmin(CMFModelAdmin):
         ]})
     ]
 
+    @admin.display(description='URL', ordering='url')
     def url_link(self, obj):
         """Display the URL as a link that opens in a new tab in the list view"""
         if obj.url:
             return format_html('<a href="{}" target="_blank">{}</a>', obj.url, obj.url)
         return "-"
 
-    url_link.short_description = 'url'
-    url_link.admin_order_field = 'url'
-
+    @admin.display(description=_('Icon'))
     def image_thumb(self, obj):
         """Display thumbnail image in list view."""
         if obj.image:
             return format_html('<img src="{}" class="icon">', obj.image.url)
         return "-"
-
-    image_thumb.short_description = _('Icon')
 
 
 @cmfadmin.register(Nav)
@@ -187,11 +184,10 @@ class NavAdmin(CMFModelAdmin):
     list_display = ('title', 'slug', 'is_active', 'created_at', 'items_action')
     list_display_links = ('title', 'slug')
 
+    @admin.display(description=_('Items'))
     def items_action(self, obj):
         url = reverse('admin:cmfadmin_navitem_changelist') + f'?nav__id__exact={obj.pk}'
         return format_html('<a href="{}">{}</a>', url, _('Edit Nav Items'))
-
-    items_action.short_description = _('Items')
 
 
 @cmfadmin.register(NavItem)
@@ -262,6 +258,10 @@ class NavItemAdmin(CMFModelAdmin):
 
     @property
     def back_url(self):
+        """
+        Defined as a property because reverse() must be called at runtime,
+        not at class definition time when URLs are not yet registered.
+        """
         return reverse('admin:cmfadmin_navitem_changelist')
 
 

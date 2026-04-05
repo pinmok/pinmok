@@ -64,6 +64,7 @@ class CMFModelAdminMixin(BaseModelAdmin):
     # Lower values appear first. Defaults to DEFAULT_SORT_ORDER (10000).
     menu_order: int = DEFAULT_SORT_ORDER
     image_crop_fields: list = []
+    rich_text_fields: list = []
 
     @property
     def action_form(self):
@@ -170,7 +171,7 @@ class CMFModelAdminMixin(BaseModelAdmin):
         Replace widget (and form field where necessary) for fields listed in
         image_crop_fields.
 
-        Accepts list (no config) or dict (with per-field config).
+        Accepts a list of field names (str) or single-key dicts with per-field config.
 
         Dict values may contain:
             mode        : 'path' (default) or 'resource'
@@ -181,12 +182,12 @@ class CMFModelAdminMixin(BaseModelAdmin):
         In resource mode, the form field is left unchanged (ModelChoiceField
         handles string PKs natively).
         """
-        if isinstance(self.image_crop_fields, dict):
-            items = self.image_crop_fields.items()
-        else:
-            items = ((field_name, {}) for field_name in self.image_crop_fields)
+        for item in self.image_crop_fields:
+            if isinstance(item, str):
+                field_name, config = item, {}
+            else:
+                field_name, config = next(iter(item.items()))
 
-        for field_name, config in items:
             if field_name not in base_fields:
                 continue
 
@@ -208,6 +209,27 @@ class CMFModelAdminMixin(BaseModelAdmin):
                     help_text=form_field.help_text,
                     widget=form_field.widget,
                 )
+
+    def _apply_rich_text_fields(self, base_fields):
+        """
+        Replace widget with HugeRTEWidget for fields listed in rich_text_fields.
+
+        Accepts a list of field names (str) or single-key dicts with per-field config.
+
+        Dict values are passed directly to HugeRTEWidget as extra_config,
+        overriding BASE_CONFIG on a per-key basis.
+        """
+        for item in self.rich_text_fields:
+            if isinstance(item, str):
+                field_name, extra_config = item, {}
+            else:
+                field_name, extra_config = next(iter(item.items()))
+
+            if field_name not in base_fields:
+                continue
+
+            form_field = base_fields[field_name]
+            form_field.widget = widgets.HugeRTEWidget(extra_config=extra_config)
 
 
 class CMFModelAdmin(CMFModelAdminMixin, ModelAdmin):
@@ -237,6 +259,7 @@ class CMFModelAdmin(CMFModelAdminMixin, ModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         self._apply_crop_fields(form.base_fields)
+        self._apply_rich_text_fields(form.base_fields)
         return form
 
 
@@ -244,6 +267,7 @@ class CMFInlineMixin(CMFModelAdminMixin):
     def get_formset(self, request, obj=None, **kwargs):
         formset = super().get_formset(request, obj, **kwargs)
         self._apply_crop_fields(formset.form.base_fields)
+        self._apply_rich_text_fields(formset.form.base_fields)
         return formset
 
 

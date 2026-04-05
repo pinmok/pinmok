@@ -35,13 +35,17 @@
 
                 <!-- Synchronize menu -->
                 {% if user.is_superuser %}
-                    <a class="text-danger cursor-pointer" data-bs-toggle="modal" data-bs-target="#sync_menu_alert">
-                        <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                             stroke-linejoin="round" title="{% translate 'Synchronize Menu' %}"
-                             data-bs-toggle="tooltip" data-bs-placement="bottom">
-                            <use href="{% static 'admin/svg/sprite.svg' %}#tabler-menu"></use>
-                        </svg>
+                    <a class="text-danger cursor-pointer" id="sync-menu-btn" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                       title="{% translate 'Synchronize Menu' %}">
+                        {% icon 'tabler-menu' 'icon' %}
                     </a>
+                    {# Synchronize Warning #}
+                    <span id="sync-menu-msg" class="d-none">
+                        {% blocktranslate trimmed %}
+                            Synchronizing the menu will reload the menu configuration and reset all menu items. This action
+                            cannot be undone! Please proceed with caution if you have made any adjustments to the menus!
+                        {% endblocktranslate %}
+                    </span>
                 {% endif %}
             </div>
             <!-- END ICON GROUP  -->
@@ -128,37 +132,11 @@
     </div>
 </aside>
 
-{# Synchronize Warning #}
-<div class="modal modal-blur fade rounded bg-surface-backdrop py-6 w-100 h-100" id="sync_menu_alert"
-     tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            <div class="modal-status bg-danger"></div>
-            <div class="modal-body text-center py-4">
-                {% icon 'tabler-alert-triangle' 'icon mb-2 text-danger icon-lg' %}
-                <h3 class="text-uppercase">{% translate 'Warning' %}</h3>
-                <div class="text-secondary text-start">
-                    {% blocktranslate trimmed %}
-                        Synchronizing the menu will reload the menu configuration and reset all menu items. This action
-                        cannot be undone!
-                        Please proceed with caution if you have made any adjustments to the menus!
-                    {% endblocktranslate %}
-                </div>
-            </div>
-            <div class="modal-footer">
-                <div class="w-100">
-                    <div class="row">
-                        <div class="col">
-                            <button class="btn w-100" data-bs-dismiss="modal"> {% translate 'Cancel' %} </button>
-                        </div>
-                        <div class="col">
-                            <a href="{% url 'admin:sync_menu' %}"
-                               class="btn btn-danger w-100">{% translate 'Confirm' %}</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<script>
+    document.getElementById('sync-menu-btn').addEventListener('click', async () => {
+        const msg = document.getElementById('sync-menu-msg').textContent.trim();
+        if (await Dialog.danger(msg, '{% translate "Warning" %}')) {
+            window.location.href = "{% url 'admin:sync_menu' %}";
+        }
+    });
+</script>
