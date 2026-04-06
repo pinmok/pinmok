@@ -160,10 +160,16 @@ class UploadPathRule(StrEnum):
 
 class TargetChoices(models.TextChoices):
     """ HTML a tag target attribute """
-    SELF = '_self', 'Self Window'
-    BLANK = '_blank', 'Blank Window'
+    SELF = '_self', _('Self Window')
+    BLANK = '_blank', _('Blank Window')
 
 
 class ImageWidgetMode(StrEnum):
     PATH = 'path'
     RESOURCE = 'resource'
+
+
+class NavType(models.TextChoices):
+    MAIN = "main", _("Main Navigation")
+    FOOTER = "footer", _("Footer Navigation")
+    SIDEBAR = "sidebar", _("Sidebar Navigation")

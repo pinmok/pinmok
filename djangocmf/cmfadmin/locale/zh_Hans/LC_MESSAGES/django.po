@@ -523,10 +523,10 @@ msgid "Time when this navigation item was last updated."
 msgstr "导航项的最后更新时间。"
 
 #: .\models.py:373 .\models.py:374
-msgid "navigation item"
-msgstr "导航项"
-msgid "navigation items"
-msgstr "导航项"
+msgid "navigation"
+msgstr "导航"
+msgid "navigations"
+msgstr "导航"
 
 #: .\options.py:355
 msgid "Configuration saved successfully."

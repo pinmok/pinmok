@@ -13,7 +13,7 @@ Created:
 from dataclasses import dataclass
 
 from djangocmf.cmfadmin.enums import TargetChoices
-from djangocmf.cmfadmin.models import Nav, NavItem as NavItemModel
+from djangocmf.cmfadmin.models import Nav, NavTranslation
 from djangocmf.core.constants import DEFAULT_SORT_ORDER
 from djangocmf.core.libs.tree import TreeNode
 
@@ -27,48 +27,76 @@ class NavNode(TreeNode['NavNode']):
     sort_order: int = DEFAULT_SORT_ORDER
     is_visible: bool = True
     level: int = 0
-    title: str = ''
 
     def __repr__(self):
-        return f"<NavItem id={self.id} name={self.name} level={self.level}>"
+        return f"<NavNode id={self.id} name={self.name} level={self.level}>"
 
 
 class NavService:
-
     @classmethod
-    def _load_nodes(cls, nav: int | Nav) -> list[NavNode]:
+    def _load_nodes(cls, nav_type: str, language: str) -> list[NavNode]:
         """Fetch nav items from database and convert to NavNode instances."""
-        nav_items = NavItemModel.objects.filter(
-            nav_id=nav.id if isinstance(nav, Nav) else nav
-        ).values("id", "parent_id", "name", "url", "icon", "target", "sort_order", "is_visible")
-        return [NavNode(**item) for item in nav_items]
+        items = (
+            Nav.objects
+            .filter(nav_type=nav_type, is_visible=True)
+            .prefetch_related('translations')
+            .values(
+                "id", "parent_id", "url", "icon",
+                "target", "sort_order", "is_visible"
+            )
+        )
+        # Build a name lookup from translations
+        translation_map = {
+            t.nav_id: t.name
+            for t in NavTranslation.objects.filter(
+                nav__nav_type=nav_type,
+                language=language,
+            )
+        }
+        nodes = []
+        for item in items:
+            item['name'] = translation_map.get(item['id'], '')
+            nodes.append(NavNode(**item))
+        return nodes
 
     @classmethod
-    def get_items(cls, nav: int | Nav) -> list[tuple[NavNode, str]]:
+    def get_items(cls, nav_type: str, language: str | None = None, exclude_id: int | None = None) -> list[tuple[NavNode, str]]:
         """
         Retrieve nav items and flatten in DFS pre-order with indented labels.
 
         Args:
-            nav: Either a ``Nav`` instance or a nav_id.
+            nav_type: NavType value string (e.g. 'main', 'footer').
+            language: Language code; falls back to default if not provided.
+            exclude_id: If provided, exclude the node with this id from the result.
+                    Used to prevent a node from appearing as its own parent option.
 
         Returns:
             List of ``(NavNode, indented_label)`` pairs in DFS pre-order.
         """
+        from django.conf import settings
+        lang = language or settings.LANGUAGE_CODE
+        nodes = cls._load_nodes(nav_type, lang)
+        # Exclude self to prevent circular reference in parent selection
+        if exclude_id is not None:
+            nodes = [n for n in nodes if n.id != exclude_id]
         return NavNode.flatten_with_indent(
-            cls._load_nodes(nav),
+            nodes,
             label_func=lambda n: n.name,
             sort_key="sort_order",
         )
 
     @classmethod
-    def build_tree(cls, nav: int | Nav) -> list[NavNode]:
+    def build_tree(cls, nav_type: str, language: str | None = None) -> list[NavNode]:
         """
-        Build the tree structure from the nav items for the specified nav.
+        Build the tree structure for the specified nav_type.
 
         Args:
-            nav: Either a ``Nav`` instance or a nav_id.
+            nav_type: NavType value string (e.g. 'main', 'footer').
+            language: Language code; falls back to default if not provided.
 
         Returns:
             Root nodes of the constructed tree.
         """
-        return NavNode.build_tree(cls._load_nodes(nav), sort_key="sort_order")
+        from django.conf import settings
+        lang = language or settings.LANGUAGE_CODE
+        return NavNode.build_tree(cls._load_nodes(nav_type, lang), sort_key="sort_order")

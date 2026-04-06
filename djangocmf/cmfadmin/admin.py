@@ -13,6 +13,7 @@ Author:
 Created:
   2025-06-08
 """
+from django.conf import settings
 from django.contrib import admin, messages
 from django.contrib.admin.options import IS_POPUP_VAR
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
@@ -23,18 +24,18 @@ from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import format_html
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, get_language
 
 from djangocmf import cmfadmin
+from djangocmf.cmfadmin import widgets
 from djangocmf.cmfadmin.enums import ConfigCategory, UploadConfigKey, FileType, MimeType
 from djangocmf.cmfadmin.fields import IndentedModelChoiceField
 from djangocmf.cmfadmin.forms.config_forms import EmailConfigForm, UploadConfigForm
 from djangocmf.cmfadmin.forms.forms import CMFAdminPasswordResetForm, CMFAdminUserCreationForm
-from djangocmf.cmfadmin.models import ExternalLink, Nav, SiteConfig, EmailConfig, UploadConfig, NavItem, Resource
-from djangocmf.cmfadmin.options import CMFModelAdmin, CMFModelAdminMixin, ConfigModelAdmin, ExtraPanel
+from djangocmf.cmfadmin.models import ExternalLink, SiteConfig, EmailConfig, UploadConfig, Resource, Nav, NavTranslation
+from djangocmf.cmfadmin.options import CMFModelAdmin, CMFModelAdminMixin, ConfigModelAdmin, ExtraPanel, CMFStackedInline
 from djangocmf.cmfadmin.service.navigation import NavService
 from djangocmf.cmfadmin.service.upload import UploadService
-from djangocmf.cmfadmin.widgets import CMFSelect
 
 
 @cmfadmin.register(User)
@@ -177,94 +178,6 @@ class ExternalLinksAdmin(CMFModelAdmin):
         return "-"
 
 
-@cmfadmin.register(Nav)
-class NavAdmin(CMFModelAdmin):
-    """Admin for navigation menu management."""
-    menu_order = 6000
-    list_display = ('title', 'slug', 'is_active', 'created_at', 'items_action')
-    list_display_links = ('title', 'slug')
-
-    @admin.display(description=_('Items'))
-    def items_action(self, obj):
-        url = reverse('admin:cmfadmin_navitem_changelist') + f'?nav__id__exact={obj.pk}'
-        return format_html('<a href="{}">{}</a>', url, _('Edit Nav Items'))
-
-
-@cmfadmin.register(NavItem)
-class NavItemAdmin(CMFModelAdmin):
-    """Admin for navigation item management."""
-    list_display = ('sort_order', 'name', 'nav', 'parent', 'url', 'is_visible')
-    list_display_links = ('name',)
-    list_filter = ('nav',)
-    list_editable = ('sort_order', 'is_visible')
-    exclude = ('nav',)
-    fieldsets = [
-        (None, {'fields': [
-            'parent',
-            ('name', 'url'),
-            ('icon', 'target'),
-            ('sort_order', 'is_visible'),
-        ]})
-    ]
-
-    def get_model_perms(self, request):
-        """Hide from app_list but keep accessible via direct URL."""
-        return {}
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'parent':
-            nav_id = self._get_nav_id(request)
-            kwargs['empty_label'] = _('Top Level')
-            kwargs['queryset'] = NavItem.objects.filter(nav_id=nav_id) if nav_id else NavItem.objects.none()
-            if nav_id:
-                items = NavService.get_items(nav_id)
-                # Use IndentedModelChoiceField to control option order and display.
-                # queryset is kept for FK validation; choices drives the actual
-                # display and DFS order from flatten_with_indent.
-                return IndentedModelChoiceField(
-                    pairs=items,
-                    widget=CMFSelect(),
-                    label=NavItem._meta.get_field('parent').verbose_name,
-                    required=False,
-                    **kwargs,
-                )
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-    def _get_nav_id(self, request):
-        """Extract nav_id from request in all contexts."""
-        filters = request.GET.get('_changelist_filters', '')
-
-        if filters:
-            for part in filters.split('&'):
-                if part.startswith('nav__id__exact='):
-                    return part.split('=')[1]
-
-        # From existing object URL (/navitem/123/change/)
-        if hasattr(request, 'resolver_match'):
-            obj_id = request.resolver_match.kwargs.get('object_id')
-            if obj_id:
-                try:
-                    return NavItem.objects.values_list('nav_id', flat=True).get(pk=obj_id)
-                except NavItem.DoesNotExist:
-                    pass
-        return None
-
-    def save_model(self, request, obj, form, change):
-        if not change:
-            nav_id = self._get_nav_id(request)
-            if nav_id:
-                obj.nav_id = nav_id
-        super().save_model(request, obj, form, change)
-
-    @property
-    def back_url(self):
-        """
-        Defined as a property because reverse() must be called at runtime,
-        not at class definition time when URLs are not yet registered.
-        """
-        return reverse('admin:cmfadmin_navitem_changelist')
-
-
 @cmfadmin.register(Resource)
 class ResourceAdmin(CMFModelAdmin):
     """
@@ -405,3 +318,83 @@ class ResourceAdmin(CMFModelAdmin):
             **(extra_context or {}),
         }
         return TemplateResponse(request, self.add_form_template, context)
+
+
+class NavTranslationInline(CMFStackedInline):
+    model = NavTranslation
+    extra = 1
+    min_num = 1
+    max_num = len(settings.LANGUAGES)
+    fieldsets = [(None, {'fields': [('name', 'language')]})]
+
+
+@cmfadmin.register(Nav)
+class NavAdmin(CMFModelAdmin):
+    """Admin for navigation item management."""
+    menu_order = 6000
+    list_display = ('get_name', 'nav_type', 'parent', 'url', 'sort_order', 'is_visible')
+    list_display_links = ('get_name',)
+    list_filter = ('nav_type',)
+    list_editable = ('sort_order', 'is_visible')
+    fieldsets = [
+        (None, {'fields': [
+            'nav_type',
+            'parent',
+            ('url', 'target'),
+            ('icon', 'sort_order', 'is_visible'),
+        ]})
+    ]
+    inlines = [NavTranslationInline]
+
+    @admin.display(description=_('Name'))
+    def get_name(self, obj):
+        """Display name from translation, fallback to default language, then any."""
+        from django.conf import settings
+        lang = get_language()
+        translation = (
+                obj.translations.filter(language=lang).first()
+                or obj.translations.filter(language=settings.LANGUAGE_CODE).first()
+                or obj.translations.first()
+        )
+        return translation.name if translation else _('(no name)')
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        return form
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'parent':
+            obj_id = request.resolver_match.kwargs.get('object_id')
+
+            # Get nav_type from query string or from the existing object
+            nav_type = request.GET.get('nav_type')
+            if not nav_type and obj_id:
+                try:
+                    nav_type = Nav.objects.values_list(
+                        'nav_type', flat=True
+                    ).get(pk=obj_id)
+                except Nav.DoesNotExist:
+                    pass
+
+            kwargs['empty_label'] = _('Top Level')
+
+            qs = Nav.objects.all()
+            if nav_type:
+                qs = qs.filter(nav_type=nav_type)
+            # Exclude self to prevent circular reference
+            if obj_id:
+                qs = qs.exclude(pk=obj_id)
+            kwargs['queryset'] = qs
+
+            if nav_type:
+                # Get items excluding self, so IndentedModelChoiceField pairs are also clean
+                items = NavService.get_items(nav_type, exclude_id=int(obj_id) if obj_id else None)
+                return IndentedModelChoiceField(
+                    pairs=items,
+                    widget=widgets.CMFSelect(),
+                    label=Nav._meta.get_field('parent').verbose_name,
+                    required=False,
+                    **kwargs,
+                )
+
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)

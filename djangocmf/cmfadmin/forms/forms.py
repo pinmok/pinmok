@@ -17,7 +17,7 @@ from django.contrib.auth.forms import SetUnusablePasswordMixin
 from django.forms.widgets import Select
 from django.utils.translation import gettext_lazy as _
 
-from djangocmf.cmfadmin.models import NavItem
+from djangocmf.cmfadmin.models import Nav
 from djangocmf.cmfadmin.widgets import CMFPassword, CMFRadioSelect
 
 
@@ -89,20 +89,21 @@ class CMFActionForm(forms.Form):
     )
 
 
-class NavItemForm(forms.ModelForm):
+class NavForm(forms.ModelForm):
     class Meta:
-        model = NavItem
-        fields = ['nav', 'parent', 'name', 'url', 'icon', 'target', 'sort_order', 'is_visible']
+        model = Nav
+        fields = ['nav_type', 'parent', 'url', 'icon', 'target', 'sort_order', 'is_visible']
 
     def __init__(self, *args, **kwargs):
-        nav_id = kwargs.pop('nav_id', None)
+        nav_type = kwargs.pop('nav_type', None)
         super().__init__(*args, **kwargs)
 
-        if nav_id:
-            self.fields['parent'].queryset = NavItem.objects.filter(nav_id=nav_id)
-
+        qs = Nav.objects.all()
+        if nav_type:
+            qs = qs.filter(nav_type=nav_type)
         if self.instance and self.instance.pk:
-            self.fields['parent'].queryset = self.fields['parent'].queryset.exclude(pk=self.instance.pk)
+            qs = qs.exclude(pk=self.instance.pk)
 
+        self.fields['parent'].queryset = qs
         self.fields['parent'].required = False
         self.fields['parent'].widget.attrs['data-allow-null'] = 'true'

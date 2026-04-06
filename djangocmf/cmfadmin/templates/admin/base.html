@@ -38,11 +38,8 @@
 
 {% block additional %}{% endblock %}
 <script>
-    window.URL_ALIASES = {
-        "{% url 'admin:cmfadmin_navitem_changelist' %}": "{% url 'admin:cmfadmin_nav_changelist' %}"
-    }
-    window.UPLOAD_URL  = "{% url 'admin:cmfadmin:upload_file' %}"
-    window.MEDIA_URL   = "{% get_media_prefix %}"
+    window.UPLOAD_URL = "{% url 'admin:cmfadmin:upload_file' %}"
+    window.MEDIA_URL  = "{% get_media_prefix %}"
 </script>
 <script src="{% static 'admin/js/tabler.min.js' %}" defer></script>
 <script src="{% static 'admin/js/tabler-theme.min.js' %}" defer></script>

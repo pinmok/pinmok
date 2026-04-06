@@ -10,11 +10,12 @@ Author:
 Created:
   2025-06-08
 """
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from djangocmf.cmfadmin.enums import ConfigCategory, TargetChoices, FileType
+from djangocmf.cmfadmin.enums import ConfigCategory, TargetChoices, FileType, NavType
 from djangocmf.core.constants import DEFAULT_SORT_ORDER
 
 User = get_user_model()
@@ -259,127 +260,6 @@ class ExternalLink(models.Model):
         return self.title
 
 
-# ---------------------------------------------------------------------------
-# Navigation models
-# ---------------------------------------------------------------------------
-
-class Nav(models.Model):
-    """
-    Navigation container table.
-    Example: Top Navigation, Footer Navigation, Main Navigation.
-    """
-    title = models.CharField(
-        max_length=100,
-        unique=True,
-        verbose_name=_("title"), help_text=_("The title for the navigation.")
-    )
-    slug = models.SlugField(
-        max_length=100,
-        unique=True,
-        verbose_name=_("slug"),
-        help_text=_("A short unique identifier used in URLs and templates. Only letters, numbers, hyphens, and underscores are allowed."))
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name=_("is active"),
-        help_text=_("Whether this navigation is active.")
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name=_("created at"),
-        help_text=_("Time when this navigation was created.")
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name=_("updated at"),
-        help_text=_("Time when this navigation was last updated.")
-    )
-
-    class Meta:
-        verbose_name = _("navigation")
-        verbose_name_plural = _("Navigations")
-        ordering = ['id']
-
-    def __str__(self):
-        return self.title
-
-
-class NavItem(models.Model):
-    """
-    Navigation menu item table.
-    Supports multi-level nesting, sorting, icons, visibility toggles, and target options.
-    """
-    nav = models.ForeignKey(
-        Nav,
-        on_delete=models.CASCADE,
-        related_name='items',
-        verbose_name=_("navigation"),
-        help_text=_("Navigation container.")
-    )
-    parent = models.ForeignKey(
-        'self',
-        null=True,
-        blank=True,
-        on_delete=models.CASCADE,
-        related_name='children',
-        verbose_name=_("parent nav item"),
-        help_text=_("Parent item for hierarchical structure.")
-    )
-    name = models.CharField(
-        max_length=100,
-        verbose_name=_("name"),
-        help_text=_("Name of the navigation item.")
-    )
-    url = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        verbose_name=_("url"),
-        help_text=_("URL for this navigation item.")
-    )
-    icon = models.CharField(
-        max_length=100,
-        blank=True,
-        default='',
-        verbose_name=_("icon class"),
-        help_text=_("Icon class for this navigation item.")
-    )
-    target = models.CharField(
-        max_length=10,
-        choices=TargetChoices,  # noqa
-        default=TargetChoices.SELF,
-        verbose_name=_("target"),
-        help_text=_("Target behavior when opening the link.")
-    )
-    sort_order = models.PositiveIntegerField(
-        default=DEFAULT_SORT_ORDER,
-        verbose_name=_("sort order"),
-        help_text=_("Order for navigation item sorting.")
-    )
-    is_visible = models.BooleanField(
-        default=True,
-        verbose_name=_("is visible"),
-        help_text=_("Whether this item is visible.")
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name=_("created at"),
-        help_text=_("Time when this navigation item was created.")
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name=_("updated at"),
-        help_text=_("Time when this navigation item was last updated.")
-    )
-
-    class Meta:
-        verbose_name = _("navigation item")
-        verbose_name_plural = _("navigation items")
-        ordering = ['sort_order']
-
-    def __str__(self):
-        return self.name
-
-
 class Resource(models.Model):
     """
     Represents an uploaded file or external media resource.
@@ -444,3 +324,107 @@ class Resource(models.Model):
 
     def __str__(self):
         return self.original_name or self.url
+
+
+# ---------------------------------------------------------------------------
+# Navigation models
+# ---------------------------------------------------------------------------
+
+class Nav(models.Model):
+    """
+    Navigation item. Language-neutral structure.
+    Use nav_type to distinguish which navigation group this item belongs to.
+    """
+    nav_type = models.CharField(
+        max_length=20,
+        choices=NavType,
+        default=NavType.MAIN,
+        verbose_name=_("navigation type"),
+        help_text=_("Which navigation group this item belongs to.")
+    )
+    parent = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='children',
+        verbose_name=_("parent item"),
+        help_text=_("Parent item for hierarchical structure.")
+    )
+    url = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        verbose_name=_("url"),
+        help_text=_("URL for this navigation item.")
+    )
+    icon = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        verbose_name=_("icon class"),
+        help_text=_("Icon class for this navigation item.")
+    )
+    target = models.CharField(
+        max_length=10,
+        choices=TargetChoices,
+        default=TargetChoices.SELF,
+        verbose_name=_("target"),
+        help_text=_("Target behavior when opening the link.")
+    )
+    sort_order = models.PositiveIntegerField(
+        default=DEFAULT_SORT_ORDER,
+        verbose_name=_("sort order"),
+        help_text=_("Order for sorting.")
+    )
+    is_visible = models.BooleanField(
+        default=True,
+        verbose_name=_("is visible"),
+        help_text=_("Whether this item is visible.")
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("created at"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("updated at"))
+
+    class Meta:
+        verbose_name = _("navigation")
+        verbose_name_plural = _("navigations")
+        ordering = ['nav_type', 'sort_order']
+
+    def __str__(self):
+        translation = self.translations.filter(
+            language=settings.LANGUAGE_CODE
+        ).first() or self.translations.first()
+        name = translation.name if translation else _('(no name)')
+        return f"[{self.get_nav_type_display()}] {name}"
+
+
+class NavTranslation(models.Model):
+    """
+    Language-specific translation for a navigation item.
+    """
+    nav = models.ForeignKey(
+        Nav,
+        on_delete=models.CASCADE,
+        related_name='translations',
+        verbose_name=_("navigation item"),
+    )
+    language = models.CharField(
+        max_length=10,
+        choices=settings.LANGUAGES,
+        verbose_name=_("language"),
+        help_text=_("Which language this item belongs to.")
+    )
+    name = models.CharField(
+        max_length=100,
+        verbose_name=_("name"),
+        help_text=_("Display name of this navigation item.")
+    )
+
+    class Meta:
+        verbose_name = _("nav translation")
+        verbose_name_plural = _("nav translations")
+        unique_together = [('nav', 'language')]
+        ordering = ['language']
+
+    def __str__(self):
+        return f"{self.nav_id} / {self.language} / {self.name}"
