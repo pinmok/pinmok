@@ -20,14 +20,16 @@ from django.contrib.staticfiles import finders
 from django.core.exceptions import SuspiciousFileOperation, ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import validate_email
+from django.http import Http404
 from django.shortcuts import render, redirect
 from django.template.response import TemplateResponse
-from django.urls import reverse
+from django.urls import reverse, resolve, Resolver404
 from django.utils.translation import gettext as _
 from django.views import View
 
 from djangocmf.cmfadmin.constants import CUSTOM_SPRITE_FILE, CMF_ICON_PREFIX, CMF_SPRITE_FILE
 from djangocmf.cmfadmin.enums import FileType, ConfigCategory
+from djangocmf.cmfadmin.models import UrlAlias
 from djangocmf.cmfadmin.service.email import EmailService
 from djangocmf.cmfadmin.service.menu import AdminMenuManager
 from djangocmf.cmfadmin.service.menu import MenuSyncMode
@@ -336,3 +338,30 @@ class UploadFileView(CMFPermissionMixin, View):
             return api.error(ErrorCode.VALIDATION_ERROR, e.message)
         except Exception as e:
             return api.error(ErrorCode.SERVER_ERROR, _('Upload failed: %(error)s') % {'error': e})
+
+
+def alias_resolver(request, alias):
+    """
+    Resolve a URL alias and forward the request to the corresponding view internally.
+
+    Looks up the given alias in the UrlAlias table. If a matching active alias is found,
+    resolves the target URL to its view function and forwards the request directly,
+    without redirecting the browser. The visitor's address bar keeps showing the alias URL.
+
+    Raises Http404 if the alias does not exist, is inactive, or the target URL does not
+    resolve to a known view.
+    """
+    # Look up the alias in the database
+    try:
+        url_alias = UrlAlias.objects.get(alias=alias, is_active=True)
+    except UrlAlias.DoesNotExist:
+        raise Http404
+
+    # Resolve the target URL to a view function
+    try:
+        match = resolve(url_alias.target)
+    except Resolver404:
+        raise Http404
+
+    # Forward the request to the resolved view internally
+    return match.func(request, *match.args, **match.kwargs)

@@ -18,10 +18,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
 
+from djangocmf.cmfadmin.views import alias_resolver
 from djangocmf.core.sites import site
 
 urlpatterns = [
     path('admin/', site.urls),
     path('content/', include('djangocmf.content.urls')),
+    path('<path:alias>', alias_resolver, name='alias_resolver'),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

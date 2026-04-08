@@ -34,7 +34,7 @@
     <div class="card-body{% if fieldset.is_collapsible %} accordion-collapse collapse{% endif %}"
          id="{{ prefix }}-{{ id_prefix }}-{{ id_suffix }}">
         {% for line in fieldset %}
-            <div class="form-row row mb-3 d-flex align-items-center{% if not line.has_visible_field %} d-none{% endif %}{% for field in line %}{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% endfor %}">
+            <div class="form-row row mb-3 d-flex{% if not line.has_visible_field %} d-none{% endif %}{% for field in line %}{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% endfor %}">
                 {% for field in line %}
                     <div class="col-md{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% if field.field.is_hidden %} d-none{% endif %}">
                         {% if field.is_fieldset %}
@@ -43,6 +43,7 @@
                             {{ field.label_tag|add_class:'card-title' }}
                         {% endif %}
                         {% if field.is_checkbox %}
+                            <div class="form-label invisible">&emsp;</div>
                             <div class="form-check">
                                 {{ field.field }}
                                 {% if not field.is_fieldset %}{{ field.label_tag|add_class:'form-check-label' }}{% endif %}

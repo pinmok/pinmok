@@ -12,7 +12,9 @@ Created:
 """
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.urls import resolve, Resolver404
 from django.utils.translation import gettext_lazy as _
 
 from djangocmf.cmfadmin.enums import ConfigCategory, TargetChoices, FileType, NavType
@@ -428,3 +430,37 @@ class NavTranslation(models.Model):
 
     def __str__(self):
         return f"{self.nav_id} / {self.language} / {self.name}"
+
+
+class UrlAlias(models.Model):
+    alias = models.CharField(
+        _('Alias'),
+        max_length=255,
+        unique=True,
+        help_text=_('The alias path without leading slash, e.g. news or about/team'),
+    )
+    target = models.CharField(
+        _('Target URL'),
+        max_length=255,
+        help_text=_(
+            'The internal URL path this alias points to, must start with a leading slash and must be a valid registered URL,'
+            ' e.g. /content/category/abc123/'
+        ),
+    )
+    is_active = models.BooleanField(_('Active'), default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        # Validate that target resolves to a known view
+        try:
+            resolve(self.target)
+        except Resolver404:
+            raise ValidationError({'target': _('Target URL does not resolve to a known view.')})
+
+    class Meta:
+        verbose_name = _('URL Alias')
+        verbose_name_plural = _('URL Aliases')
+
+    def __str__(self):
+        return f'{self.alias} → {self.target}'

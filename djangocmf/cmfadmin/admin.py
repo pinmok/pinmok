@@ -22,7 +22,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.storage import default_storage
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
-from django.urls import reverse
+from django.urls import reverse, NoReverseMatch
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _, get_language
 
@@ -32,7 +32,7 @@ from djangocmf.cmfadmin.enums import ConfigCategory, UploadConfigKey, FileType, 
 from djangocmf.cmfadmin.fields import IndentedModelChoiceField
 from djangocmf.cmfadmin.forms.config_forms import EmailConfigForm, UploadConfigForm
 from djangocmf.cmfadmin.forms.forms import CMFAdminPasswordResetForm, CMFAdminUserCreationForm
-from djangocmf.cmfadmin.models import ExternalLink, SiteConfig, EmailConfig, UploadConfig, Resource, Nav, NavTranslation
+from djangocmf.cmfadmin.models import ExternalLink, SiteConfig, EmailConfig, UploadConfig, Resource, Nav, NavTranslation, UrlAlias
 from djangocmf.cmfadmin.options import CMFModelAdmin, CMFModelAdminMixin, ConfigModelAdmin, ExtraPanel, CMFStackedInline
 from djangocmf.cmfadmin.service.navigation import NavService
 from djangocmf.cmfadmin.service.upload import UploadService
@@ -398,3 +398,39 @@ class NavAdmin(CMFModelAdmin):
                 )
 
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+@cmfadmin.register(UrlAlias)
+class UrlAliasAdmin(CMFModelAdmin):
+    list_display = ('alias', 'target', 'is_active', 'updated_at')
+    list_filter = ('is_active',)
+    search_fields = ('alias', 'target')
+    readonly_fields = ('created_at', 'updated_at')
+    fieldsets = [(None, {'fields': [
+        ('alias', 'target'),
+        ('is_active', 'created_at', 'updated_at')
+    ]})]
+
+    @staticmethod
+    def _is_alias_resolver_registered() -> bool:
+        """
+       Check whether the alias resolver URL pattern is registered in the root URLconf.
+
+       This is done by attempting to reverse the 'alias_resolver' named URL.
+       If the reverse lookup succeeds, the pattern exists in urlpatterns.
+       If it raises NoReverseMatch, the user has not added the required line to urls.py.
+       """
+        try:
+            reverse('alias_resolver', kwargs={'alias': '__test__'})
+            return True
+        except NoReverseMatch:
+            return False
+
+    def changelist_view(self, request, extra_context=None):
+        if not self._is_alias_resolver_registered():
+            return TemplateResponse(
+                request,
+                'admin/url_alias_tip.html',
+                self.admin_site.each_context(request)
+            )
+        return super().changelist_view(request, extra_context)
