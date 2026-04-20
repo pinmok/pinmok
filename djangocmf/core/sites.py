@@ -71,8 +71,11 @@ class DjangoCmfAdminSite(AdminSite):
 
         def inner(request, *args, **kwargs):
             response = view(request, *args, **kwargs)
-            if isinstance(response, TemplateResponse) and 'admin_menu' not in response.context_data:
-                response.context_data.update(self.each_context(request))
+            if isinstance(response, TemplateResponse):
+                context = response.context_data or {}
+                if 'admin_menu' not in context:
+                    context.update(self.each_context(request))
+                    response.context_data = context
             return response
 
         return super().admin_view(inner, cacheable=cacheable)
@@ -116,7 +119,7 @@ class DjangoCmfAdminSite(AdminSite):
                 continue
 
             # Look for admin_urlpatterns
-            admin_urls = getattr(mod, 'admin_urlpatterns', None)
+            admin_urls = getattr(mod, 'admin_urlpatterns', [])
             if not admin_urls:
                 continue
 

@@ -14,6 +14,7 @@ Created:
 from django.apps import AppConfig
 from django.contrib import admin
 from django.contrib.admin import autodiscover
+from django.utils.module_loading import autodiscover_modules
 
 from djangocmf.core.sites import site
 
@@ -26,6 +27,7 @@ class CmfadminConfig(AppConfig):
     def ready(self):
         # Automatically discover models registered on admin and register them on DjangoCMF site.
         self._cmf_autodiscover_and_register()
+        autodiscover_modules('datasource')
 
         # Import signals module to trigger signal handler registration via @receiver decorators.
         import djangocmf.cmfadmin.signals  # noqa: F401

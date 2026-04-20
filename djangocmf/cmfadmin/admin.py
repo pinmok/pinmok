@@ -322,7 +322,7 @@ class ResourceAdmin(CMFModelAdmin):
 
 class NavTranslationInline(CMFStackedInline):
     model = NavTranslation
-    extra = 1
+    extra = 0
     min_num = 1
     max_num = len(settings.LANGUAGES)
     fieldsets = [(None, {'fields': [('name', 'language')]})]
@@ -364,7 +364,7 @@ class NavAdmin(CMFModelAdmin):
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'parent':
-            obj_id = request.resolver_match.kwargs.get('object_id')
+            obj_id = request.resolver_match.kwargs.get('object_id') if request.resolver_match else None
 
             # Get nav_type from query string or from the existing object
             nav_type = request.GET.get('nav_type')
@@ -388,20 +388,30 @@ class NavAdmin(CMFModelAdmin):
 
             if nav_type:
                 # Get items excluding self, so IndentedModelChoiceField pairs are also clean
-                items = NavService.get_items(nav_type, exclude_id=int(obj_id) if obj_id else None)
+                items = NavService.get_items(nav_type, exclude_id=int(obj_id) if obj_id else None)  # type: ignore[arg-type]
                 return IndentedModelChoiceField(
                     pairs=items,
                     widget=widgets.CMFSelect(),
-                    label=Nav._meta.get_field('parent').verbose_name,
+                    label=Nav._meta.get_field('parent').verbose_name,  # type: ignore[union-attr]
                     required=False,
                     **kwargs,
                 )
 
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        field = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if db_field.name == 'nav_type' and field is not None:
+            field.widget.attrs['data-parent-choices-url'] = reverse('admin:cmfadmin:nav_parent_choices')
+        return field
+
+    class Media:
+        js = ('admin/js/nav_admin.js',)
+
 
 @cmfadmin.register(UrlAlias)
 class UrlAliasAdmin(CMFModelAdmin):
+    menu_order = 8000
     list_display = ('alias', 'target', 'is_active', 'updated_at')
     list_filter = ('is_active',)
     search_fields = ('alias', 'target')

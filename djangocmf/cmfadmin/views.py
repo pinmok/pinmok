@@ -20,19 +20,22 @@ from django.contrib.staticfiles import finders
 from django.core.exceptions import SuspiciousFileOperation, ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import validate_email
-from django.http import Http404
+from django.http import Http404, QueryDict, JsonResponse
 from django.shortcuts import render, redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse, resolve, Resolver404
 from django.utils.translation import gettext as _
 from django.views import View
+from django.views.decorators.http import require_GET
 
 from djangocmf.cmfadmin.constants import CUSTOM_SPRITE_FILE, CMF_ICON_PREFIX, CMF_SPRITE_FILE
-from djangocmf.cmfadmin.enums import FileType, ConfigCategory
+from djangocmf.cmfadmin.enums import FileType, ConfigCategory, NavType
 from djangocmf.cmfadmin.models import UrlAlias
 from djangocmf.cmfadmin.service.email import EmailService
 from djangocmf.cmfadmin.service.menu import AdminMenuManager
 from djangocmf.cmfadmin.service.menu import MenuSyncMode
+from djangocmf.cmfadmin.service.navigation import NavService
+from djangocmf.cmfadmin.service.theme import ThemeService, ThemeServiceError
 from djangocmf.cmfadmin.service.upload import UploadService
 from djangocmf.core import api
 from djangocmf.core.api import ErrorCode
@@ -42,7 +45,7 @@ from djangocmf.core.mixins import CMFPermissionMixin
 
 def license_page(request):
     """Serve the License information page."""
-    return render(request, 'pages/license.html')
+    return TemplateResponse(request, 'pages/license.html')
 
 
 def sync_menu(request):
@@ -365,3 +368,135 @@ def alias_resolver(request, alias):
 
     # Forward the request to the resolved view internally
     return match.func(request, *match.args, **match.kwargs)
+
+
+class ThemeView:
+    @staticmethod
+    def theme_list(request):
+        """Render the theme management list page."""
+        themes = ThemeService.scan()
+        return TemplateResponse(request, 'theme/list.html', {
+            'title': _('List of themes'),
+            'subtitle': _('Theme Management'),
+            'themes': themes,
+        })
+
+    @staticmethod
+    def install(request, directory: str):
+        """Install a theme from the given directory."""
+        try:
+            ThemeService.install(directory)
+            messages.success(request, _('Theme installed successfully.'))
+        except ThemeServiceError as e:
+            messages.error(request, str(e))
+        return redirect(reverse('admin:cmfadmin:theme_list'))
+
+    @staticmethod
+    def uninstall(request, theme_id: int):
+        """Uninstall a theme by its primary key."""
+        try:
+            ThemeService.uninstall(theme_id)
+            messages.success(request, _('Theme uninstalled successfully.'))
+        except ThemeServiceError as e:
+            messages.error(request, str(e))
+        return redirect(reverse('admin:cmfadmin:theme_list'))
+
+    @staticmethod
+    def activate(request, theme_id: int):
+        """Activate a theme by its primary key."""
+        try:
+            ThemeService.activate(theme_id)
+            messages.success(request, _('Theme activated successfully.'))
+        except ThemeServiceError as e:
+            messages.error(request, str(e))
+        return redirect(reverse('admin:cmfadmin:theme_list'))
+
+    @staticmethod
+    def reset(request, theme_id: int):
+        """Reset a theme to its default configuration."""
+        try:
+            ThemeService.reset(theme_id)
+            messages.success(request, _('Theme reset successfully.'))
+        except ThemeServiceError as e:
+            messages.error(request, str(e))
+        return redirect(reverse('admin:cmfadmin:theme_list'))
+
+    @staticmethod
+    def config(request, theme_id: int):
+        """Render the theme configuration page."""
+        template_id = request.GET.get('template')
+        ctx = ThemeService.get_config_context(theme_id, int(template_id) if template_id else None)
+        return TemplateResponse(request, 'theme/config.html', {
+            'title': ctx['theme'].name,
+            'subtitle': _('Theme Configuration'),
+            'ctx': ctx,
+        })
+
+
+class ThemeConfigView(View):
+    """Theme configuration editing view. GET renders the form, POST saves and redirects back."""
+
+    def get(self, request, theme_id: int):
+        template_id = request.GET.get('template')
+        ctx = ThemeService.get_config_context(
+            theme_id,
+            int(template_id) if template_id else None,
+        )
+        return TemplateResponse(request, 'theme/config.html', {
+            'title': ctx['theme'].name,
+            'subtitle': _('Theme Configuration'),
+            **ctx,
+        })
+
+    def post(self, request, theme_id: int):
+        template_id_raw = request.POST.get('template_id')
+        template_id = int(template_id_raw) if template_id_raw else None
+        submitted = self._collect_submitted(request.POST)
+
+        if template_id:
+            ThemeService.save_template_config(int(template_id), submitted)
+        else:
+            ThemeService.save_config(theme_id, submitted)
+
+        redirect_url = request.path
+        if template_id:
+            redirect_url += f'?template={template_id}'
+        return redirect(redirect_url)
+
+    @staticmethod
+    def _collect_submitted(post: QueryDict) -> dict:
+        """
+        Parse flat POST keys into nested submitted dict.
+        var__key -> submitted['vars'][key]
+        fieldset__fs_key__var_key -> submitted['fieldsets'][fs_key][var_key]
+        """
+        print(post)
+        submitted = {'vars': {}, 'fieldsets': {}}
+        for raw_key, value in post.items():
+            if raw_key.startswith('var__'):
+                key = raw_key[5:]
+                submitted['vars'][key] = value
+            elif raw_key.startswith('fieldset__'):
+                parts = raw_key.split('__')
+                if len(parts) == 3:
+                    _, fs_key, var_key = parts
+                    submitted['fieldsets'].setdefault(fs_key, {})
+                    submitted['fieldsets'][fs_key][var_key] = value
+        return submitted
+
+
+@require_GET
+def nav_parent_choices(request):
+    """
+    Return parent choices for the Nav parent field.
+    Filtered by nav_type, excluding the specified node and its descendants.
+    Used by the NavAdmin parent field AJAX update.
+    """
+    nav_type = request.GET.get('nav_type', NavType.MAIN)
+    exclude_id = request.GET.get('exclude_id')
+    items = NavService.get_items(
+        nav_type,
+        exclude_id=int(exclude_id) if exclude_id else None
+    )
+    choices = [{'id': node.id, 'label': label} for node, label in items]
+    return JsonResponse({'choices': choices})

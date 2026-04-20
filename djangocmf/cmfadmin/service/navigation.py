@@ -12,6 +12,8 @@ Created:
 """
 from dataclasses import dataclass
 
+from django.conf import settings
+
 from djangocmf.cmfadmin.enums import TargetChoices
 from djangocmf.cmfadmin.models import Nav, NavTranslation
 from djangocmf.core.constants import DEFAULT_SORT_ORDER
@@ -73,15 +75,13 @@ class NavService:
         Returns:
             List of ``(NavNode, indented_label)`` pairs in DFS pre-order.
         """
-        from django.conf import settings
         lang = language or settings.LANGUAGE_CODE
         nodes = cls._load_nodes(nav_type, lang)
-        # Exclude self to prevent circular reference in parent selection
-        if exclude_id is not None:
-            nodes = [n for n in nodes if n.id != exclude_id]
+
         return NavNode.flatten_with_indent(
             nodes,
             label_func=lambda n: n.name,
+            exclude_id=exclude_id,
             sort_key="sort_order",
         )
 
@@ -97,6 +97,5 @@ class NavService:
         Returns:
             Root nodes of the constructed tree.
         """
-        from django.conf import settings
         lang = language or settings.LANGUAGE_CODE
         return NavNode.build_tree(cls._load_nodes(nav_type, lang), sort_key="sort_order")

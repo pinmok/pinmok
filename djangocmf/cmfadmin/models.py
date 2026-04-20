@@ -23,10 +23,6 @@ from djangocmf.core.constants import DEFAULT_SORT_ORDER
 User = get_user_model()
 
 
-# ---------------------------------------------------------------------------
-# Main menu model
-# ---------------------------------------------------------------------------
-
 class Menu(models.Model):
     """
     Backend admin menu item supporting multi-level hierarchy and permission control.
@@ -217,10 +213,6 @@ class UploadConfig(Config):
         verbose_name_plural = _("Upload Settings")
 
 
-# ---------------------------------------------------------------------------
-# External links
-# ---------------------------------------------------------------------------
-
 class ExternalLink(models.Model):
     """
     Model representing a friendly external link.
@@ -327,10 +319,6 @@ class Resource(models.Model):
     def __str__(self):
         return self.original_name or self.url
 
-
-# ---------------------------------------------------------------------------
-# Navigation models
-# ---------------------------------------------------------------------------
 
 class Nav(models.Model):
     """
@@ -464,3 +452,43 @@ class UrlAlias(models.Model):
 
     def __str__(self):
         return f'{self.alias} → {self.target}'
+
+
+class Theme(models.Model):
+    """Installed theme, corresponds to theme.json"""
+    name = models.CharField(max_length=100)
+    version = models.CharField(max_length=20)
+    author = models.CharField(max_length=100, blank=True)
+    description = models.TextField(blank=True)
+    preview = models.CharField(max_length=200, blank=True)
+    directory = models.CharField(max_length=200, unique=True)
+    is_active = models.BooleanField(default=False)
+    installed_at = models.DateTimeField(auto_now_add=True)
+    config = models.JSONField(default=dict)
+
+    class Meta:
+        verbose_name = _('theme')
+        verbose_name_plural = _('themes')
+        ordering = ['-installed_at']
+
+    def __str__(self):
+        return f'{self.name} {self.version}'
+
+
+class ThemeTemplate(models.Model):
+    """Page template within a theme, corresponds to each page JSON"""
+    theme = models.ForeignKey(Theme, on_delete=models.CASCADE, related_name='templates')
+    filename = models.CharField(max_length=100)
+    name = models.CharField(max_length=100)
+    action = models.CharField(max_length=100)
+    order = models.IntegerField(default=0)
+    config = models.JSONField(default=dict)
+
+    class Meta:
+        verbose_name = _('theme template')
+        verbose_name_plural = _('theme templates')
+        ordering = ['order']
+        unique_together = ('theme', 'filename')
+
+    def __str__(self):
+        return f'{self.theme.name} / {self.name}'

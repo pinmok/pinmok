@@ -112,6 +112,7 @@ class Dialog {
             okBtn.textContent = buttons[buttons.length - 1].label;
             okBtn.className   = `btn btn-${t.color} w-100`;
             okBtn.onclick     = () => {
+                okBtn.blur();
                 resolve({action: 'ok', input: inputEl ? inputEl.value : null});
                 tabler.Modal.getInstance(tpl).hide();
             };

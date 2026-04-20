@@ -25,4 +25,12 @@ admin_menu = [
         sort_order=4000,
         permissions=["cmfadmin.view_icon", "cmfadmin.change_icon"]
     ),
+    menu(
+        'theme',
+        title='Theme Management',
+        url='admin:cmfadmin:theme_list',
+        parent_key='config',
+        sort_order=7000,
+        permissions=["cmfadmin.view_theme"]
+    )
 ]

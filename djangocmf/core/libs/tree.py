@@ -313,6 +313,7 @@ class TreeNode(Generic[T]):
             cls: type[T],
             nodes: list[T],
             label_func: Callable[[T], str],
+            exclude_id: int | str | None = None,
             prefix: str | None = None,
             sort_key: str | None = None,
     ) -> list[tuple[T, str]]:
@@ -327,13 +328,29 @@ class TreeNode(Generic[T]):
         Args:
             nodes: Flat list of TreeNode instances with parent_id set.
             label_func: Returns the display label for a node.
+            exclude_id: If provided, exclude this node and all its descendants.
             prefix: Indent string per level. ``None`` uses box-drawing mode.
             sort_key: Attribute name to sort children and roots by.
 
         Returns:
             List of ``(node, indented_label)`` pairs in DFS pre-order.
         """
+
         roots = cls.build_tree(nodes, sort_key=sort_key)
+
+        # Remove target node and its entire subtree before traversal
+        if exclude_id is not None:
+            for root in roots:
+                if root.id == exclude_id:
+                    roots.remove(root)
+                    break
+                target = root.find(exclude_id)
+                if target and target.parent_id:
+                    parent = root.find(target.parent_id)
+                    if parent:
+                        parent.remove_child(exclude_id)
+                        break
+
         result: list[tuple[T, str]] = []
 
         if prefix is not None:

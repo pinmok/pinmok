@@ -48,7 +48,7 @@ class CMFWidgetMixin:
 
     def get_context(self, name, value, attrs):
         """ Provide icons name for input fields that include built-in icons. """
-        context = super().get_context(name, value, attrs)
+        context = super().get_context(name, value, attrs)  # type: ignore
         if self.icon_name:
             context['widget']['icon_name'] = self.icon_name
         return context
@@ -362,7 +362,7 @@ class HugeRTEWidget(forms.Textarea):
         # User-supplied config overrides BASE_CONFIG
         config.update(self.extra_config)
 
-        final_attrs = self.build_attrs(self.attrs, attrs or {})
+        final_attrs = self.build_attrs(self.attrs or {}, attrs or {})
         existing_class = final_attrs.get('class', '')
         final_attrs['class'] = (existing_class + ' hugerte-editor').strip()
         final_attrs['data-hugerte-config'] = json.dumps(config, ensure_ascii=False)

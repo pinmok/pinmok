@@ -119,7 +119,7 @@ def menu(
 
     return MenuNode(
         id=key,
-        title=title,
+        title=title,  # noqa
         url=url,
         parent_id=parent_key,
         sort_order=sort_order,

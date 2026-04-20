@@ -12,10 +12,19 @@ Created:
 """
 from django.urls import path
 
-from djangocmf.cmfadmin.views import SpriteManagerView, UploadFileView, TestEmailView
+from djangocmf.cmfadmin.views import (
+    SpriteManagerView, UploadFileView, TestEmailView, ThemeView, ThemeConfigView, nav_parent_choices
+)
 
 admin_urlpatterns = [
     path('icons/', SpriteManagerView.as_view(), name='icons_manage'),
     path('test-email/', TestEmailView.as_view(), name='test_email'),
     path('upload-file/', UploadFileView.as_view(), name='upload_file'),  # File upload URL, used by AJAX
+    path('theme/', ThemeView.theme_list, name='theme_list'),
+    path('theme/<str:directory>/install/', ThemeView.install, name='theme_install'),
+    path('theme/<int:theme_id>/uninstall/', ThemeView.uninstall, name='theme_uninstall'),
+    path('theme/<int:theme_id>/activate/', ThemeView.activate, name='theme_activate'),
+    path('theme/<int:theme_id>/reset/', ThemeView.reset, name='theme_reset'),
+    path('theme/<int:theme_id>/config/', ThemeConfigView.as_view(), name='theme_config'),
+    path('nav/parent-choices/', nav_parent_choices, name='nav_parent_choices'),
 ]

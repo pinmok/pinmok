@@ -23,7 +23,12 @@ from djangocmf.core.sites import site
 
 urlpatterns = [
     path('admin/', site.urls),
-    path('content/', include('djangocmf.content.urls')),
-    path('<path:alias>', alias_resolver, name='alias_resolver'),
+    path('', include('djangocmf.content.urls')),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# WARNING: alias_resolver must always be the last pattern.
+# <path:alias> matches everything — any route registered after it will never be reached.
+urlpatterns += [
+    path('<path:alias>', alias_resolver, name='alias_resolver'),
+]

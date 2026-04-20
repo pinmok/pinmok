@@ -1,0 +1,28 @@
+{
+  "name": "Article",
+  "action": "content.article",
+  "order": 100,
+  "vars": {
+    "company_slogan": {
+      "title": "Company slogan",
+      "type": "text"
+    }
+  },
+  "widgets": {
+    "news": {
+      "title": "News block",
+      "vars": {
+        "category": {
+          "title": "Category of News",
+          "type": "datasource",
+          "source": "news_category"
+        },
+        "count": {
+          "title": "List number",
+          "type": "number",
+          "default": 10
+        }
+      }
+    }
+  }
+}

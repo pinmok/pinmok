@@ -1,0 +1,95 @@
+{
+  "name": "Home Page",
+  "action": "content_index",
+  "order": 100,
+  "vars": {
+    "slogan": {
+      "title": "Company Slogan",
+      "type": "text",
+      "default": "",
+      "tip": "Displayed below the banner"
+    },
+    "intro": {
+      "title": "Introduction",
+      "type": "textarea",
+      "default": "",
+      "tip": "Brief introduction shown on the home page"
+    },
+    "show_stats": {
+      "title": "Show Statistics",
+      "type": "boolean",
+      "default": false,
+      "tip": "Display the statistics section"
+    }
+  },
+  "fieldsets": {
+    "banner": {
+      "title": "Banner Block",
+      "vars": {
+        "page": {
+          "title": "Linked Page",
+          "type": "datasource",
+          "source": "page",
+          "default": ""
+        },
+        "height": {
+          "title": "Banner Height (px)",
+          "type": "number",
+          "default": 400
+        },
+        "show_title": {
+          "title": "Show Page Title",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "news": {
+      "title": "News Block",
+      "vars": {
+        "category": {
+          "title": "News Category",
+          "type": "datasource",
+          "source": "category",
+          "default": ""
+        },
+        "count": {
+          "title": "Number of Articles",
+          "type": "number",
+          "default": 5
+        },
+        "show_thumbnail": {
+          "title": "Show Thumbnail",
+          "type": "boolean",
+          "default": true
+        },
+        "title": {
+          "title": "Block Title",
+          "type": "text",
+          "default": "Latest News"
+        },
+        "description": {
+          "title": "Block Description",
+          "type": "textarea",
+          "default": ""
+        }
+      }
+    },
+    "featured_article": {
+      "title": "Featured Article",
+      "vars": {
+        "article": {
+          "title": "Article",
+          "type": "datasource",
+          "source": "article",
+          "default": ""
+        },
+        "show_author": {
+          "title": "Show Author",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    }
+  }
+}

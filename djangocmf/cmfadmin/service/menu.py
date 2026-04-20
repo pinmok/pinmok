@@ -15,7 +15,7 @@ import importlib
 from enum import StrEnum
 
 from django.apps import apps
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, AnonymousUser
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
@@ -211,12 +211,13 @@ class MenuSynchronizer:
         # Step 3: Build mapping from menu_key to inserted DB row.
         created_map = {m.menu_key: m for m in created_items}
         for src in current_level:
-            db = created_map[src.menu_key]
-            src.db_id = db.id
-            # Remap children's parent_id from the node's logical id to the DB PK.
-            for child in menu_nodes:
-                if child.parent_id == src.id:
-                    child.parent_id = db.id
+            if src.menu_key is not None:
+                db = created_map[src.menu_key]
+                src.db_id = db.id
+                # Remap children's parent_id from the node's logical id to the DB PK.
+                for child in menu_nodes:
+                    if child.parent_id == src.id:
+                        child.parent_id = db.id
 
         # Step 4: Recursively insert child nodes.
         for item in current_level:
@@ -291,7 +292,7 @@ class AdminMenuService:
 
             app_item = MenuNode(
                 id=app_label,
-                title=app_config.verbose_name,
+                title=app_config.verbose_name,  # noqa
                 url=app.get('app_url'),
                 icon=icon,
                 app_label=app_label,
@@ -326,7 +327,7 @@ class AdminMenuService:
         return menu_nodes
 
     @staticmethod
-    def _filter_by_permissions(menu_nodes: list[MenuNode], user: AbstractUser) -> list[MenuNode]:
+    def _filter_by_permissions(menu_nodes: list[MenuNode], user: AbstractUser | AnonymousUser) -> list[MenuNode]:
         """
         Filter menu nodes according to user's permissions.
 
@@ -411,7 +412,7 @@ class AdminMenuService:
         return db_menus
 
     @classmethod
-    def get_menu(cls, app_list: list[dict], user: AbstractUser, db_menus=None) -> list[MenuNode]:
+    def get_menu(cls, app_list: list[dict], user: AbstractUser | AnonymousUser, db_menus=None) -> list[MenuNode]:
         """
         Assemble, filter, merge and return the final admin menu tree.
 
@@ -485,13 +486,12 @@ class AdminMenuManager:
         Returns:
             list[MenuNode]: Hierarchical menu tree ready for template rendering.
         """
-        if app_list is None:
-            app_list = site.get_app_list(request)
+        resolved_app_list = app_list or site.get_app_list(request)
         db_menus = AdminMenuService.get_db_menus()
-        return AdminMenuService.get_menu(app_list=app_list, user=request.user, db_menus=db_menus)
+        return AdminMenuService.get_menu(app_list=resolved_app_list, user=request.user, db_menus=db_menus)
 
     @classmethod
-    def synchronize_menu(cls, app_label: str, user: AbstractUser) -> dict:
+    def synchronize_menu(cls, app_label: str, user: AbstractUser | AnonymousUser) -> dict:
         """
         Synchronize backend menu data with the database.
 

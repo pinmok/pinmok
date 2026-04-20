@@ -1,0 +1,75 @@
+{% extends 'theme/theme_base.html' %}
+{% load i18n %}
+
+{% block object-tools %}
+    <a href="{% url 'admin:cmfadmin:theme_list' %}" class="btn btn-secondary">{% translate 'Back' %}</a>
+{% endblock %}
+
+{% block content %}
+    <div class="row row-cards">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    {% if current_template %}
+                        <h3 class="card-title">
+                            {{ current_template.name }}
+                            <span class="card-subtitle">({{ current_template.filename }}.html)</span>
+                        </h3>
+                    {% else %}
+                        <h3 class="card-title">{% translate 'Global' %}</h3>
+                    {% endif %}
+                </div>
+                <form method="post">{% csrf_token %}
+                    {% if current_template %}
+                        <input type="hidden" name="template_id" value="{{ current_template.pk }}">
+                    {% endif %}
+                    <div class="card-body">
+                        {% for field in config_data.vars %}
+                            <div class="mb-3">
+                                <label class="form-label">{{ field.title }}</label>
+                                {{ field.html|safe }}
+                                <small class="form-hint">{{ field.tip }}</small>
+                            </div>
+                        {% endfor %}
+                        {% for fieldset in config_data.fieldsets %}
+                            <h3>{{ fieldset.title }}</h3>
+                            <div class="form-fieldset mb-3">
+                                {% for field in fieldset.fields %}
+                                    <div class="mb-3">
+                                        <label class="form-label">{{ field.title }}</label>
+                                        {{ field.html|safe }}
+                                        <small class="form-hint">{{ field.tip }}</small>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="card-footer d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary">{% translate 'Save' %}</button>
+                        <a href="{% url 'admin:cmfadmin:theme_list' %}" class="btn btn-secondary">
+                            {% translate 'Back' %}
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">{% translate 'Templates Files' %}</h3>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="?" class="list-group-item list-group-item-action {% if not current_template %}active{% endif %}">
+                        {% translate 'Global' %}
+                    </a>
+                    {% for tpl in templates %}
+                        <a href="?template={{ tpl.pk }}"
+                           class="list-group-item list-group-item-action {% if current_template.pk == tpl.pk %}active{% endif %}">
+                            {{ tpl.name }} <small class="text-muted">({{ tpl.filename }}.html)</small>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

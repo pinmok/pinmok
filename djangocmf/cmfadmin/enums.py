@@ -173,3 +173,11 @@ class NavType(models.TextChoices):
     MAIN = "main", _("Main Navigation")
     FOOTER = "footer", _("Footer Navigation")
     SIDEBAR = "sidebar", _("Sidebar Navigation")
+
+
+class ThemeVarType(StrEnum):
+    TEXT = 'text'
+    TEXTAREA = 'textarea'
+    NUMBER = 'number'
+    BOOLEAN = 'boolean'
+    DATASOURCE = 'datasource'
