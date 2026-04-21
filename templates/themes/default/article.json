@@ -8,14 +8,14 @@
       "type": "text"
     }
   },
-  "widgets": {
+  "fieldsets": {
     "news": {
       "title": "News block",
       "vars": {
         "category": {
-          "title": "Category of News",
+          "title": "Page sample",
           "type": "datasource",
-          "source": "news_category"
+          "source": "page"
         },
         "count": {
           "title": "List number",

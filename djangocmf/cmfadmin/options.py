@@ -164,7 +164,9 @@ class CMFModelAdminMixin(BaseModelAdmin):
             else:
                 kwargs["widget"] = widgets.CMFSelectMultiple()
 
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
+        form_field = super().formfield_for_manytomany(db_field, request, **kwargs)
+        form_field.help_text = ''
+        return form_field
 
     def _apply_crop_fields(self, base_fields):
         """

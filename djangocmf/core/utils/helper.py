@@ -141,11 +141,10 @@ def get_valid_app_labels(exclude_prefixes: list[str] | None = None) -> set[str]:
     Returns:
         set[str]: Set of valid app labels.
     """
-    if exclude_prefixes is None:
-        exclude_prefixes = ['django.']
+    ex_prefixes = exclude_prefixes or ['django.']
 
     valid_labels = {
         app.label for app in apps.get_app_configs()
-        if not any(app.name.startswith(prefix) for prefix in exclude_prefixes)
+        if not any(app.name.startswith(prefix) for prefix in ex_prefixes)
     }
     return valid_labels
