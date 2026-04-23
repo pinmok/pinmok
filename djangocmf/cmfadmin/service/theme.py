@@ -55,6 +55,7 @@ class ThemeVar:
     default: Any | None = None
     tip: str = ""
     source: str = ""
+    multiple: bool = False
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -419,15 +420,12 @@ class ThemeService:
             return None
 
     @classmethod
-    def get_active_template(cls, action: str) -> Optional[ThemeTemplate]:
-        """Return the ThemeTemplate for the active theme that matches the given URL name."""
+    def get_templates_by_action(cls, action: str) -> list[ThemeTemplate]:
+        """Return all ThemeTemplates of the active theme matching the given action."""
         theme = cls.get_active_theme()
         if theme is None:
-            return None
-        try:
-            return theme.templates.get(action=action)
-        except ThemeTemplate.DoesNotExist:
-            return None
+            return []
+        return [t for t in theme.templates.all() if t.action == action]
 
     @classmethod
     def get_theme_config(cls, theme_id: int) -> dict:
@@ -499,46 +497,47 @@ class ThemeService:
     # ------------------------------------------------------------------
 
     @classmethod
-    def resolve_template(cls, action: str) -> Optional[str]:
-        """
-        Return the template file path for the given URL name, relative to
-        the Django template loader roots.
-        e.g. 'themes/default/index.html'
-        Returns None if no active theme or no matching template.
-        """
+    def get_template_path(cls, filename: str) -> Optional[str]:
+        """Return the full template path for the given filename, or None if no active theme."""
         theme = cls.get_active_theme()
         if theme is None:
             return None
-        try:
-            template = theme.templates.get(action=action)
-        except ThemeTemplate.DoesNotExist:
-            return None
-        return f'themes/{theme.directory}/{template.filename}.html'
+        return f'themes/{theme.directory}/{filename}.html'
 
     @classmethod
     def get_vars_context(cls, action: str) -> dict:
         """
-        Return a flat dict of variable values for the given action,
+        Return a dict of variable values for the given action,
         merging global (theme-level) vars and page-level vars.
         Page-level vars override global vars on key collision.
-        Used by views to inject variables into the template context.
+
+        Top-level vars are injected directly: {{ company_name }}
+        Fieldset vars are injected as dicts: {{ news.category }}
+
+        Used by views to inject theme variables into the template context.
         """
         theme = cls.get_active_theme()
         if theme is None:
             return {}
 
-        # Extract only the value from each stored var definition
-        context = {
-            key: var['value']
-            for key, var in theme.config.get('vars', {}).items()
-        }
+        def extract(config: dict) -> dict:
+            result = {}
+            # Top-level vars
+            for key, var in config.get('vars', {}).items():
+                result[key] = var['value']
+            # Fieldsets as nested dicts
+            for fs_key, fs_data in config.get('fieldsets', {}).items():
+                result[fs_key] = {
+                    var_key: var['value']
+                    for var_key, var in fs_data.get('vars', {}).items()
+                }
+            return result
+
+        context = extract(theme.config)
 
         try:
             template = theme.templates.get(action=action)
-            context.update({
-                key: var['value']
-                for key, var in template.config.get('vars', {}).items()
-            })
+            context.update(extract(template.config))
         except ThemeTemplate.DoesNotExist:
             pass
 
@@ -686,7 +685,7 @@ class ThemeService:
         """
         if var.type == ThemeVarType.DATASOURCE:
             widget_class = datasource.get(var.source)
-            return widget_class() if widget_class else None
+            return widget_class(multiple=var.multiple) if widget_class else None
 
         widget_class = TYPE_WIDGET_MAP.get(var.type)
         return widget_class() if widget_class else None  # type: ignore

@@ -27,6 +27,7 @@ from django.utils.translation import gettext_lazy as _
 from djangocmf.cmfadmin import widgets
 from djangocmf.cmfadmin.enums import ImageWidgetMode
 from djangocmf.cmfadmin.fields import CMFImagePathField
+from djangocmf.cmfadmin.service.theme import ThemeService
 from djangocmf.core.constants import DEFAULT_SORT_ORDER
 
 
@@ -236,6 +237,15 @@ class CMFModelAdminMixin(BaseModelAdmin):
 
 class CMFModelAdmin(CMFModelAdminMixin, ModelAdmin):
     back_url = None
+
+    @staticmethod
+    def _get_template_choices(action: str) -> list:
+        """Return template choices for the given action, with default option first."""
+        return [(action, _('Default'))] + [
+            (t.filename, t.name)
+            for t in ThemeService.get_templates_by_action(action)
+            if t.filename != action
+        ]
 
     def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
         extra_context = extra_context or {}

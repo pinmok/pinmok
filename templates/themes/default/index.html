@@ -1,3 +1,4 @@
+{% load content_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,5 +7,6 @@
 </head>
 <body>
 前端首页
+{% articles categories=news.category %}
 </body>
 </html>

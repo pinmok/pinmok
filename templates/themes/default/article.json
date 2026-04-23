@@ -1,6 +1,6 @@
 {
   "name": "Article",
-  "action": "content.article",
+  "action": "article",
   "order": 100,
   "vars": {
     "company_slogan": {
@@ -13,9 +13,9 @@
       "title": "News block",
       "vars": {
         "category": {
-          "title": "Page sample",
+          "title": "article sample",
           "type": "datasource",
-          "source": "page"
+          "source": "article"
         },
         "count": {
           "title": "List number",
