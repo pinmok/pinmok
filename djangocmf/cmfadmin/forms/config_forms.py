@@ -78,7 +78,7 @@ def _build_field(key: str, field_schema: dict) -> forms.Field:
     label = field_schema.get("label", key)
     help_text = field_schema.get("help_text", "")
     required = field_schema.get("required", False)
-    choices = field_schema.get("choices")
+    choices: list | None = field_schema.get("choices")
 
     field_class, widget_class = _FIELD_MAP.get(cfg_type, (forms.CharField, widgets.CMFTextInput))
 
@@ -108,7 +108,7 @@ def _build_field(key: str, field_schema: dict) -> forms.Field:
     if choices:
         field_class = forms.MultipleChoiceField if cfg_type == ConfigType.MULTI_SELECT else forms.ChoiceField
         if cfg_type == ConfigType.MULTI_SELECT:
-            kwargs["choices"] = choices
+            kwargs["choices"] = list(choices)
         else:
             # Prepend empty option for non-required single-select fields.
             if not required:

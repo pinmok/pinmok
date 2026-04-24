@@ -18,6 +18,7 @@ from django.contrib import admin, messages
 from django.contrib.admin.options import IS_POPUP_VAR
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import User, Group
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.storage import default_storage
 from django.http import HttpResponseRedirect
@@ -28,6 +29,7 @@ from django.utils.translation import gettext_lazy as _, get_language
 
 from djangocmf import cmfadmin
 from djangocmf.cmfadmin import widgets
+from djangocmf.cmfadmin.constants import EXTERNAL_LINK_CACHE_KEY
 from djangocmf.cmfadmin.enums import ConfigCategory, UploadConfigKey, FileType, MimeType
 from djangocmf.cmfadmin.fields import IndentedModelChoiceField
 from djangocmf.cmfadmin.forms.config_forms import EmailConfigForm, UploadConfigForm
@@ -176,6 +178,16 @@ class ExternalLinksAdmin(CMFModelAdmin):
         if obj.image:
             return format_html('<img src="{}" class="icon">', obj.image.url)
         return "-"
+
+    def save_model(self, request, obj, form, change):
+        """Invalidate external links cache after saving."""
+        super().save_model(request, obj, form, change)
+        cache.delete(EXTERNAL_LINK_CACHE_KEY)
+
+    def delete_model(self, request, obj):
+        """Invalidate external links cache after deleting."""
+        super().delete_model(request, obj)
+        cache.delete(EXTERNAL_LINK_CACHE_KEY)
 
 
 @cmfadmin.register(Resource)
@@ -404,6 +416,17 @@ class NavAdmin(CMFModelAdmin):
         if db_field.name == 'nav_type' and field is not None:
             field.widget.attrs['data-parent-choices-url'] = reverse('admin:cmfadmin:nav_parent_choices')
         return field
+
+    def save_model(self, request, obj, form, change):
+        assert isinstance(obj, Nav)
+        super().save_model(request, obj, form, change)
+        NavService.invalidate_cache(obj.nav_type)
+
+    def delete_model(self, request, obj):
+        assert isinstance(obj, Nav)
+        nav_type = obj.nav_type  # read before delete
+        super().delete_model(request, obj)
+        NavService.invalidate_cache(nav_type)
 
     class Media:
         js = ('admin/js/nav_admin.js',)

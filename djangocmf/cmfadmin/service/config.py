@@ -32,15 +32,6 @@ from djangocmf.cmfadmin.models import Config
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Internal sentinel — distinguishes a cached None from a cache miss.
-# ---------------------------------------------------------------------------
-_MISSING = object()
-
-
-# ===========================================================================
-# ConfigCache
-# ===========================================================================
 
 class ConfigCache:
     """
@@ -68,13 +59,9 @@ class ConfigCache:
 
     # --- per-key operations -------------------------------------------------
 
-    def get(self, category: str, key: str) -> str | object:
-        """
-        Return the cached raw string, or _MISSING if not cached.
-        A stored empty string is a valid value and is returned as-is.
-        """
-        result = cache.get(self._key(category, key), default=_MISSING)
-        return result
+    def get(self, category: str, key: str) -> str | None:
+        """Return the cached raw string, or None if not cached."""
+        return cache.get(self._key(category, key))
 
     def set(self, category: str, key: str, raw_value: str) -> None:
         cache.set(self._key(category, key), raw_value, timeout=CMF_CONFIG_CACHE_TTL)
@@ -84,12 +71,9 @@ class ConfigCache:
 
     # --- per-category operations --------------------------------------------
 
-    def get_category(self, category: str) -> dict[str, str] | object:
-        """
-        Return a {key: raw_str} dict for the whole category, or _MISSING.
-        """
-        result = cache.get(self._cat_key(category), default=_MISSING)
-        return result
+    def get_category(self, category: str) -> dict[str, str] | None:
+        """Return a {key: raw_str} dict for the whole category, or None if not cached."""
+        return cache.get(self._cat_key(category))
 
     def set_category(self, category: str, data: dict[str, str]) -> None:
         cache.set(self._cat_key(category), data, timeout=CMF_CONFIG_CACHE_TTL)
@@ -102,10 +86,6 @@ class ConfigCache:
         self.delete(category, key)
         self.delete_category(category)
 
-
-# ===========================================================================
-# ConfigStore
-# ===========================================================================
 
 class ConfigStore:
     """
@@ -260,10 +240,6 @@ def _deserialize(cfg_type: ConfigType, raw: str) -> Any:
             return raw
 
 
-# ===========================================================================
-# ConfigService
-# ===========================================================================
-
 class ConfigService:
     """
     Public API for reading and writing CMF configuration.
@@ -336,7 +312,7 @@ class ConfigService:
         The result is cached before returning.
         """
         cached = cls._cache.get(category, key)
-        if cached is not _MISSING:
+        if cached is not None:
             schema = cls._field_schema(category, key)
             cfg_type = schema.get("type", ConfigType.STR)
             return _deserialize(cfg_type, cached)
@@ -363,7 +339,7 @@ class ConfigService:
         Lookup order: category cache → DB → merge with defaults.
         """
         cached = cls._cache.get_category(category)
-        if cached is not _MISSING:
+        if cached is not None:
             return cls._apply_schema(category, cached)
 
         db_rows = ConfigStore.get_category(category)
@@ -385,13 +361,7 @@ class ConfigService:
             if key in db_rows:
                 raw = db_rows[key]
             else:
-                default = field.get("default", "")
-                if cfg_type == ConfigType.BOOL and isinstance(default, bool):
-                    raw = "true" if default else "false"
-                elif default is None:
-                    raw = ""
-                else:
-                    raw = str(default)
+                raw = cls._default(category, key)
             result[key] = _deserialize(cfg_type, raw)
 
         # Keys in DB but not in schema — include as raw strings.
@@ -453,7 +423,7 @@ class ConfigService:
         Useful for pre-populating form fields that display the stored value.
         """
         cached = cls._cache.get(category, key)
-        if cached is not _MISSING:
+        if cached is not None:
             return cached
         raw = ConfigStore.get(category, key)
         if raw is None:
@@ -468,7 +438,7 @@ class ConfigService:
         merging DB rows with schema defaults for missing keys.
         """
         cached = cls._cache.get_category(category)
-        if cached is not _MISSING:
+        if cached is not None:
             db_rows = cached
         else:
             db_rows = ConfigStore.get_category(category)
@@ -481,14 +451,7 @@ class ConfigService:
             if key in db_rows:
                 result[key] = db_rows[key]
             else:
-                default = field.get("default", "")
-                cfg_type = field.get("type", ConfigType.STR)
-                if cfg_type == ConfigType.BOOL and isinstance(default, bool):
-                    result[key] = "true" if default else "false"
-                elif default is None:
-                    result[key] = ""
-                else:
-                    result[key] = str(default)
+                result[key] = cls._default(category, key)
 
         # Include extra DB keys not in schema.
         for key, raw in db_rows.items():

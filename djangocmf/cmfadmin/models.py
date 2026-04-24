@@ -16,6 +16,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import resolve, Resolver404
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation.trans_real import get_languages
 
 from djangocmf.cmfadmin.enums import ConfigCategory, TargetChoices, FileType, NavType
 from djangocmf.core.constants import DEFAULT_SORT_ORDER
@@ -417,7 +418,7 @@ class NavTranslation(models.Model):
         ordering = ['language']
 
     def __str__(self):
-        return f"{self.nav_id} / {self.language} / {self.name}"
+        return f"{get_languages().get(self.language)} / {self.name}"
 
 
 class UrlAlias(models.Model):

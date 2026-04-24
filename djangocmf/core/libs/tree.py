@@ -85,8 +85,8 @@ class TreeNode(Generic[T]):
         for child in self.children:
             child.traverse(func)
 
-    @classmethod
-    def build_tree(cls: type[T], nodes: list[T], sort_key: str | None = None) -> list[T]:
+    @staticmethod
+    def build_tree(nodes: list[T], sort_key: str | None = None) -> list[T]:
         """
         Build a tree structure from a flat list of nodes.
 
@@ -107,17 +107,21 @@ class TreeNode(Generic[T]):
         roots: list[T] = []
         for node in nodes:
             if node.parent_id:
-                if node.parent_id not in node_map:
-                    raise ValueError(f"Parent {node.parent_id} not found")
-                if node.parent_id == node.id:
+                parent_id = node.parent_id
+                assert parent_id is not None
+                if parent_id not in node_map:
+                    raise ValueError(f"Parent {parent_id} not found")
+                if parent_id == node.id:
                     raise ValueError(f"Node {node.id} cannot be its own parent")
-                node_map[node.parent_id].children.append(node)
+                node_map[parent_id].children.append(node)
             else:
                 roots.append(node)
 
         if sort_key:
+            key = sort_key
+
             def sort_nodes(nodes_list: list[T]):
-                nodes_list.sort(key=lambda n: getattr(n, sort_key))
+                nodes_list.sort(key=lambda n: getattr(n, key))
 
             # Recursive sorting of children for each node
             def sort_tree(nodes_list: list[T]):

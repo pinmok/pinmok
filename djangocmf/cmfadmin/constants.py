@@ -58,3 +58,5 @@ HUGERTE_LANG_MAP = {
     'sv': 'sv_SE',
     'th': 'th_TH',
 }
+
+EXTERNAL_LINK_CACHE_KEY = 'cmf_external_links'

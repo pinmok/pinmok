@@ -1,4 +1,4 @@
-{% load i18n static cmf_admin_tags %}
+{% load i18n static cmf_tags %}
 {% if cl.search_fields %}
     <h2 id="changelist-search-form" class="visually-hidden">
         {% blocktranslate with name=cl.opts.verbose_name_plural %}Search {{ name }}{% endblocktranslate %}</h2>
