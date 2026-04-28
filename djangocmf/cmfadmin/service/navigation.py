@@ -49,7 +49,6 @@ class NavService:
         items = (
             Nav.objects
             .filter(nav_type=nav_type, is_visible=True)
-            .prefetch_related('translations')
             .values(
                 "id", "parent_id", "url", "icon",
                 "target", "sort_order", "is_visible"
@@ -63,11 +62,10 @@ class NavService:
                 language=language,
             )
         }
-        nodes = []
-        for item in items:
-            item['name'] = translation_map.get(item['id'], '')
-            nodes.append(NavNode(**item))
-        return nodes
+        return [
+            NavNode(**{**item, 'name': translation_map.get(item['id'], '')})
+            for item in items
+        ]
 
     @classmethod
     def get_items(cls, nav_type: str, language: str | None = None, exclude_id: int | None = None) -> list[tuple[NavNode, str]]:

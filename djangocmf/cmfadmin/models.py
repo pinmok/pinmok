@@ -482,13 +482,13 @@ class ThemeTemplate(models.Model):
     filename = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     action = models.CharField(max_length=100)
-    order = models.IntegerField(default=0)
+    sort_order = models.IntegerField(default=DEFAULT_SORT_ORDER)
     config = models.JSONField(default=dict)
 
     class Meta:
         verbose_name = _('theme template')
         verbose_name_plural = _('theme templates')
-        ordering = ['order']
+        ordering = ['sort_order']
         unique_together = ('theme', 'filename')
 
     def __str__(self):

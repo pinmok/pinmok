@@ -10,24 +10,26 @@ Author:
 Created:
   2026/4/12
 """
+import inspect
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from pathlib import Path
 from typing import Optional, Any
 
 from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, get_language
 
 from djangocmf.cmfadmin import widgets
 from djangocmf.cmfadmin.datasource import datasource
 from djangocmf.cmfadmin.enums import ThemeVarType
 from djangocmf.cmfadmin.models import Theme, ThemeTemplate
+from djangocmf.core.constants import DEFAULT_SORT_ORDER
 
 THEME_CACHE_KEY = 'cmf_active_theme'
 THEME_CACHE_TIMEOUT = 3600
-
+THEMES_DIR_NAME = 'themes'
 # Map ThemeVarType to Django form widget class.
 # To add a new type: add the enum value and its widget class here only.
 TYPE_WIDGET_MAP = {
@@ -54,20 +56,31 @@ class ThemeVar:
     type: ThemeVarType
     default: Any | None = None
     tip: str = ""
-    source: str = ""
-    multiple: bool = False
+    options: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> 'ThemeVar':
+        """
+        Base fields are handled explicitly; everything else goes into options.
+        This handles two cases:
+        1. Raw JSON definition: extra fields like 'source', 'multiple' are written
+           directly at the top level and collected into options via `extra`.
+        2. Database-stored structure: options are already nested under 'options'
+           key (produced by to_dict()), collected via `stored_options`.
+        Both are merged so from_dict works regardless of the source.
+        """
+        base_key = {'title', 'type', 'default', 'tip'}
+        stored_options = data.get('options', {})
+        extra = {k: v for k, v in data.items() if k not in base_key and k != 'options'}
         return cls(
             title=data['title'],
             type=ThemeVarType(data['type']),
             default=data.get('default', None),
             tip=data.get('tip', ''),
-            source=data.get('source', ''),
+            options={**stored_options, **extra},
         )
 
 
@@ -90,14 +103,10 @@ class ThemeService:
         """Return the themes/ directory found under any configured template DIRS entry."""
         for conf in settings.TEMPLATES:
             for d in conf.get('DIRS', []):
-                candidate = Path(d) / 'themes'
+                candidate = Path(d) / THEMES_DIR_NAME
                 if candidate.is_dir():
                     return candidate
         raise ThemeServiceError(_('No themes directory found in any configured template directory.'))
-
-    @classmethod
-    def _theme_dir(cls, directory: str) -> Path:
-        return cls._themes_root() / directory
 
     @classmethod
     def _read_json(cls, path: Path) -> dict:
@@ -137,11 +146,11 @@ class ThemeService:
         ``location`` is a human-readable path string for error messages,
         e.g. 'vars.company_name' or 'fieldsets.sidebar.vars.count'.
         """
-        for field in _VAR_REQUIRED_FIELDS:
-            if field not in var_def:
+        for f in _VAR_REQUIRED_FIELDS:
+            if f not in var_def:
                 raise ThemeServiceError(
                     _('Missing required field "%(field)s" in %(location)s') % {
-                        'field': field,
+                        'field': f,
                         'location': location,
                     }
                 )
@@ -208,33 +217,23 @@ class ThemeService:
     def _parse_config(cls, data: dict, config_file: str = '') -> dict:
         """
         Validate and parse vars and fieldsets from a JSON dict.
-        Stores the full definition for each var, with 'value' initialised
-        from 'default'.  This is the structure persisted to the database.
-
-        Each var entry contains: title, type, default, tip, source, value.
-        Each fieldset entry contains: title, and a vars dict of the same shape.
+        Only the initial value (from 'default') is stored; definition fields
+        (title, type, tip, options) are intentionally excluded.
         """
         cls._validate_config(data, config_file or 'config')
 
         result_vars = {}
         for key, var_def in data.get('vars', {}).items():
             var = ThemeVar.from_dict(var_def)
-            entry = var.to_dict()
-            entry['value'] = cls._default_value(var)
-            result_vars[key] = entry
+            result_vars[key] = cls._default_value(var)
 
         result_fieldsets = {}
         for fs_key, fs_def in data.get('fieldsets', {}).items():
             fs_vars = {}
             for var_key, var_def in fs_def.get('vars', {}).items():
                 var = ThemeVar.from_dict(var_def)
-                entry = var.to_dict()
-                entry['value'] = cls._default_value(var)
-                fs_vars[var_key] = entry
-            result_fieldsets[fs_key] = {
-                'title': fs_def['title'],
-                'vars': fs_vars,
-            }
+                fs_vars[var_key] = cls._default_value(var)
+            result_fieldsets[fs_key] = fs_vars
 
         return {'vars': result_vars, 'fieldsets': result_fieldsets}
 
@@ -302,7 +301,7 @@ class ThemeService:
         Raises ThemeServiceError if the directory, theme.json, or any
         page-level JSON fails validation.
         """
-        theme_dir = cls._theme_dir(directory)
+        theme_dir = cls._themes_root() / directory
         if not theme_dir.is_dir():
             raise ThemeServiceError(_('Theme directory not found: %(dir)s') % {'dir': directory})
         if Theme.objects.filter(directory=directory).exists():
@@ -357,7 +356,7 @@ class ThemeService:
                 filename=filename,
                 name=name,
                 action=action,
-                order=data.get('order', 0),
+                sort_order=data.get('sort_order', DEFAULT_SORT_ORDER),
                 config=cls._parse_config(data, json_file.name),
             )
 
@@ -452,20 +451,18 @@ class ThemeService:
     @staticmethod
     def _apply_submitted_values(config: dict, submitted: dict) -> dict:
         """
-        Write submitted POST values into a stored config dict in-place.
-        Only the 'value' field of each matching var is updated.
-        Unknown keys are silently ignored; definition fields are never touched.
-        Returns the mutated config dict.
+        Write submitted POST values into a stored config dict.
+        Only existing keys are updated; unknown keys are silently ignored.
         """
         for key, value in submitted.get('vars', {}).items():
             if key in config.get('vars', {}):
-                config['vars'][key]['value'] = value
+                config['vars'][key] = value
 
         for fs_key, fs_values in submitted.get('fieldsets', {}).items():
             if fs_key in config.get('fieldsets', {}):
                 for var_key, value in fs_values.items():
-                    if var_key in config['fieldsets'][fs_key].get('vars', {}):
-                        config['fieldsets'][fs_key]['vars'][var_key]['value'] = value
+                    if var_key in config['fieldsets'][fs_key]:
+                        config['fieldsets'][fs_key][var_key] = value
 
         return config
 
@@ -523,14 +520,11 @@ class ThemeService:
         def extract(config: dict) -> dict:
             result = {}
             # Top-level vars
-            for key, var in config.get('vars', {}).items():
-                result[key] = var['value']
+            for key, value in config.get('vars', {}).items():
+                result[key] = value
             # Fieldsets as nested dicts
-            for fs_key, fs_data in config.get('fieldsets', {}).items():
-                result[fs_key] = {
-                    var_key: var['value']
-                    for var_key, var in fs_data.get('vars', {}).items()
-                }
+            for fs_key, fs_vars in config.get('fieldsets', {}).items():
+                result[fs_key] = dict(fs_vars)
             return result
 
         context = extract(theme.config)
@@ -543,80 +537,18 @@ class ThemeService:
 
         return context
 
-    @classmethod
-    def get_fieldset_context(cls, action: str, fieldset_key: str) -> dict:
-        """
-        Return a flat dict of variable values for a specific fieldset.
-        Used by template tags to inject fieldset variables into rendering context.
-        Looks in the page template first, then falls back to the global theme config.
-        Returns an empty dict if not found.
-        """
-        theme = cls.get_active_theme()
-        if theme is None:
-            return {}
-
-        def _extract_values(config: dict) -> Optional[dict]:
-            fs = config.get('fieldsets', {}).get(fieldset_key)
-            if not isinstance(fs, dict):
-                return None
-            return {
-                var_key: var['value']
-                for var_key, var in fs.get('vars', {}).items()
-            }
-
-        # Page-level fieldset takes priority
-        try:
-            template = theme.templates.get(action=action)
-            values = _extract_values(template.config)
-            if values is not None:
-                return values
-        except ThemeTemplate.DoesNotExist:
-            pass
-
-        # Fall back to global fieldset
-        return _extract_values(theme.config) or {}
-
     # ------------------------------------------------------------------
     # Config context for admin editing page
     # ------------------------------------------------------------------
 
     @classmethod
-    def get_config_context(cls, theme_id: int, template_id: int | None) -> dict:
+    def _render_var(cls, key: str, var_def: dict, value: Any, fs_key: str = '') -> dict:
         """
-        Return all data needed for the config editing page.
-
-        config_data contains two lists ready for template iteration:
-        - vars: list of field dicts (key, title, tip, widget, value)
-        - fieldsets: list of group dicts (key, title, fields), where each
-          fields entry has the same shape as a vars field dict.
+        Convert a single var definition and its stored value into a template-friendly dict.
+        var_def comes from the config file; value comes from the database config field.
+        fs_key is non-empty when the var belongs to a fieldset.
         """
-        theme = cls._get_theme(theme_id)
-        templates = ThemeTemplate.objects.filter(theme=theme).order_by('order', 'name')
-
-        if template_id:
-            current_template = cls._get_template(template_id)
-            raw_config = cls.get_template_config(template_id)
-        else:
-            current_template = None
-            raw_config = cls.get_theme_config(theme_id)
-
-        config_data = cls._build_config_context(raw_config)
-
-        return {
-            'theme': theme,
-            'templates': templates,
-            'current_template': current_template,
-            'config_data': config_data,
-        }
-
-    @classmethod
-    def _render_var(cls, key: str, var_data: dict, fs_key: str = '') -> dict:
-        """
-        Convert a single stored var dict into a template-friendly field dict.
-        Resolves the widget instance so the template never needs to inspect type.
-        """
-        var = ThemeVar.from_dict(var_data)
-        value = var_data.get('value', cls._default_value(var))
+        var = ThemeVar.from_dict(var_def)
         name = f'fieldset__{fs_key}__{key}' if fs_key else f'var__{key}'
         widget = cls.get_widget_for_var(var)
         html = widget.render(name, value) if widget else ''
@@ -626,36 +558,90 @@ class ThemeService:
             'title': var.title,
             'tip': var.tip,
             'html': html,
-            'value': var_data.get('value', cls._default_value(var)),
+            'value': value
         }
 
     @classmethod
-    def _build_config_context(cls, raw_config: dict) -> dict:
+    def _build_config_context(cls, file_data: dict, db_config: dict) -> dict:
         """
-        Convert the raw stored config dict into a template-friendly structure.
-        Resolves widget instances for each var so the template can call
-        widget.render() without knowing the type.
+        Build the template-friendly config structure for the admin editing page.
+        file_data is the parsed config file (provides definitions: title, type, tip, options).
+        db_config is the stored database config (provides saved values only).
         """
         rendered_vars = [
-            cls._render_var(key, var_data)
-            for key, var_data in raw_config.get('vars', {}).items()
+            cls._render_var(key, var_def, db_config.get('vars', {}).get(key, ''))
+            for key, var_def in file_data.get('vars', {}).items()
         ]
 
         rendered_fieldsets = []
-        for fs_key, fs_data in raw_config.get('fieldsets', {}).items():
+        for fs_key, fs_def in file_data.get('fieldsets', {}).items():
             fields = [
-                cls._render_var(var_key, var_data, fs_key)
-                for var_key, var_data in fs_data.get('vars', {}).items()
+                cls._render_var(
+                    var_key,
+                    var_def,
+                    db_config.get('fieldsets', {}).get(fs_key, {}).get(var_key, ''),
+                    fs_key,
+                )
+                for var_key, var_def in fs_def.get('vars', {}).items()
             ]
             rendered_fieldsets.append({
                 'key': fs_key,
-                'title': fs_data.get('title', fs_key),
+                'title': fs_def.get('title', fs_key),
                 'fields': fields,
             })
 
         return {
             'vars': rendered_vars,
             'fieldsets': rendered_fieldsets,
+        }
+
+    @classmethod
+    def _read_config(cls, base_path: Path) -> dict:
+        """
+        Read a config JSON file with language fallback.
+        Tries the current language variant first (e.g. theme.zh-hans.json),
+        falls back to the default file (e.g. theme.json) if not found.
+        Language code must match Django's get_language() format exactly.
+        """
+        lang_path = base_path.with_name(f'{base_path.stem}.{get_language()}{base_path.suffix}')
+        if lang_path.exists():
+            return cls._read_json(lang_path)
+        return cls._read_json(base_path)
+
+    @classmethod
+    def get_config_context(cls, theme_id: int, template_id: int | None) -> dict:
+        """
+        Return all data needed for the config editing page.
+
+        Reads variable definitions from the config file (with language fallback),
+        merges with saved values from the database config field, and resolves
+        widget instances for each var.
+
+        config_data contains two lists ready for template iteration:
+        - vars: list of field dicts (key, title, tip, html, value)
+        - fieldsets: list of group dicts (key, title, fields), where each
+          fields entry has the same shape as a vars field dict.
+        """
+        theme = cls._get_theme(theme_id)
+        templates = ThemeTemplate.objects.filter(theme=theme).order_by('sort_order', 'name')
+        theme_dir = cls._themes_root() / theme.directory
+
+        if template_id:
+            current_template = cls._get_template(template_id)
+            file_data = cls._read_config(theme_dir / f'{current_template.filename}.json')
+            db_config = cls.get_template_config(template_id)
+        else:
+            current_template = None
+            file_data = cls._read_config(theme_dir / 'theme.json')
+            db_config = cls.get_theme_config(theme_id)
+
+        config_data = cls._build_config_context(file_data, db_config)
+
+        return {
+            'theme': theme,
+            'templates': templates,
+            'current_template': current_template,
+            'config_data': config_data,
         }
 
     # ------------------------------------------------------------------
@@ -684,8 +670,21 @@ class ThemeService:
         To support a new type, add it to TYPE_WIDGET_MAP only.
         """
         if var.type == ThemeVarType.DATASOURCE:
-            widget_class = datasource.get(var.source)
-            return widget_class(multiple=var.multiple) if widget_class else None
+            source = var.options.get('source')
+            widget_class = datasource.get(source)
+            if widget_class:
+                # The widget class may not declare **kwargs, so we filter options to only
+                # pass parameters it explicitly accepts. If it does declare **kwargs,
+                # pass all options and let the widget handle them itself.
+                sig = inspect.signature(widget_class.__init__)
+                params = sig.parameters
+                has_var_keyword = any(
+                    p.kind == inspect.Parameter.VAR_KEYWORD
+                    for p in params.values()
+                )
+                options = var.options if has_var_keyword else {k: v for k, v in var.options.items() if k in params}
+                return widget_class(**options)
+            return None
 
         widget_class = TYPE_WIDGET_MAP.get(var.type)
         return widget_class() if widget_class else None  # type: ignore

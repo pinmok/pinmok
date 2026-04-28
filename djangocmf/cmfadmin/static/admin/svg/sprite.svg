@@ -632,4 +632,37 @@
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M17 18.5a6 6 0 0 1 -5 0a6 6 0 0 0 -5 .5a3 3 0 0 0 2 -2.5v-7.5a4 4 0 0 1 7.45 -2m-2.55 6h-7"/>
     </symbol>
+    <symbol id="tabler-book" viewBox="0 0 24 24">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0"/>
+        <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0"/>
+        <path d="M3 6l0 13"/>
+        <path d="M12 6l0 13"/>
+        <path d="M21 6l0 13"/>
+    </symbol>
+    <symbol id="tabler-books" viewBox="0 0 24 24">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M5 5a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -14"/>
+        <path d="M9 5a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -14"/>
+        <path d="M5 8h4"/>
+        <path d="M9 16h4"/>
+        <path d="M13.803 4.56l2.184 -.53c.562 -.135 1.133 .19 1.282 .732l3.695 13.418a1.02 1.02 0 0 1 -.634 1.219l-.133 .041l-2.184 .53c-.562 .135 -1.133 -.19 -1.282 -.732l-3.695 -13.418a1.02 1.02 0 0 1 .634 -1.219l.133 -.041"/>
+        <path d="M14 9l4 -1"/>
+        <path d="M16 16l3.923 -.98"/>
+    </symbol>
+    <symbol id="tabler-file-text" viewBox="0 0 24 24">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+        <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2"/>
+        <path d="M9 9l1 0"/>
+        <path d="M9 13l6 0"/>
+        <path d="M9 17l6 0"/>
+    </symbol>
+    <symbol id="tabler-file-unknown" viewBox="0 0 24 24">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+        <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2"/>
+        <path d="M12 17v.01"/>
+        <path d="M12 14a1.5 1.5 0 1 0 -1.14 -2.474"/>
+    </symbol>
 </svg>
