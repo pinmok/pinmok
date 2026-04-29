@@ -53,12 +53,12 @@ _DEFAULT_HTTP_STATUS: dict[ErrorCode, HTTPStatus] = {
 # Every ErrorCode MUST have an entry here — missing keys will raise KeyError immediately.
 _DEFAULT_ERROR_MESSAGES: dict[ErrorCode, Promise] = {
     ErrorCode.SUCCESS: _("Success"),
-    ErrorCode.BAD_REQUEST: _("Bad request."),
-    ErrorCode.UNAUTHORIZED: _("Unauthorized."),
-    ErrorCode.FORBIDDEN: _("Permission denied."),
-    ErrorCode.NOT_FOUND: _("Resource not found."),
-    ErrorCode.VALIDATION_ERROR: _("Validation failed."),
-    ErrorCode.SERVER_ERROR: _("Internal server error."),
+    ErrorCode.BAD_REQUEST: _("Bad request"),
+    ErrorCode.UNAUTHORIZED: _("Unauthorized"),
+    ErrorCode.FORBIDDEN: _("Permission denied"),
+    ErrorCode.NOT_FOUND: _("Resource not found"),
+    ErrorCode.VALIDATION_ERROR: _("Validation failed"),
+    ErrorCode.SERVER_ERROR: _("Internal server error"),
 }
 
 

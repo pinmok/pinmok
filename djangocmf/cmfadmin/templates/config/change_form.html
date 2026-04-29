@@ -40,7 +40,7 @@
                     <div> {# For card subtitle use, can not be deleted. #}
                         {% if fieldset.is_collapsible %}
                             <button class="accordion-button collapsed p-0" type="button" data-bs-toggle="collapse"
-                                    data-bs-target="#{{ name }}">
+                                    data-bs-target="#{{ name|slugify }}">
                                 {{ name }}
                                 <div class="accordion-button-toggle">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -60,7 +60,7 @@
                 </div>
             {% endif %}
 
-            <div class="card-body{% if fieldset.is_collapsible %} accordion-collapse collapse{% endif %}" id="{{ name }}">
+            <div class="card-body{% if fieldset.is_collapsible %} accordion-collapse collapse{% endif %}" id="{{ name|slugify }}">
                 {% for line in fieldset.fields %}
                     <div class="row mb-3 d-flex align-items-center{% if not line.has_visible_field %} d-none{% endif %}">
                         {% for field in line %}

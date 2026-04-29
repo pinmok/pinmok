@@ -21,8 +21,8 @@ from django.templatetags.static import static
 from django.utils.safestring import mark_safe
 
 from djangocmf.cmfadmin.constants import CMF_ICON_PREFIX, CMF_SPRITE_FILE, CUSTOM_SPRITE_FILE, CMF_CONFIG_CACHE_TTL, EXTERNAL_LINK_CACHE_KEY
-from djangocmf.cmfadmin.enums import NavType, ConfigCategory
-from djangocmf.cmfadmin.models import ExternalLink
+from djangocmf.cmfadmin.enums import ConfigCategory
+from djangocmf.cmfadmin.models import ExternalLink, Slider
 from djangocmf.cmfadmin.service.config import ConfigService
 from djangocmf.cmfadmin.service.navigation import NavService
 
@@ -121,7 +121,7 @@ def site_info() -> dict:
     return ConfigService.get_category(ConfigCategory.SITE)
 
 
-@register.simple_tag
+@register.simple_tag(name='links')
 def external_links() -> list[dict[str, Any]]:
     """
     Return a list of visible external links, ordered by sort_order.
@@ -194,14 +194,11 @@ class NavigationNode(template.Node):
         return ''.join(result)
 
     def render(self, context):
-        nav_type = self.nav_type_var.resolve(context)
-
-        if nav_type not in NavType.values:
-            raise ValueError(f'Invalid nav_type: {nav_type}')
+        group = self.nav_type_var.resolve(context)
 
         request = context.get('request')
         language = getattr(request, 'LANGUAGE_CODE', None)
-        tree = NavService.build_tree(nav_type, language)
+        tree = NavService.build_tree(group, language)
 
         template_map = self._get_template_map()
         return self._render_nodes(tree, 1, template_map, context)
@@ -279,3 +276,25 @@ def do_navblock(parser: template.base.Parser, token: template.base.Token):
     nodelist = parser.parse(('endnavblock',))
     parser.delete_first_token()
     return NavBlockNode(level, nodelist)
+
+
+@register.simple_tag
+def slider(group: str) -> list[dict[str, Any]]:
+    """
+    Return a list of active slider items for the given group, ordered by sort_order.
+    Results are cached to avoid repeated database queries.
+
+    Usage:
+        {% slider 'home' as slides %}
+    """
+    cache_key = f'slider_{group}'
+    items = cache.get(cache_key)
+    if items is None:
+        items = list(
+            Slider.objects
+            .filter(group=group, is_active=True)
+            .order_by('sort_order')
+            .values('title', 'image', 'link')
+        )
+        cache.set(cache_key, items, CMF_CONFIG_CACHE_TTL)
+    return items

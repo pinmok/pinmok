@@ -169,12 +169,6 @@ class ImageWidgetMode(StrEnum):
     RESOURCE = 'resource'
 
 
-class NavType(models.TextChoices):
-    MAIN = "main", _("Main Navigation")
-    FOOTER = "footer", _("Footer Navigation")
-    SIDEBAR = "sidebar", _("Sidebar Navigation")
-
-
 class ThemeVarType(StrEnum):
     TEXT = 'text'
     TEXTAREA = 'textarea'

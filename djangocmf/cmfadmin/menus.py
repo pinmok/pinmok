@@ -27,10 +27,10 @@ admin_menu = [
     ),
     menu(
         'theme',
-        title='Theme Management',
+        title='Template Management',
         url='admin:cmfadmin:theme_list',
         parent_key='config',
-        sort_order=7000,
+        sort_order=8000,
         permissions=["cmfadmin.view_theme"]
     )
 ]

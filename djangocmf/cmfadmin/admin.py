@@ -13,6 +13,8 @@ Author:
 Created:
   2025-06-08
 """
+from typing import cast
+
 from django.conf import settings
 from django.contrib import admin, messages
 from django.contrib.admin.options import IS_POPUP_VAR
@@ -21,6 +23,7 @@ from django.contrib.auth.models import User, Group
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.storage import default_storage
+from django.db.models import ForeignKey
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import reverse, NoReverseMatch
@@ -34,7 +37,7 @@ from djangocmf.cmfadmin.enums import ConfigCategory, UploadConfigKey, FileType, 
 from djangocmf.cmfadmin.fields import IndentedModelChoiceField
 from djangocmf.cmfadmin.forms.config_forms import EmailConfigForm, UploadConfigForm
 from djangocmf.cmfadmin.forms.forms import CMFAdminPasswordResetForm, CMFAdminUserCreationForm
-from djangocmf.cmfadmin.models import ExternalLink, SiteConfig, EmailConfig, UploadConfig, Resource, Nav, NavTranslation, UrlAlias
+from djangocmf.cmfadmin.models import ExternalLink, SiteConfig, EmailConfig, UploadConfig, Resource, Nav, NavTranslation, UrlAlias, Slider
 from djangocmf.cmfadmin.options import CMFModelAdmin, CMFModelAdminMixin, ConfigModelAdmin, ExtraPanel, CMFStackedInline
 from djangocmf.cmfadmin.service.navigation import NavService
 from djangocmf.cmfadmin.service.upload import UploadService
@@ -95,13 +98,6 @@ class SiteConfigAdmin(ConfigModelAdmin):
             "fields": [
                 ("facebook_link", "x_link"),
                 ("linkedin_link", "instagram_link")
-            ],
-            'classes': ('collapse',),
-        }),
-        (_("SEO Settings"), {
-            "fields": [
-                ("seo_title", "seo_keywords"),
-                "seo_description",
             ],
             'classes': ('collapse',),
         }),
@@ -209,7 +205,7 @@ class ResourceAdmin(CMFModelAdmin):
     """
     # --- Upload form template for add view ---
     add_form_template = 'admin/widgets/resource_add_form.html'
-
+    menu_order = 10000
     # --- List display ---
     list_display = [
         'thumbnail_preview',
@@ -344,13 +340,13 @@ class NavTranslationInline(CMFStackedInline):
 class NavAdmin(CMFModelAdmin):
     """Admin for navigation item management."""
     menu_order = 6000
-    list_display = ('get_name', 'nav_type', 'parent', 'url', 'sort_order', 'is_visible')
+    list_display = ('get_name', 'group', 'parent', 'url', 'sort_order', 'is_visible')
     list_display_links = ('get_name',)
-    list_filter = ('nav_type',)
+    list_filter = ('group',)
     list_editable = ('sort_order', 'is_visible')
     fieldsets = [
         (None, {'fields': [
-            'nav_type',
+            'group',
             'parent',
             ('url', 'target'),
             ('icon', 'sort_order', 'is_visible'),
@@ -371,40 +367,39 @@ class NavAdmin(CMFModelAdmin):
         return translation.name if translation else _('(no name)')
 
     def get_form(self, request, obj=None, **kwargs):
+        # Kept intentionally to prevent form hijacking by parent class.
         form = super().get_form(request, obj, **kwargs)
         return form
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'parent':
-            obj_id = request.resolver_match.kwargs.get('object_id') if request.resolver_match else None
+            obj_id: str | None = request.resolver_match.kwargs.get('object_id') if request.resolver_match else None
 
-            # Get nav_type from query string or from the existing object
-            nav_type = request.GET.get('nav_type')
-            if not nav_type and obj_id:
+            # Get group from query string or from the existing object
+            group = request.GET.get('group')
+            if not group and obj_id:
                 try:
-                    nav_type = Nav.objects.values_list(
-                        'nav_type', flat=True
-                    ).get(pk=obj_id)
+                    group = Nav.objects.values_list('group', flat=True).get(pk=obj_id)
                 except Nav.DoesNotExist:
                     pass
 
             kwargs['empty_label'] = _('Top Level')
 
             qs = Nav.objects.all()
-            if nav_type:
-                qs = qs.filter(nav_type=nav_type)
+            if group:
+                qs = qs.filter(group=group)
             # Exclude self to prevent circular reference
             if obj_id:
                 qs = qs.exclude(pk=obj_id)
             kwargs['queryset'] = qs
 
-            if nav_type:
-                # Get items excluding self, so IndentedModelChoiceField pairs are also clean
-                items = NavService.get_items(nav_type, exclude_id=int(obj_id) if obj_id else None)  # type: ignore[arg-type]
+            if group:
+                items = NavService.get_items(group, exclude_id=int(obj_id) if obj_id else None)
+                field = cast(ForeignKey, Nav._meta.get_field('parent'))
                 return IndentedModelChoiceField(
                     pairs=items,
                     widget=widgets.CMFSelect(),
-                    label=Nav._meta.get_field('parent').verbose_name,  # type: ignore[union-attr]
+                    label=field.verbose_name,
                     required=False,
                     **kwargs,
                 )
@@ -413,20 +408,22 @@ class NavAdmin(CMFModelAdmin):
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         field = super().formfield_for_dbfield(db_field, request, **kwargs)
-        if db_field.name == 'nav_type' and field is not None:
+        if db_field.name == 'group' and field is not None:
+            options = Nav.objects.values_list('group', flat=True).distinct()
+            field.widget = widgets.CMFDatalistInput(options=options)
             field.widget.attrs['data-parent-choices-url'] = reverse('admin:cmfadmin:nav_parent_choices')
         return field
 
     def save_model(self, request, obj, form, change):
         assert isinstance(obj, Nav)
         super().save_model(request, obj, form, change)
-        NavService.invalidate_cache(obj.nav_type)
+        NavService.invalidate_cache(obj.group)
 
     def delete_model(self, request, obj):
         assert isinstance(obj, Nav)
-        nav_type = obj.nav_type  # read before delete
+        group = obj.group  # read before delete
         super().delete_model(request, obj)
-        NavService.invalidate_cache(nav_type)
+        NavService.invalidate_cache(group)
 
     class Media:
         js = ('admin/js/nav_admin.js',)
@@ -434,7 +431,7 @@ class NavAdmin(CMFModelAdmin):
 
 @cmfadmin.register(UrlAlias)
 class UrlAliasAdmin(CMFModelAdmin):
-    menu_order = 8000
+    menu_order = 9000
     list_display = ('alias', 'target', 'is_active', 'updated_at')
     list_filter = ('is_active',)
     search_fields = ('alias', 'target')
@@ -467,3 +464,39 @@ class UrlAliasAdmin(CMFModelAdmin):
                 self.admin_site.each_context(request)
             )
         return super().changelist_view(request, extra_context)
+
+
+@cmfadmin.register(Slider)
+class SliderAdmin(CMFModelAdmin):
+    """Admin for slider management."""
+    menu_order = 7000
+    list_display = ('title', 'group', 'sort_order', 'is_active')
+    list_filter = ('group',)
+    list_editable = ('sort_order', 'is_active')
+    fieldsets = [
+        (None, {'fields': [
+            ('title', 'group'),
+            'image',
+            ('link', 'sort_order', 'is_active'),
+        ]})
+    ]
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        field = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if db_field.name == 'group' and field is not None:
+            options = Slider.objects.values_list('group', flat=True).distinct()
+            field.widget = widgets.CMFDatalistInput(options=options)
+        return field
+
+    def save_model(self, request, obj, form, change):
+        """Invalidate sliders cache after saving."""
+        assert isinstance(obj, Slider)
+        super().save_model(request, obj, form, change)
+        cache.delete(f'slider_{obj.group}')
+
+    def delete_model(self, request, obj):
+        """Invalidate sliders cache after deleting."""
+        assert isinstance(obj, Slider)
+        group = obj.group  # read before delete
+        super().delete_model(request, obj)
+        cache.delete(f'slider_{group}')

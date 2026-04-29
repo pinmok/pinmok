@@ -13,6 +13,10 @@ Created:
   2026/4/13
 """
 from django.forms.widgets import Widget
+from django.utils.translation import gettext_lazy as _
+
+from djangocmf.cmfadmin.models import Slider, Nav
+from djangocmf.cmfadmin.widgets import CMFSelect
 
 
 class DataSourceRegistry:
@@ -50,3 +54,19 @@ class DataSourceRegistry:
 
 
 datasource = DataSourceRegistry()
+
+
+@datasource.register('nav')
+class NavDataSource(CMFSelect):
+    def __init__(self, attrs=None):
+        groups = Nav.objects.filter(is_visible=True).values_list('group', flat=True).distinct()
+        choices = [('', _('None'))] + [(n, n) for n in groups]
+        super().__init__(attrs=attrs, choices=choices)
+
+
+@datasource.register('slider')
+class SliderDataSource(CMFSelect):
+    def __init__(self, attrs=None):
+        groups = Slider.objects.filter(is_active=True).values_list('group', flat=True).distinct()
+        choices = [('', _('None'))] + [(g, g) for g in groups]
+        super().__init__(attrs=attrs, choices=choices)

@@ -394,3 +394,24 @@ class ResourceWidget(CMFForeignKeyRawId):
 
     class Media:
         js = ('admin/js/widgets/resource_widget.js',)
+
+
+class CMFDatalistInput(CMFWidgetMixin, forms.TextInput):
+    """
+    Text input with a datalist dropdown for suggesting existing values.
+    Accepts any iterable via the options parameter; the caller is responsible
+    for providing the data source.
+    """
+    default_css_class = 'form-control'
+    template_name = 'forms/widgets/datalist_input.html'
+
+    def __init__(self, options=(), attrs=None, **kwargs):
+        super().__init__(attrs=attrs, **kwargs)
+        self.options = options
+
+    def get_context(self, name, value, attrs):
+        attributes = {'list': f'{name}_list', **(attrs or {})}
+        context = super().get_context(name, value, attributes)
+        context['widget']['datalist_id'] = f'{name}_list'
+        context['widget']['options'] = self.options
+        return context

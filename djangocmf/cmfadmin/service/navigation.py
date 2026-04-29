@@ -24,8 +24,8 @@ CACHE_TIMEOUT = 86400  # 24 hours
 CACHE_KEY_PREFIX = "nav_"
 
 
-def _cache_key(nav_type: str, language: str) -> str:
-    return f'{CACHE_KEY_PREFIX}_{nav_type}_{language}'
+def _cache_key(group: str, language: str) -> str:
+    return f'{CACHE_KEY_PREFIX}_{group}_{language}'
 
 
 @dataclass(kw_only=True)
@@ -44,11 +44,11 @@ class NavNode(TreeNode['NavNode']):
 
 class NavService:
     @classmethod
-    def _load_nodes(cls, nav_type: str, language: str) -> list[NavNode]:
+    def _load_nodes(cls, group: str, language: str) -> list[NavNode]:
         """Fetch nav items from database and convert to NavNode instances."""
         items = (
             Nav.objects
-            .filter(nav_type=nav_type, is_visible=True)
+            .filter(group=group, is_visible=True)
             .values(
                 "id", "parent_id", "url", "icon",
                 "target", "sort_order", "is_visible"
@@ -58,7 +58,7 @@ class NavService:
         translation_map = {
             t.nav_id: t.name
             for t in NavTranslation.objects.filter(
-                nav__nav_type=nav_type,
+                nav__group=group,
                 language=language,
             )
         }
@@ -68,12 +68,12 @@ class NavService:
         ]
 
     @classmethod
-    def get_items(cls, nav_type: str, language: str | None = None, exclude_id: int | None = None) -> list[tuple[NavNode, str]]:
+    def get_items(cls, group: str, language: str | None = None, exclude_id: int | None = None) -> list[tuple[NavNode, str]]:
         """
         Retrieve nav items and flatten in DFS pre-order with indented labels.
 
         Args:
-            nav_type: NavType value string (e.g. 'main', 'footer').
+            group: NavType value string (e.g. 'main', 'footer').
             language: Language code; falls back to default if not provided.
             exclude_id: If provided, exclude the node with this id from the result.
                     Used to prevent a node from appearing as its own parent option.
@@ -82,7 +82,7 @@ class NavService:
             List of ``(NavNode, indented_label)`` pairs in DFS pre-order.
         """
         lang = language or settings.LANGUAGE_CODE
-        nodes = cls._load_nodes(nav_type, lang)
+        nodes = cls._load_nodes(group, lang)
 
         return NavNode.flatten_with_indent(
             nodes,
@@ -92,32 +92,32 @@ class NavService:
         )
 
     @classmethod
-    def invalidate_cache(cls, nav_type: str) -> None:
+    def invalidate_cache(cls, group: str) -> None:
         """
-        Invalidate all cached trees for the given nav_type across all languages.
+        Invalidate all cached trees for the given group across all languages.
         Called from ModelAdmin on save/delete.
         """
-        keys = [_cache_key(nav_type, lang) for lang, _ in settings.LANGUAGES]
+        keys = [_cache_key(group, lang) for lang, _ in settings.LANGUAGES]
         cache.delete_many(keys)
 
     @classmethod
-    def build_tree(cls, nav_type: str, language: str | None = None) -> list[NavNode]:
+    def build_tree(cls, group: str, language: str | None = None) -> list[NavNode]:
         """
-        Build the tree structure for the specified nav_type.
+        Build the tree structure for the specified group.
 
         Args:
-            nav_type: NavType value string (e.g. 'main', 'footer').
+            group: NavType value string (e.g. 'main', 'footer').
             language: Language code; falls back to default if not provided.
 
         Returns:
             Root nodes of the constructed tree.
         """
         lang = language or settings.LANGUAGE_CODE
-        key = _cache_key(nav_type, lang)
+        key = _cache_key(group, lang)
         tree = cache.get(key)
 
         if tree is None:
-            tree = NavNode.build_tree(cls._load_nodes(nav_type, lang), sort_key="sort_order")
+            tree = NavNode.build_tree(cls._load_nodes(group, lang), sort_key="sort_order")
             cache.set(key, tree, CACHE_TIMEOUT)
 
         return tree

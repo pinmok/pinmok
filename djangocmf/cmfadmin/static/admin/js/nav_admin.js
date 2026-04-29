@@ -2,18 +2,18 @@
     'use strict';
 
     $(document).ready(function ($) {
-        const navType = $('#id_nav_type');
-        const parent  = $('#id_parent');
+        const groupInput = $('#id_group');
+        const parent     = $('#id_parent');
 
         // Extract current object id from URL (edit page only)
         const match     = window.location.pathname.match(/\/(\d+)\/change\/$/);
         const excludeId = match ? match[1] : null;
 
-        function updateParent(nav_type) {
-            const url = navType.attr('data-parent-choices-url');
-            if (!url) return;
+        function updateParent(group) {
+            const url = groupInput.attr('data-parent-choices-url');
+            if (!url || !group) return;
 
-            const params = new URLSearchParams({nav_type});
+            const params = new URLSearchParams({group});
             if (excludeId) params.append('exclude_id', excludeId);
 
             $.getJSON(url + '?' + params.toString(), function (data) {
@@ -29,9 +29,15 @@
             });
         }
 
-        // Update parent choices when nav_type changes
-        navType.on('change', function () {
-            updateParent($(this).val());
+        // Update parent choices when group input loses focus
+        groupInput.on('blur', function () {
+            updateParent($(this).val().trim());
         });
+
+        // Trigger on page load if group already has a value (edit page)
+        const initialGroup = groupInput.val().trim();
+        if (initialGroup) {
+            updateParent(initialGroup);
+        }
     });
 }());

@@ -29,7 +29,7 @@ from django.views import View
 from django.views.decorators.http import require_GET
 
 from djangocmf.cmfadmin.constants import CUSTOM_SPRITE_FILE, CMF_ICON_PREFIX, CMF_SPRITE_FILE
-from djangocmf.cmfadmin.enums import FileType, ConfigCategory, NavType
+from djangocmf.cmfadmin.enums import FileType, ConfigCategory
 from djangocmf.cmfadmin.models import UrlAlias
 from djangocmf.cmfadmin.service.email import EmailService
 from djangocmf.cmfadmin.service.menu import AdminMenuManager
@@ -489,13 +489,16 @@ class ThemeConfigView(View):
 def nav_parent_choices(request):
     """
     Return parent choices for the Nav parent field.
-    Filtered by nav_type, excluding the specified node and its descendants.
+    Filtered by group, excluding the specified node and its descendants.
     Used by the NavAdmin parent field AJAX update.
     """
-    nav_type = request.GET.get('nav_type', NavType.MAIN)
+    group = request.GET.get('group', '')
+    if not group:
+        return JsonResponse({'choices': []})
+
     exclude_id = request.GET.get('exclude_id')
     items = NavService.get_items(
-        nav_type,
+        group,
         exclude_id=int(exclude_id) if exclude_id else None
     )
     choices = [{'id': node.id, 'label': label} for node, label in items]

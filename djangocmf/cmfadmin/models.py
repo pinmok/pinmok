@@ -18,7 +18,7 @@ from django.urls import resolve, Resolver404
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation.trans_real import get_languages
 
-from djangocmf.cmfadmin.enums import ConfigCategory, TargetChoices, FileType, NavType
+from djangocmf.cmfadmin.enums import ConfigCategory, TargetChoices, FileType
 from djangocmf.core.constants import DEFAULT_SORT_ORDER
 
 User = get_user_model()
@@ -248,8 +248,8 @@ class ExternalLink(models.Model):
 
     class Meta:
         ordering = ['sort_order']
-        verbose_name = _('External Link')
-        verbose_name_plural = _('External Links')
+        verbose_name = _('Partner Link')
+        verbose_name_plural = _('Partner Links')
 
     def __str__(self):
         return self.title
@@ -324,13 +324,11 @@ class Resource(models.Model):
 class Nav(models.Model):
     """
     Navigation item. Language-neutral structure.
-    Use nav_type to distinguish which navigation group this item belongs to.
+    Use group to distinguish which navigation group this item belongs to.
     """
-    nav_type = models.CharField(
-        max_length=20,
-        choices=NavType,
-        default=NavType.MAIN,
-        verbose_name=_("navigation type"),
+    group = models.CharField(
+        max_length=100,
+        verbose_name=_("group"),
         help_text=_("Which navigation group this item belongs to.")
     )
     parent = models.ForeignKey(
@@ -379,14 +377,14 @@ class Nav(models.Model):
     class Meta:
         verbose_name = _("navigation")
         verbose_name_plural = _("navigations")
-        ordering = ['nav_type', 'sort_order']
+        ordering = ['group', 'sort_order']
 
     def __str__(self):
         translation = self.translations.filter(
             language=settings.LANGUAGE_CODE
         ).first() or self.translations.first()
         name = translation.name if translation else _('(no name)')
-        return f"[{self.get_nav_type_display()}] {name}"
+        return f"[{self.group}] {name}"
 
 
 class NavTranslation(models.Model):
@@ -493,3 +491,20 @@ class ThemeTemplate(models.Model):
 
     def __str__(self):
         return f'{self.theme.name} / {self.name}'
+
+
+class Slider(models.Model):
+    title = models.CharField(max_length=200, blank=True, verbose_name=_('title'))
+    image = models.ImageField(upload_to='slider/', verbose_name=_('image'))
+    link = models.CharField(max_length=200, blank=True, verbose_name=_('link'))
+    group = models.CharField(max_length=100, verbose_name=_('group'))
+    sort_order = models.IntegerField(default=DEFAULT_SORT_ORDER, verbose_name=_('order'))
+    is_active = models.BooleanField(default=True, verbose_name=_('status'))
+
+    class Meta:
+        verbose_name = _('slider')
+        verbose_name_plural = _('sliders')
+        ordering = ['group', 'sort_order']
+
+    def __str__(self):
+        return f'[{self.group}] {self.title}'

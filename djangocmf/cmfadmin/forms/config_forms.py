@@ -22,7 +22,6 @@ Description:
         form = SiteConfigForm
         fieldsets = [
             (_("Basic"), {"fields": ["site_name", "site_slogan", "site_logo"]}),
-            (_("SEO"),   {"fields": ["seo_title", "meta_keywords", "seo_description"]}),
         ]
 
 Author:

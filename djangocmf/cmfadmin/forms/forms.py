@@ -17,7 +17,6 @@ from django.contrib.auth.forms import SetUnusablePasswordMixin
 from django.forms.widgets import Select
 from django.utils.translation import gettext_lazy as _
 
-from djangocmf.cmfadmin.models import Nav
 from djangocmf.cmfadmin.widgets import CMFPassword, CMFRadioSelect
 
 
@@ -87,23 +86,3 @@ class CMFActionForm(forms.Form):
         initial=0,
         widget=forms.HiddenInput({"class": "select-across"}),
     )
-
-
-class NavForm(forms.ModelForm):
-    class Meta:
-        model = Nav
-        fields = ['nav_type', 'parent', 'url', 'icon', 'target', 'sort_order', 'is_visible']
-
-    def __init__(self, *args, **kwargs):
-        nav_type = kwargs.pop('nav_type', None)
-        super().__init__(*args, **kwargs)
-
-        qs = Nav.objects.all()
-        if nav_type:
-            qs = qs.filter(nav_type=nav_type)
-        if self.instance and self.instance.pk:
-            qs = qs.exclude(pk=self.instance.pk)
-
-        self.fields['parent'].queryset = qs
-        self.fields['parent'].required = False
-        self.fields['parent'].widget.attrs['data-allow-null'] = 'true'

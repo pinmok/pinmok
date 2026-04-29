@@ -371,7 +371,6 @@ class ConfigModelAdmin(CMFModelAdminMixin, ModelAdmin):
             form = SiteConfigForm
             fieldsets = [
                 (_("Basic"), {"fields": ["site_name", "site_slogan"]}),
-                (_("SEO"),   {"fields": ["seo_title", "seo_description"]}),
             ]
 
     The `form` attribute must be a ConfigForm subclass with `category` defined.

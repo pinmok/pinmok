@@ -67,26 +67,8 @@ CONFIG_SCHEMA = {
         "pns": {
             "type": ConfigType.STR,
             "default": "",
-            "label": _("PNS filing number"),
-            "help_text": _("Certificate of Public Network Security Filing, leave blank if not applicable."),
-        },
-        "seo_title": {
-            "type": ConfigType.STR,
-            "default": "",
-            "label": _("SEO title"),
-            "help_text": _("Page title for search engines, maximum 60 characters."),
-        },
-        "seo_keywords": {
-            "type": ConfigType.STR,
-            "default": "",
-            "label": _("Meta keywords"),
-            "help_text": _("Comma-separated keywords, recommended within 5-10 words."),
-        },
-        "seo_description": {
-            "type": ConfigType.STR,
-            "default": "",
-            "label": _("Meta description"),
-            "help_text": _("Page description for search engines, maximum 160 characters."),
+            "label": _("Public Security Internet Filing Number"),
+            "help_text": _("Public Security Internet Filing Number, leave blank if not applicable."),
         },
         "service_phone": {
             "type": ConfigType.STR,
