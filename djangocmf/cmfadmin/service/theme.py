@@ -209,6 +209,35 @@ class ThemeService:
                     f'{config_file} > fieldsets.{fs_key}.vars.{var_key}',
                 )
 
+    @classmethod
+    def _validate_config_file(cls, theme_dir: Path):
+        """ Validate that all configuration files contain required attributes. """
+        template_attrs = ['name', 'action']
+        for json_file in theme_dir.glob('*.json'):
+            try:
+                data = cls._read_json(json_file)
+            except ThemeServiceError:
+                continue
+
+            # Validate theme config file
+            if json_file.name.startswith('theme'):
+                if not data.get('name', ''):
+                    raise ThemeServiceError(
+                        _('Theme configuration file %(file)s is missing required field "name".') % {
+                            'file': json_file.name,
+                        }
+                    )
+                continue
+
+            for attr in template_attrs:
+                if not data.get(attr, ''):
+                    raise ThemeServiceError(
+                        _('Template configuration file %(file)s is missing required field "%(attr)s".') % {
+                            'file': json_file.name,
+                            'attr': attr,
+                        }
+                    )
+
     # ------------------------------------------------------------------
     # Parse config (install-time)
     # ------------------------------------------------------------------
@@ -307,8 +336,9 @@ class ThemeService:
         if Theme.objects.filter(directory=directory).exists():
             raise ThemeServiceError(_('Theme "%(dir)s" already installed.') % {'dir': directory})
 
-        data = cls._read_json(theme_dir / 'theme.json')
+        cls._validate_config_file(theme_dir)
 
+        data = cls._read_json(theme_dir / 'theme.json')
         theme = Theme.objects.create(
             name=data.get('name', directory),
             version=data.get('version', ''),
@@ -327,35 +357,16 @@ class ThemeService:
     def _install_templates(cls, theme: Theme, theme_dir: Path):
         """Scan the theme directory for page-level JSON files and create ThemeTemplate records."""
         for json_file in sorted(theme_dir.glob('*.json')):
-            if json_file.name == 'theme.json':
-                continue
-            try:
-                data = cls._read_json(json_file)
-            except ThemeServiceError:
+            if json_file.name.startswith('theme'):
                 continue
 
-            action = data.get('action', '')
-            if not action:
-                raise ThemeServiceError(
-                    _('Template config %(file)s is missing required field "action"') % {
-                        'file': json_file.name,
-                    }
-                )
-
-            name = data.get('name', '')
-            if not name:
-                raise ThemeServiceError(
-                    _('Template config %(file)s is missing required field "name"') % {
-                        'file': json_file.name,
-                    }
-                )
-
-            filename = json_file.stem  # e.g. 'index' from 'index.json'
+            data = cls._read_json(json_file)
+            filename = json_file.name.split('.')[0]  # e.g. 'index' from 'index.json'
             ThemeTemplate.objects.create(
                 theme=theme,
                 filename=filename,
-                name=name,
-                action=action,
+                name=data.get('name', ''),
+                action=data.get('action', ''),
                 sort_order=data.get('sort_order', DEFAULT_SORT_ORDER),
                 config=cls._parse_config(data, json_file.name),
             )

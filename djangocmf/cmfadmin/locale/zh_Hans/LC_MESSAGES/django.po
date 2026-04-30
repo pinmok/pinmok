@@ -739,15 +739,15 @@ msgstr "主题目录未找到：%(dir)s"
 msgid "Theme \"%(dir)s\" already installed."
 msgstr "主题 “%(dir)s” 已安装。"
 
-#: .\djangocmf\cmfadmin\service\theme.py:340
+#: .\djangocmf\cmfadmin\service\theme.py:226
 #, python-format
-msgid "Template config %(file)s is missing required field \"action\""
-msgstr "模板配置 %(file)s 缺少必需字段 “action”"
+msgid "Theme configuration file %(file)s is missing required field \"name\"."
+msgstr "主题配置文件 %(file)s 缺少必需字段 “name”。"
 
-#: .\djangocmf\cmfadmin\service\theme.py:348
+#: .\djangocmf\cmfadmin\service\theme.py:235
 #, python-format
-msgid "Template config %(file)s is missing required field \"name\""
-msgstr "模板配置 %(file)s 缺少必需字段 “name”"
+msgid "Template configuration file %(file)s is missing required field \"%(attr)s\"."
+msgstr "模板配置文件 %(file)s 缺少必需字段 “%(attr)s”"
 
 #: .\djangocmf\cmfadmin\service\theme.py:369
 msgid "Cannot uninstall the active theme."
