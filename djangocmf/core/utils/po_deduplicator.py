@@ -52,7 +52,6 @@ class PoDeduplicator:
         "django/contrib/auth",
         "django/contrib/contenttypes",
         "django/contrib/flatpages",
-        "djangocmf",
     ]
 
     DOMAIN = {'django', 'djangojs'}
