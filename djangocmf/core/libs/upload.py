@@ -104,6 +104,8 @@ class Upload:
         mime_type = self.detect_mime(file_obj)
         file_hash = self.calculate_hash(file_obj)
 
+        if not file_obj.name:
+            raise ValueError('Uploaded file must have a name.')
         filename = (
             self._generate_unique_name(file_obj.name)
             if self.use_unique_name
@@ -114,6 +116,8 @@ class Upload:
         file_obj.seek(0)
         saved_path = default_storage.save(relative_path, ContentFile(file_obj.read()))
 
+        if file_obj.size is None:
+            raise ValueError('Uploaded file size is unknown.')
         return UploadResult(
             path=saved_path,
             filename=filename,

@@ -476,6 +476,7 @@ class SliderAdmin(CMFModelAdmin):
     fieldsets = [
         (None, {'fields': [
             ('title', 'group'),
+            'subtitle',
             'image',
             ('link', 'sort_order', 'is_active'),
         ]})

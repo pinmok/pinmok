@@ -495,7 +495,8 @@ class ThemeTemplate(models.Model):
 
 class Slider(models.Model):
     title = models.CharField(max_length=200, blank=True, verbose_name=_('title'))
-    image = models.ImageField(upload_to='slider/', verbose_name=_('image'))
+    subtitle = models.TextField(blank=True, verbose_name=_('subtitle'))
+    image = models.ImageField(upload_to='slider/', blank=True, verbose_name=_('image'))
     link = models.CharField(max_length=200, blank=True, verbose_name=_('link'))
     group = models.CharField(max_length=100, verbose_name=_('group'))
     sort_order = models.IntegerField(default=DEFAULT_SORT_ORDER, verbose_name=_('order'))

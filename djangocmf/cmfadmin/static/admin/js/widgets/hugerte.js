@@ -30,6 +30,7 @@ function initHugerte(textarea) {
         ...config,
         selector:              `#${textarea.id}`,
         images_upload_handler: hugerteImageHandler,
+        convert_urls:          false
     });
 }
 

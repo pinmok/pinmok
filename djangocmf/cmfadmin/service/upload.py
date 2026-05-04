@@ -268,6 +268,12 @@ class UploadService:
         if self.file_type == FileType.IMAGE:
             file = self._compress_image(file)
 
+        # Calculate file hash and check if a resource with the same hash already exists (deduplication).
+        file_hash = self._uploader.calculate_hash(file)
+        existing_resource = Resource.objects.filter(hash=file_hash).first()
+        if existing_resource:
+            return existing_resource
+
         # Persist file to storage
         result: UploadResult = self._uploader.save(file)
 

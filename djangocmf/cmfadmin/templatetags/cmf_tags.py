@@ -294,7 +294,7 @@ def slider(group: str) -> list[dict[str, Any]]:
             Slider.objects
             .filter(group=group, is_active=True)
             .order_by('sort_order')
-            .values('title', 'image', 'link')
+            .values('title', 'subtitle', 'image', 'link')
         )
         cache.set(cache_key, items, CMF_CONFIG_CACHE_TTL)
     return items
