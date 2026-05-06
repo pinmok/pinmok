@@ -19,6 +19,8 @@ from typing import Optional, Any
 from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
+from django.http import QueryDict
+from django.utils.datastructures import MultiValueDict
 from django.utils.translation import gettext_lazy as _, get_language
 
 from djangocmf.cmfadmin import widgets
@@ -30,13 +32,14 @@ from djangocmf.core.constants import DEFAULT_SORT_ORDER
 THEME_CACHE_KEY = 'cmf_active_theme'
 THEME_CACHE_TIMEOUT = 3600
 THEMES_DIR_NAME = 'themes'
+
 # Map ThemeVarType to Django form widget class.
 # To add a new type: add the enum value and its widget class here only.
 TYPE_WIDGET_MAP = {
     ThemeVarType.TEXT: widgets.CMFTextInput,
     ThemeVarType.TEXTAREA: widgets.CMFTextarea,
     ThemeVarType.NUMBER: widgets.CMFNumberInput,
-    ThemeVarType.BOOLEAN: widgets.CMFCheckbox,
+    ThemeVarType.BOOLEAN: widgets.CMFSwitch,
 }
 
 # Required fields for a var definition in JSON.
@@ -478,6 +481,89 @@ class ThemeService:
         return config
 
     @classmethod
+    def get_var_definitions(
+            cls,
+            theme_id: int,
+            template_id: int | None,
+    ) -> dict[str, ThemeVar]:
+        """
+        Return a flat mapping of POST field name -> ThemeVar for all
+        configurable variables in the given theme or template config file.
+
+        Key format matches _render_var naming convention:
+          top-level var -> 'var__<key>'
+          fieldset var  -> 'fieldset__<fs_key>__<var_key>'
+
+        Used by collect_submitted to look up each field's type during POST
+        processing, without re-reading the file a second time.
+        """
+        theme = cls._get_theme(theme_id)
+        theme_dir = cls._themes_root() / theme.directory
+
+        if template_id:
+            current_template = cls._get_template(template_id)
+            file_data = cls._read_config(theme_dir / f'{current_template.filename}.json')
+        else:
+            file_data = cls._read_config(theme_dir / 'theme.json')
+
+        result: dict[str, ThemeVar] = {}
+
+        for key, var_def in file_data.get('vars', {}).items():
+            result[f'var__{key}'] = ThemeVar.from_dict(var_def)
+
+        for fs_key, fs_def in file_data.get('fieldsets', {}).items():
+            for var_key, var_def in fs_def.get('vars', {}).items():
+                result[f'fieldset__{fs_key}__{var_key}'] = ThemeVar.from_dict(var_def)
+
+        return result
+
+    @classmethod
+    def collect_submitted(
+            cls,
+            post_data: QueryDict,
+            var_definitions: dict[str, ThemeVar],
+    ) -> dict:
+        """
+        Extract and coerce POST values using Django Widget machinery.
+
+        For each known field name, delegates to Widget.value_from_datadict()
+        rather than reading request.POST directly. This is critical for boolean
+        fields (CMFSwitch): when a checkbox is unchecked it is absent from POST,
+        and value_from_datadict() correctly returns False in that case.
+
+        Unknown POST keys are ignored. If no widget is found for a var (e.g.
+        unregistered datasource), falls back to raw string from POST.
+
+        Returns a dict shaped for _apply_submitted_values:
+          {'vars': {key: value, ...}, 'fieldsets': {fs_key: {key: value, ...}}}
+        """
+        submitted_vars: dict = {}
+        submitted_fieldsets: dict = {}
+
+        for field_name, var in var_definitions.items():
+            widget = cls.get_widget_for_var(var)
+
+            if widget is None:
+                # datasource not registered; no widget available, skip this field.
+                continue
+
+            # Delegate extraction to the widget. value_from_datadict receives
+            # the full QueryDict so it can handle multi-value fields correctly.
+            # The files argument is unused for non-file widgets; pass empty dict.
+            value = widget.value_from_datadict(post_data, MultiValueDict(), field_name)
+
+            # Decode field_name back into the storage structure.
+            parts = field_name.split('__', 2)
+            if parts[0] == 'var':
+                # 'var__<key>'
+                submitted_vars[parts[1]] = value
+            elif parts[0] == 'fieldset':
+                # 'fieldset__<fs_key>__<var_key>'
+                submitted_fieldsets.setdefault(parts[1], {})[parts[2]] = value
+
+        return {'vars': submitted_vars, 'fieldsets': submitted_fieldsets}
+
+    @classmethod
     def save_config(cls, theme_id: int, submitted: dict):
         """
         Persist user-submitted values for a theme's global config.
@@ -629,7 +715,7 @@ class ThemeService:
         widget instances for each var.
 
         config_data contains two lists ready for template iteration:
-        - vars: list of field dicts (key, title, tip, html, value)
+        - vars: list of field dicts (key, title, tip, HTML, value)
         - fieldsets: list of group dicts (key, title, fields), where each
           fields entry has the same shape as a vars field dict.
         """

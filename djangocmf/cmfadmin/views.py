@@ -20,7 +20,7 @@ from django.contrib.staticfiles import finders
 from django.core.exceptions import SuspiciousFileOperation, ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import validate_email
-from django.http import Http404, QueryDict, JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import render, redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse, resolve, Resolver404
@@ -451,7 +451,9 @@ class ThemeConfigView(View):
     def post(self, request, theme_id: int):
         template_id_raw = request.POST.get('template_id')
         template_id = int(template_id_raw) if template_id_raw else None
-        submitted = self._collect_submitted(request.POST)
+
+        var_definitions = ThemeService.get_var_definitions(theme_id, template_id)
+        submitted = ThemeService.collect_submitted(request.POST, var_definitions)
 
         if template_id:
             ThemeService.save_template_config(int(template_id), submitted)
@@ -462,27 +464,6 @@ class ThemeConfigView(View):
         if template_id:
             redirect_url += f'?template={template_id}'
         return redirect(redirect_url)
-
-    @staticmethod
-    def _collect_submitted(post: QueryDict) -> dict:
-        """
-        Parse flat POST keys into nested submitted dict.
-        var__key -> submitted['vars'][key]
-        fieldset__fs_key__var_key -> submitted['fieldsets'][fs_key][var_key]
-        """
-        print(post)
-        submitted = {'vars': {}, 'fieldsets': {}}
-        for raw_key, value in post.items():
-            if raw_key.startswith('var__'):
-                key = raw_key[5:]
-                submitted['vars'][key] = value
-            elif raw_key.startswith('fieldset__'):
-                parts = raw_key.split('__')
-                if len(parts) == 3:
-                    _, fs_key, var_key = parts
-                    submitted['fieldsets'].setdefault(fs_key, {})
-                    submitted['fieldsets'][fs_key][var_key] = value
-        return submitted
 
 
 @require_GET

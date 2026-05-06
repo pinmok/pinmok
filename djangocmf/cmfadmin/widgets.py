@@ -145,6 +145,11 @@ class CMFCheckbox(CMFWidgetMixin, forms.CheckboxInput):
     default_css_class = 'form-check-input'
 
 
+class CMFSwitch(CMFWidgetMixin, forms.CheckboxInput):
+    default_css_class = 'form-check-input'
+    template_name = 'forms/widgets/checkbox_switch.html'
+
+
 class CMFCheckboxSelectMultiple(CMFWidgetMixin, forms.CheckboxSelectMultiple):
     default_css_class = 'form-selectgroup-input'
     template_name = 'forms/widgets/checkbox_select_multiple.html'

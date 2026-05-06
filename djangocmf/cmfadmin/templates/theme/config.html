@@ -26,7 +26,7 @@
                     <div class="card-body">
                         {% for field in config_data.vars %}
                             <div class="mb-3">
-                                <label class="form-label">{{ field.title }}</label>
+                                <div class="form-label">{{ field.title }}</div>
                                 {{ field.html|safe }}
                                 <small class="form-hint">{{ field.tip }}</small>
                             </div>
@@ -36,7 +36,7 @@
                             <div class="form-fieldset mb-3">
                                 {% for field in fieldset.fields %}
                                     <div class="mb-3">
-                                        <label class="form-label">{{ field.title }}</label>
+                                        <div class="form-label">{{ field.title }}</div>
                                         {{ field.html|safe }}
                                         <small class="form-hint">{{ field.tip }}</small>
                                     </div>
