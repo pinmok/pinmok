@@ -238,7 +238,8 @@ class ConfigForm(forms.Form):
                 continue
 
             data_to_save[key] = value
-
+            
+        assert self.category is not None
         ConfigService.set_many(self.category, data_to_save)
 
 

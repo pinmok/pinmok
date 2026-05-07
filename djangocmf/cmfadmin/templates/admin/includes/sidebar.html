@@ -12,18 +12,17 @@
         <div class="navbar-brand navbar-brand-autodark" style="font-size: 1rem">
             <a href="{% url 'admin:index' %}" class="d-flex align-items-center text-decoration-none"
                aria-label="Tabler">
-                {% if config.site_logo %}
-                    <img src="{% media_url config.site_logo %}" alt="Logo" width="28" height="28">
+                {% if site_config.site_logo %}
+                    <img src="{% media_url site_config.site_logo %}" alt="Logo" width="28" height="28">
                 {% else %}
                     <svg width="28" height="28">
                         <use href="{% static 'admin/svg/crazy_logo.svg' %}"></use>
                     </svg>
                 {% endif %}
-                <span class="ms-2 text-body">{{ site_header }}</span>
+                <span class="ms-2 text-body">{{ site_config.site_name }}</span>
             </a>
         </div>
         <!-- END NAVBAR LOGO -->
-
         <div class="collapse navbar-collapse" id="sidebar-menu">
             <!-- BEGIN ICON GROUP  -->
             <div class="d-flex justify-content-center gap-3">
@@ -136,7 +135,7 @@
     document.getElementById('sync-menu-btn').addEventListener('click', async () => {
         const msg = document.getElementById('sync-menu-msg').textContent.trim();
         if (await Dialog.danger(msg, '{% translate "Warning" %}')) {
-            window.location.href = "{% url 'admin:sync_menu' %}";
+            window.location.href = "{% url 'admin:cmfadmin:sync_menu' %}";
         }
     });
 </script>

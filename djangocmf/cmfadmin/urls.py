@@ -13,7 +13,8 @@ Created:
 from django.urls import path
 
 from djangocmf.cmfadmin.views import (
-    SpriteManagerView, UploadFileView, TestEmailView, ThemeView, ThemeConfigView, nav_parent_choices
+    SpriteManagerView, UploadFileView, TestEmailView, ThemeView, ThemeConfigView, nav_parent_choices,
+    license_page, sync_menu,
 )
 
 admin_urlpatterns = [
@@ -27,4 +28,6 @@ admin_urlpatterns = [
     path('theme/<int:theme_id>/reset/', ThemeView.reset, name='theme_reset'),
     path('theme/<int:theme_id>/config/', ThemeConfigView.as_view(), name='theme_config'),
     path('nav/parent-choices/', nav_parent_choices, name='nav_parent_choices'),
+    path('license/', license_page, name='license_page'),
+    path('sync-menu/', sync_menu, name='sync_menu'),
 ]

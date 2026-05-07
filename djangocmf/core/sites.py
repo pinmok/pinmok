@@ -25,6 +25,7 @@ from django.urls import path, include, URLPattern, URLResolver
 from django.views.i18n import JavaScriptCatalog
 
 import djangocmf
+from djangocmf.core.signals import extend_admin_context
 from djangocmf.core.utils.helper import get_system_info, get_disk_info
 
 
@@ -102,13 +103,7 @@ class DjangoCmfAdminSite(AdminSite):
         Returns:
             list: Complete URL patterns for the admin site
         """
-        from djangocmf.cmfadmin.views import license_page, sync_menu
-
-        # Some CMF admin URLs without 'admin' prefix
-        urlpatterns: list[URLPattern | URLResolver] = [
-            path('license/', self.admin_view(license_page), name='license_page'),
-            path('sync-menu/', self.admin_view(sync_menu), name='sync_menu'),
-        ]
+        urlpatterns = []
 
         # Scan apps for admin URL contributions
         for app in apps.get_app_configs():
@@ -121,14 +116,6 @@ class DjangoCmfAdminSite(AdminSite):
             # Look for admin_urlpatterns
             admin_urls = getattr(mod, 'admin_urlpatterns', [])
             if not admin_urls:
-                continue
-
-            # Validate that admin_urls is iterable
-            if not hasattr(admin_urls, '__iter__'):
-                warnings.warn(
-                    f"App '{app.label}' has admin_urlpatterns but it's not iterable. Skipping.",
-                    UserWarning
-                )
                 continue
 
             # Wrap each URL pattern with admin_view() for permission checking
@@ -173,18 +160,17 @@ class DjangoCmfAdminSite(AdminSite):
         Extend the default admin context with CMF-specific data,
         including menu tree, breadcrumbs, and global settings.
         """
-        from djangocmf.cmfadmin.service.menu import AdminMenuManager
-
         context = super().each_context(request)
-
-        menu_tree = AdminMenuManager.get_admin_menu(request, app_list=context['available_apps'])
-        breadcrumbs = AdminMenuManager.get_admin_breadcrumb(request, menu_tree)
         context.update({
             'SOFTWARE_NAME': djangocmf.__name__,
             'USE_I18N': settings.USE_I18N,
-            'admin_menu': menu_tree,
-            'admin_breadcrumbs': breadcrumbs
         })
+
+        # Fire the extend_admin_context signal so that other apps (e.g. cmfadmin)
+        # can inject their own data into the shared admin context.
+        # Receivers modify `context` in-place via dict.update(); no return value needed.
+        # This signal is fired on every request that calls each_context.
+        extend_admin_context.send(sender=self.__class__, request=request, context=context)
         return context
 
     def index(self, request, extra_context=None):

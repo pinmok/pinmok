@@ -370,7 +370,7 @@ class ThemeService:
                 filename=filename,
                 name=data.get('name', ''),
                 action=data.get('action', ''),
-                sort_order=data.get('sort_order', DEFAULT_SORT_ORDER),
+                sort_order=data.get('order', DEFAULT_SORT_ORDER),
                 config=cls._parse_config(data, json_file.name),
             )
 

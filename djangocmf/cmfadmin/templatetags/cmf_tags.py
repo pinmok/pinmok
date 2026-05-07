@@ -88,26 +88,25 @@ def media_url(path: str) -> str:
     """
     Resolve a media file path to a full URL.
 
+    Accepts a string path, FieldFile, or ImageFieldFile object.
     Absolute URLs (http/https) are returned as-is.
     Relative paths are resolved via the configured default storage backend.
-
-    Usage:
-        {% media_url article.cover as url %}
-        <img src="{{ url }}">
-        or
-        <img src="{% media_url article.cover %}">
-
-    Args:
-        path: Relative file path or absolute URL.
-
-    Returns:
-        Full URL string, or empty string if path is empty.
+    Empty values or unresolvable inputs return empty string.
     """
     if not path:
         return ''
-    if path.startswith(('http://', 'https://')):
-        return path
-    return default_storage.url(path)
+    try:
+        # FieldFile / ImageFieldFile: use its own url property
+        if hasattr(path, 'url'):
+            return path.url
+        path_str = str(path)
+        # External URL: return as-is
+        if path_str.startswith(('http://', 'https://')):
+            return path_str
+        # Relative path: resolve via storage backend
+        return default_storage.url(path_str)
+    except Exception:
+        return ''
 
 
 @register.simple_tag

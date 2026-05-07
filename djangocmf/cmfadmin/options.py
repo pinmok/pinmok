@@ -27,6 +27,7 @@ from django.utils.translation import gettext_lazy as _
 from djangocmf.cmfadmin import widgets
 from djangocmf.cmfadmin.enums import ImageWidgetMode
 from djangocmf.cmfadmin.fields import CMFImagePathField
+from djangocmf.cmfadmin.service.config import ConfigService
 from djangocmf.cmfadmin.service.theme import ThemeService
 from djangocmf.core.constants import DEFAULT_SORT_ORDER
 
@@ -456,26 +457,35 @@ class ConfigModelAdmin(CMFModelAdminMixin, ModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         """
-        renders the config form instead of a list.
+        Override the default changelist (record list) view.
+        For config models there is nothing to list — render a settings form instead.
+        GET  → load current values from ConfigService and pre-fill the form.
+        POST → validate submitted data and persist via ConfigService.
         """
         if not self.has_view_or_change_permission(request):
             raise PermissionDenied
 
+        # Each config ModelAdmin subclass declares which form class to use.
+        # If it is missing the admin is misconfigured — fail loudly.
         form_class = self.get_form_class()
         if form_class is None:
             raise ImproperlyConfigured(
                 f"{self.__class__.__name__} must define 'form'."
             )
 
+        assert self.category is not None
         if request.method == "POST":
             form = form_class(data=request.POST, files=request.FILES)
             if form.is_valid():
-                form.save_resource()
+                # Persist all submitted values in one DB transaction.
+                # ConfigService.set_many handles type serialization (Python → raw string)
+                # and invalidates both per-key and category caches automatically.
+                ConfigService.set_many(self.category, form.cleaned_data)
                 messages.success(request, _("Configuration saved successfully."))
                 return HttpResponseRedirect(request.path)
         else:
-            from djangocmf.cmfadmin.service.config import ConfigService
-
+            # Load current config values as typed Python objects for form pre-filling.
+            # Keys missing from the DB fall back to schema defaults automatically.
             initial = ConfigService.get_category(self.category)
             form = form_class(initial=initial)
 
