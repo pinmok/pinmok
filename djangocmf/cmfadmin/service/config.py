@@ -23,6 +23,7 @@ from datetime import datetime
 from typing import Any
 
 from django.core.cache import cache
+from django.db import transaction
 from django.utils.dateparse import parse_datetime
 
 from djangocmf.cmfadmin.config_schema import CONFIG_SCHEMA
@@ -128,8 +129,6 @@ class ConfigStore:
         """
         Upsert multiple keys for the same category in a single transaction.
         """
-        from django.db import transaction
-
         with transaction.atomic():
             for key, raw_value in data.items():
                 ConfigStore.set(category, key, raw_value)

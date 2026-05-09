@@ -387,7 +387,6 @@ function uploadPendingBlob(widgetEl) {
                 resolve();
             },
             onError:   err => {
-                showToast(err.message || gettext('Upload failed.'), ToastType.ERROR);
                 reject(err);
             },
         });

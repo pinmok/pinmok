@@ -10,16 +10,15 @@ Author:
 Created:
   2025-06-08
 """
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import resolve, Resolver404
 from django.utils.translation import gettext_lazy as _
-from django.utils.translation.trans_real import get_languages
 
 from djangocmf.cmfadmin.enums import ConfigCategory, TargetChoices, FileType
-from djangocmf.core.constants import DEFAULT_SORT_ORDER
+from djangocmf.core.constants import DEFAULT_SORT_ORDER, TRANSLATION_RELATED_NAME
+from djangocmf.core.translatable import TranslatableModel, TranslationModel
 
 User = get_user_model()
 
@@ -321,7 +320,7 @@ class Resource(models.Model):
         return self.original_name or self.url
 
 
-class Nav(models.Model):
+class Nav(TranslatableModel):
     """
     Navigation item. Language-neutral structure.
     Use group to distinguish which navigation group this item belongs to.
@@ -379,33 +378,20 @@ class Nav(models.Model):
         verbose_name_plural = _("navigations")
         ordering = ['group', 'sort_order']
 
-    def __str__(self):
-        translation = self.translations.filter(
-            language=settings.LANGUAGE_CODE
-        ).first() or self.translations.first()
-        name = translation.name if translation else _('(no name)')
-        return f"[{self.group}] {name}"
 
-
-class NavTranslation(models.Model):
+class NavTranslation(TranslationModel):
     """
     Language-specific translation for a navigation item.
     """
     nav = models.ForeignKey(
         Nav,
         on_delete=models.CASCADE,
-        related_name='translations',
+        related_name=TRANSLATION_RELATED_NAME,
         verbose_name=_("navigation item"),
     )
-    language = models.CharField(
-        max_length=10,
-        choices=settings.LANGUAGES,
-        verbose_name=_("language"),
-        help_text=_("Which language this item belongs to.")
-    )
     name = models.CharField(
+        _("name"),
         max_length=100,
-        verbose_name=_("name"),
         help_text=_("Display name of this navigation item.")
     )
 
@@ -413,10 +399,9 @@ class NavTranslation(models.Model):
         verbose_name = _("nav translation")
         verbose_name_plural = _("nav translations")
         unique_together = [('nav', 'language')]
-        ordering = ['language']
 
-    def __str__(self):
-        return f"{get_languages().get(self.language)} / {self.name}"
+    def get_display_text(self):
+        return self.name
 
 
 class UrlAlias(models.Model):

@@ -31,7 +31,7 @@ from django.views.decorators.http import require_GET
 from djangocmf.cmfadmin.constants import CUSTOM_SPRITE_FILE, CMF_ICON_PREFIX, CMF_SPRITE_FILE
 from djangocmf.cmfadmin.enums import FileType, ConfigCategory
 from djangocmf.cmfadmin.models import UrlAlias
-from djangocmf.cmfadmin.service.email import EmailService
+from djangocmf.cmfadmin.service.email import EmailService, EmailValueError
 from djangocmf.cmfadmin.service.menu import AdminMenuManager
 from djangocmf.cmfadmin.service.menu import MenuSyncMode
 from djangocmf.cmfadmin.service.navigation import NavService
@@ -93,6 +93,8 @@ class TestEmailView(View):
             if res > 0:
                 return api.success(_('Successfully sent email.'), {'has_send': res})
             return api.error(ErrorCode.BAD_REQUEST, _('Failed to send email.'))
+        except EmailValueError as e:
+            return api.error(ErrorCode.BAD_REQUEST, str(e))
         except Exception as e:
             return api.error(ErrorCode.SERVER_ERROR, _('Error while sending email: ') + str(e))
 
@@ -117,6 +119,8 @@ class TestEmailView(View):
             if res > 0:
                 return api.success(_('Successfully sent email.'), {'has_send': res})
             return api.error(ErrorCode.BAD_REQUEST, _('Failed to send email.'))
+        except EmailValueError as e:
+            return api.error(ErrorCode.BAD_REQUEST, str(e))
         except Exception as e:
             return api.error(ErrorCode.SERVER_ERROR, _('Error while sending email: ') + str(e))
 

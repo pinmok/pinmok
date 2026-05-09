@@ -26,9 +26,9 @@ from django.core.files.storage import default_storage
 from django.db.models import ForeignKey
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
-from django.urls import reverse, NoReverseMatch
+from django.urls import reverse, NoReverseMatch, reverse_lazy
 from django.utils.html import format_html
-from django.utils.translation import gettext_lazy as _, get_language
+from django.utils.translation import gettext_lazy as _
 
 from djangocmf import cmfadmin
 from djangocmf.cmfadmin import widgets
@@ -339,6 +339,7 @@ class NavTranslationInline(CMFStackedInline):
 @cmfadmin.register(Nav)
 class NavAdmin(CMFModelAdmin):
     """Admin for navigation item management."""
+    back_url = reverse_lazy('admin:cmfadmin_nav_changelist')
     menu_order = 6000
     list_display = ('get_name', 'group', 'parent', 'url', 'sort_order', 'is_visible')
     list_display_links = ('get_name',)
@@ -354,17 +355,10 @@ class NavAdmin(CMFModelAdmin):
     ]
     inlines = [NavTranslationInline]
 
-    @admin.display(description=_('Name'))
+    @admin.display(description=_('name'))
     def get_name(self, obj):
         """Display name from translation, fallback to default language, then any."""
-        from django.conf import settings
-        lang = get_language()
-        translation = (
-                obj.translations.filter(language=lang).first()
-                or obj.translations.filter(language=settings.LANGUAGE_CODE).first()
-                or obj.translations.first()
-        )
-        return translation.name if translation else _('(no name)')
+        return str(obj)
 
     def get_form(self, request, obj=None, **kwargs):
         # Kept intentionally to prevent form hijacking by parent class.

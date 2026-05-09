@@ -10,3 +10,4 @@ Created:
   2026/1/8
 """
 DEFAULT_SORT_ORDER = 10000
+TRANSLATION_RELATED_NAME = 'translations'

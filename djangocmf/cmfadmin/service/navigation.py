@@ -16,7 +16,7 @@ from django.conf import settings
 from django.core.cache import cache
 
 from djangocmf.cmfadmin.enums import TargetChoices
-from djangocmf.cmfadmin.models import Nav, NavTranslation
+from djangocmf.cmfadmin.models import Nav
 from djangocmf.core.constants import DEFAULT_SORT_ORDER
 from djangocmf.core.libs.tree import TreeNode
 
@@ -44,26 +44,22 @@ class NavNode(TreeNode['NavNode']):
 
 class NavService:
     @classmethod
-    def _load_nodes(cls, group: str, language: str) -> list[NavNode]:
+    def _load_nodes(cls, group: str) -> list[NavNode]:
         """Fetch nav items from database and convert to NavNode instances."""
         items = (
-            Nav.objects
-            .filter(group=group, is_visible=True)
-            .values(
-                "id", "parent_id", "url", "icon",
-                "target", "sort_order", "is_visible"
-            )
+            Nav.objects.filter(group=group, is_visible=True)
         )
-        # Build a name lookup from translations
-        translation_map = {
-            t.nav_id: t.name
-            for t in NavTranslation.objects.filter(
-                nav__group=group,
-                language=language,
-            )
-        }
         return [
-            NavNode(**{**item, 'name': translation_map.get(item['id'], '')})
+            NavNode(
+                id=item.id,
+                parent_id=item.parent_id,
+                url=item.url,
+                icon=item.icon,
+                target=TargetChoices(item.target) if item.target in TargetChoices.values else TargetChoices.SELF,
+                sort_order=item.sort_order,
+                is_visible=item.is_visible,
+                name=item.translation.name if item.translation else '',
+            )
             for item in items
         ]
 
@@ -81,8 +77,7 @@ class NavService:
         Returns:
             List of ``(NavNode, indented_label)`` pairs in DFS pre-order.
         """
-        lang = language or settings.LANGUAGE_CODE
-        nodes = cls._load_nodes(group, lang)
+        nodes = cls._load_nodes(group)
 
         return NavNode.flatten_with_indent(
             nodes,
@@ -117,7 +112,7 @@ class NavService:
         tree = cache.get(key)
 
         if tree is None:
-            tree = NavNode.build_tree(cls._load_nodes(group, lang), sort_key="sort_order")
+            tree = NavNode.build_tree(cls._load_nodes(group), sort_key="sort_order")
             cache.set(key, tree, CACHE_TIMEOUT)
 
         return tree

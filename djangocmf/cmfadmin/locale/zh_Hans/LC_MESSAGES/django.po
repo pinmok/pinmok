@@ -1377,3 +1377,7 @@ msgstr "日志管理"
 #: .\djangocmf\cmfadmin\menus.py:19
 msgid "Site Settings"
 msgstr "站点设置"
+
+#: .\djangocmf\core\translatable.py:194
+msgid "Which language this translation belongs to."
+msgstr "这段译文属于哪种语言。"
