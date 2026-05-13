@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "djangocmf"
+name = "Pinmok"
 version = "1.0.0"
 description = "A lightweight and flexible content management framework designed for fast and effortless backend development."
 readme = "README.md"
@@ -12,7 +12,7 @@ license-files = ["LICENSE"]
 authors = [{ name = "惠达浪", email = "crazys@126.com" }]
 requires-python = ">=3.11"
 dependencies = ["Django>=5.0", "Pillow>=10.1.0", "filetype>=1.2.0"]
-keywords = ['django', 'cmf', 'djangocmf', 'admin']
+keywords = ['django', 'Pinmok', 'admin']
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
@@ -24,9 +24,7 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/django-cmf/djangocmf"
-Documentation = "https://github.com/django-cmf/djangocmf"
-Source = "https://github.com/django-cmf/djangocmf"
+Source = "https://github.com/pinmok/pinmok"
 
 [tool.setuptools]
-packages = ["djangocmf", "djangocmf.core", "djangocmf.cmfadmin"]
+packages = ["pinmok", "pinmok.core", "pinmok.cmfadmin"]

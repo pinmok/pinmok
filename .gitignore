@@ -9,3 +9,5 @@ __pycache__/
 *.sqlite3
 .DS_Store
 /media/
+manage.py
+project_settings/
