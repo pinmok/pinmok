@@ -1,0 +1,151 @@
+{% extends 'admin/base_site.html' %}
+{% load i18n admin_urls static admin_list pinmok_admin_tags pinmok_tags %}
+
+{% block title %}{% if cl.formset and cl.formset.errors %}{% translate "Error:" %} {% endif %}{{ block.super }}{% endblock %}
+{% block extrastyle %}
+    {{ block.super }}
+    {{ media.css }}
+{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {{ media.js }}
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} change-list{% endblock %}
+
+{% if not is_popup %}
+    {% block page_header %}
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <!-- Page pre-title -->
+                <div class="page-pretitle">{{ opts.model_name }}</div>
+                <h2 class="page-title">{{ title }}</h2>
+            </div>
+            <div class="col-auto ms-auto d-print-none">
+                {# [change_list_object_tolls.html] Right-aligned object tools area (e.g., 'Add' button) #}
+                {% block object-tools %}
+                    <div class="col-auto ms-auto d-print-none">
+                        {% block object-tools-items %} {% change_list_object_tools %} {% endblock %}
+                    </div>
+                {% endblock %}
+            </div>
+        </div>
+    {% endblock %}
+{% endif %}
+
+{% block coltype %}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-stamp">
+            <div class="card-stamp-icon bg-yellow">
+                {% icon 'tabler-table' 'icon icon-tabler icons-tabler-outline icon-tabler-filters' %}
+            </div>
+        </div>
+        <div class="card-header flex-column align-items-start">
+            <div class="row mb-2">
+                {# [date_hierarchy.html] Date hierarchy navigation for drilling down by year, month, and day. #}
+                {% block date_hierarchy %}{% if cl.date_hierarchy %}{% date_hierarchy cl %}{% endif %}{% endblock %}
+            </div>
+            <div class="row w-full align-items-center">
+                <div class="col">
+                    {# [search_form.html] Search form for filtering the changelist by keyword #}
+                    {% block search %} {% search_form cl %} {% endblock %}
+                </div>
+                <div class="col-md-auto col-sm-12">
+                    {% if cl.formset and cl.formset.errors %}
+                        <div class="alert alert-danger m-0" role="alert">
+                            <div class="alert-icon">{% icon 'tabler-alert-circle' 'icon alert-icon' %}</div>
+                            <div>
+                                <h4 class="alert-heading">
+                                    {% blocktranslate trimmed count counter=cl.formset.total_error_count %}
+                                        Please correct the error below.{% plural %}Please correct the errors below.
+                                    {% endblocktranslate %}
+                                </h4>
+                                <div class="alert-description">{{ cl.formset.non_form_errors|add_class:'alert-list' }}</div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <form id="changelist-form" method="post"{% if cl.formset and cl.formset.is_multipart %}
+              enctype="multipart/form-data"{% endif %} novalidate>{% csrf_token %}
+            {# Hidden inputs of formset#}
+            {% if cl.formset %}
+                <div class="d-none">{{ cl.formset.management_form }}</div>
+            {% endif %}
+
+            {% block result_list %}
+                {# [actions.html] Display action buttons above the result list if enabled #}
+                {% if action_form and actions_on_top and cl.show_admin_actions or cl.has_filters %}
+                    <div class="card-body border-bottom d-flex align-items-center">
+                        {% if action_form and actions_on_top and cl.show_admin_actions %}{% admin_actions %}{% endif %}
+                        {% if cl.has_filters %}
+                            <a class="btn btn-outline-primary ms-auto" data-bs-toggle="offcanvas" href="#changelist-filter" role="button"
+                               aria-controls="changelist-filter">{% translate 'Filter' %}</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {# [change_list_results.html] Render the main result list table. #}
+                {% result_list cl %}
+
+                {# [actions.html] Display action buttons below the result list if enabled #}
+                {% if action_form and actions_on_bottom and cl.show_admin_actions %}
+                    <div class="card-body border-top">{% admin_actions %}</div>
+                {% endif %}
+            {% endblock %}
+
+            {% if pagination_required or cl.formset and cl.result_count %}
+                <div class="card-footer d-flex">
+                    {# pagination.html #}
+                    {% block pagination %}{% pagination cl %}{% endblock %}
+                    {% if cl.formset and cl.result_count %}
+                        <div class="ms-auto">
+                            <input type="submit" name="_save" class="btn btn-primary" value="{% translate 'Save' %}">
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </form>
+    </div>
+
+    {% block filters %}
+        {# Offcanvas sidebar for filter panel #}
+        {% if cl.has_filters %}
+            <search class="offcanvas offcanvas-end" tabindex="-1" id="changelist-filter" aria-labelledby="changelist-filter-header">
+                <div class="offcanvas-header">
+                    <h2 class="offcanvas-title" id="changelist-filter-header">{% translate 'Filter' %}</h2>
+                    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body">
+                    {% if cl.is_facets_optional or cl.has_active_filters %}
+                        <div id="changelist-filter-extra-actions">
+                            {% if cl.is_facets_optional %}
+                                {% if cl.add_facets %}
+                                    <a href="{{ cl.remove_facet_link }}" class="btn btn-sm btn-outline-info">
+                                        {% icon 'tabler-eye-closed' 'icon me-2' %} {% translate "Hide counts" %}
+                                    </a>
+                                {% else %}
+                                    <a href="{{ cl.add_facet_link }}" class="btn btn-sm btn-outline-info">
+                                        {% icon 'tabler-eye' 'icon me-2' %} {% translate "Show counts" %}
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+                            {% if cl.has_active_filters %}
+                                <a href="{{ cl.clear_all_filters_qs }}" class="btn btn-sm btn-outline-pink">
+                                    {% icon 'tabler-copy-x' 'icon me-2' %} {% translate "Clear all filters" %}
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    {# [filter.html] Render each filter specification  as a filter widget #}
+                    {% for spec in cl.filter_specs %}{% admin_list_filter cl spec %}{% endfor %}
+                </div>
+            </search>
+        {% endif %}
+    {% endblock %}
+{% endblock %}

@@ -27,4 +27,4 @@ classifiers = [
 Source = "https://github.com/pinmok/pinmok"
 
 [tool.setuptools]
-packages = ["pinmok", "pinmok.core", "pinmok.cmfadmin"]
+packages = ["pinmok", "pinmok.core", "pinmok.padmin"]

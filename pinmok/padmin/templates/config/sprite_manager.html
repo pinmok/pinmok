@@ -1,0 +1,140 @@
+{% extends 'config/config_base.html' %}
+{% load i18n pinmok_tags %}
+
+{% block page_subtitle %}Icon Management{% endblock %}
+{% block page_title %}{% translate 'Icons in sprite' %}{% endblock %}
+{% block page_right %}
+    <a href="{% url 'admin:padmin:icons_manage' %}?action=add" class="btn btn-secondary">
+        {% icon 'tabler-plus' %} {% translate 'Add' %} {% translate 'SVG Icon' %}
+    </a>
+{% endblock %}
+
+{% block content %}
+    <div class="w-50 mb-3">
+        <div class="input-icon">
+            <input type="text" value="" class="form-control" placeholder="{% translate 'Search' %}…">
+            <span class="input-icon-addon">{% icon 'tabler-search' 'icon' %}</span>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a href="#tabs-custom" class="nav-link active" data-bs-toggle="tab" aria-selected="true" role="tab">
+                        {% translate 'Custom Sprites' %}
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a href="#tabs-cmf" class="nav-link" data-bs-toggle="tab" aria-selected="false" tabindex="-1" role="tab">
+                        {% translate 'System Sprites' %}
+                    </a>
+                </li>
+                <li class="nav-item ms-auto" role="presentation">
+                    <a href="#tabs-help" class="nav-link" title="Settings" data-bs-toggle="tab" aria-selected="false" tabindex="-1"
+                       role="tab">
+                        {% icon 'tabler-help' 'icon' %}
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content">
+                <div class="tab-pane fade active show" id="tabs-custom" role="tabpanel">
+                    <div class="row g-3">
+                        {% if custom_icons %}
+                            {% for custom_icon in custom_icons %}
+                                <div class="col-3">
+                                    <div class="row g-3 align-items-center">
+                                        <div class="col-auto">{% icon custom_icon size=36 %}</div>
+                                        <div class="col text-truncate">
+                                            <strong>{{ custom_icon }}</strong>
+                                            <div class="text-secondary text-truncate mt-n1">
+                                                <div class="icon-wrapper">
+                                                    <a href="{% url 'admin:padmin:icons_manage' %}?action=edit&symbol_id={{ custom_icon }}"
+                                                       class="btn btn-sm btn-ghost-primary" data-bs-toggle="tooltip"
+                                                       data-bs-placement="bottom" data-bs-original-title="{% translate 'Edit' %}">
+                                                        {% icon 'tabler-edit' %}
+                                                    </a>
+                                                    <button class="btn btn-sm btn-ghost-danger" data-bs-toggle="tooltip"
+                                                            data-bs-placement="bottom" data-bs-original-title="{% translate 'Delete' %}"
+                                                            onclick="deleteItem('{{ custom_icon }}',this)">
+                                                        {% icon 'tabler-delete' %}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <strong>{% translate 'No custom icons found.' %}</strong>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="tabs-cmf" role="tabpanel">
+                    <div class="row g-3">
+                        {% for icon in icons %}
+                            <div class="col-3">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-auto">{% icon icon size=36 %}</div>
+                                    <div class="col text-truncate">
+                                        <strong>{{ icon }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="tabs-help" role="tabpanel">
+                    <div class="row">
+                        Help Text
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        window.onload = function () {
+            const iconLink = document.querySelector('link[rel="icon"]');
+            if (iconLink) {
+                const newIconUrl = iconLink.getAttribute("href") + '?v=' + new Date().getTime();
+                iconLink.setAttribute('href', newIconUrl);
+            }
+        };
+
+        const searchInput = document.querySelector('.input-icon input');
+        searchInput.addEventListener('input', function () {
+            const keyword = this.value.trim().toLowerCase();
+
+            document.querySelectorAll('.tab-pane .col-3').forEach(function (col) {
+                const name        = col.querySelector('strong').textContent.toLowerCase();
+                col.style.display = keyword === '' || name.includes(keyword) ? '' : 'none';
+            });
+        });
+
+        async function deleteItem(symbol_id, btn) {
+            // Ensure symbol_id is provided
+            if (!symbol_id) {
+                showToast(gettext('Symbol ID is required.'), ToastType.WARNING);
+                return;
+            }
+
+            // Confirm before deleting
+            const confirmed = await Dialog.warning(gettext('Are you sure you want to delete this item?'));
+            if (!confirmed) return;
+
+            // Send DELETE request using fetch
+            ajaxRequest({
+                url:       `{% url 'admin:padmin:icons_manage' %}`,
+                method:    'DELETE',
+                data:      {symbol_id},
+                onSuccess: () => {
+                    location.reload()
+                },
+            }, btn)
+        }
+    </script>
+{% endblock %}

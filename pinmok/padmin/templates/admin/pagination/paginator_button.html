@@ -1,0 +1,22 @@
+{% load pinmok_tags %}
+{% if enabled %}
+    <li class="page-item">
+        <a class="page-link" role="button" href="{{ url }}">
+            {% if direction == 'previous' %}
+                {% icon 'tabler-chevron-left' 'icon' 24 %}
+            {% else %}
+                {% icon 'tabler-chevron-right' 'icon' 24 %}
+            {% endif %}
+        </a>
+    </li>
+{% else %}
+    <li class="page-item disabled">
+        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+            {% if direction == 'previous' %}
+                {% icon 'tabler-chevron-left' 'icon' 24 %}
+            {% else %}
+                {% icon 'tabler-chevron-right' 'icon' 24 %}
+            {% endif %}
+        </a>
+    </li>
+{% endif %}

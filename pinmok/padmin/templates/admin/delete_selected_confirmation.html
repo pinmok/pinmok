@@ -1,0 +1,73 @@
+{% extends "admin/base_site.html" %}
+{% load i18n l10n admin_urls static pinmok_tags %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {{ media }}
+    <script src="{% static 'admin/js/cancel.js' %}" async></script>
+{% endblock %}
+
+{% block bodyclass %}
+    {{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} delete-confirmation delete-selected-confirmation
+{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item active"> {% translate 'Delete multiple objects' %} </li>
+{% endblock %}
+
+{% block content %}
+    {% if perms_lacking %}
+        <div class="alert alert-warning" role="alert">
+            <div class="alert-icon">{% icon 'tabler-alert-triangle' 'icon alert-icon' %}</div>
+            {% blocktranslate trimmed %}
+                Deleting the selected {{ objects_name }} would result in deleting related objects, but your account doesn't have permission
+                to delete the following types of objects:
+            {% endblocktranslate %}
+        </div>
+        <ul class="list-group">{{ perms_lacking|unordered_list }}</ul>
+    {% elif protected %}
+        <div class="alert alert-warning" role="alert">
+            <div class="alert-icon">{% icon 'tabler-alert-triangle' 'icon alert-icon' %}</div>
+            {% blocktranslate trimmed %}
+                Deleting the selected {{ objects_name }} would require deleting the following protected related objects:
+            {% endblocktranslate %}
+        </div>
+        <ul class="list-group">{{ protected|unordered_list }}</ul>
+    {% else %}
+        <div class="alert alert-warning" role="alert">
+            <div class="alert-icon">{% icon 'tabler-alert-triangle' 'icon alert-icon' %}</div>
+            {% blocktranslate trimmed %}
+                Are you sure you want to delete the selected {{ objects_name }}? All the following objects and
+                their related items will be deleted:
+            {% endblocktranslate %}
+        </div>
+        <div class="mb-3">{% include "admin/includes/object_delete_summary.html" %}</div>
+        <h2>{% translate "Objects" %}</h2>
+        <div class="mb-3">
+            {% for deletable_object in deletable_objects %}
+                <ul class="list-group">{{ deletable_object|unordered_list }}</ul>
+            {% endfor %}
+        </div>
+        <form method="post">{% csrf_token %}
+            {% for obj in queryset %}
+                <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk|unlocalize }}">
+            {% endfor %}
+            <input type="hidden" name="action" value="delete_selected">
+            <input type="hidden" name="post" value="yes">
+            <button type="submit" class="btn btn-outline-primary me-5">{% translate 'Yes, I’m sure' %}</button>
+            <a href="#" class="btn btn-outline-secondary cancel-link">{% translate "No, take me back" %}</a>
+        </form>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        // unordered_list filter renders bare <li> tags, so add list-group-item class via JS
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll("ul.list-group li").forEach(li => {
+                li.classList.add("list-group-item");
+            });
+        });
+    </script>
+{% endblock %}

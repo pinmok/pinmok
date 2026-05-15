@@ -1,0 +1,23 @@
+{% extends "admin/base.html" %}
+{% load static pinmok_tags i18n %}
+{% block body %}
+    <div class="page page-center">
+        <div class="container-tight py-4">
+            <div class="empty">
+                <div class="empty-header">403</div>
+                <p class="empty-title">
+                    {% translate 'Oops… Permission denied' %}
+                </p>
+                <p class="empty-subtitle text-secondary">
+                    {% translate 'We are sorry but you don’t have permission to visit this page.' %}
+                </p>
+                <div class="empty-action">
+                    <button class="btn btn-primary" onclick="goBackOrHome()">
+                        {% icon 'tabler-arrow-left' 'icon' %}
+                        {% translate 'Take me back or home' %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

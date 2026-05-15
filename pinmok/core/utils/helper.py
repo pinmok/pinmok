@@ -51,8 +51,8 @@ def get_system_info() -> dict[str, str]:
         'django_version': get_version(),
         'db_vendor': db_vendor,
         'db_version': db_version,
-        'cmf_name': core.__title__,
-        'cmf_version': core.__version__,
+        'project_name': core.__title__,
+        'project_version': core.__version__,
     }
     return system_info
 

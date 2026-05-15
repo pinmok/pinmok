@@ -1,6 +1,6 @@
 # Pinmok
 
-**If you know Django, you're ready.**
+Feels like Django. Barely any learning.
 
 [![Python](https://img.shields.io/badge/Python-3.12+-blue)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/Django-5.2+-green)](https://www.djangoproject.com/)
@@ -12,56 +12,55 @@ English | [中文](README.zh-CN.md)
 
 ## Introduction
 
-Pinmok is a modular admin framework built on top of Django Admin.
+Pinmok is a modular admin framework built on top of Django Admin. It extends Admin with a modular design philosophy, while fully preserving
+the Django development experience you already know.
 
-Its goal is simple: let developers focus on their business logic, not the framework itself. If you can write a Django app, you can plug in
-backend logic. If you know Bootstrap, you can build the interface. Pinmok takes care of the rest — wiring together menus, permissions, and
-themes — so you only need to follow a few conventions and focus on what matters.
-
-Because Pinmok extends Django Admin, your existing Admin knowledge transfers directly. No new mental model to learn, no extra overhead.
-
-The core ships with only site settings and user/group management. Everything else is an independent app — install what you need, remove what
-you don't.
+Pinmok provides a standardized menu system that goes beyond model-bound navigation, extending into complex business workflows. It also
+covers common site configuration, frontend theme management, and a complete chain from menu visibility to URL access control. Each feature
+lives in its own independent app — plug in what you need, remove what you don't, keeping backend infrastructure and business logic cleanly
+separated. Whether it's content management, user operations, or data dashboards, any module can be wired into Pinmok and combined freely.
 
 ## Features
 
-**Modular Architecture**
-Each feature lives in its own app. Install it and it works; remove it and nothing else breaks. Building your own app is no different from
-building a regular Django app — just follow the conventions, and Pinmok handles the integration.
+**Minimal learning curve**
+Takes over Django Admin while remaining fully compatible with existing usage — no changes to your current logic required. Django knowledge
+covers the backend; Bootstrap knowledge covers the interface.
 
-**Menus & Permissions**
-Each app declares its own menus. Pinmok merges and manages them centrally, with up to three levels of hierarchy. Permissions are bound to
-menu nodes, controlling both visibility and URL access in one place — no extra configuration needed.
+**Flexible menu system**
+A simple configuration is all it takes to plug in a custom menu structure and extend your admin with new business sections.
 
-**Theme System**
-Themes are self-contained packages. Each theme can define its own layout, style variables, and page components. Multiple themes can coexist
-and be switched from the admin.
+**Modular by design**
+Each module is independent. Install it and it works; remove it and nothing else breaks. Start lightweight and add only what you need.
 
-**Internationalization**
-Pinmok follows Django's native i18n system. All user-facing text in the framework supports multiple languages. Your own apps can plug into
-the same Django i18n pipeline without any extra setup.
+**No separate permission logic**
+Configure your menus and access control is handled automatically. Menu visibility and URL-level access are the same thing — defined once,
+enforced everywhere.
 
-**UI Based on Tabler**
-Tabler is a modern admin UI framework built on Bootstrap. Whether you use built-in components or build your own interface, your Bootstrap
-knowledge applies directly — no new UI system to learn.
+**Themeable interface**
+The admin supports self-contained theme packages with customizable layouts, color schemes, and components. Multiple themes can coexist and
+be switched at any time.
 
-For full setup and documentation, see [Docs (coming soon)](#).
+**Internationalization out of the box**
+Built on Django's native i18n system. All user-facing text in the framework is translatable, and your own apps plug into the same pipeline
+with no extra setup.
 
-## Project Structure
+## Requirements
 
-```
-pinmok/
-├── cmfadmin/       # Core app: menus, permissions, themes, site config
-├── content/        # Content management app (optional)
-├── ...             # Other optional apps
-└── manage.py
-```
+- Python >= 3.12
+- Django >= 5.2 (compatible with the latest release; older versions are untested and not recommended)
+
+### Dependencies
+
+- pillow >= 10.0
+- filetype >= 1.0.10
+- polib >= 1.1.0 (msgid deduplication for i18n, install only if needed)
+
+> Other dependency conventions follow Django's standards.
 
 ## Contributing
 
-Issues and pull requests are welcome.
-
-Repositories:
+Pinmok is still in its early stages, and there's plenty to build together. If you find this project worthwhile, contributions are welcome —
+and so is a Star on the repository. For an independently developed open source project, that kind of support genuinely matters.
 
 - GitHub: [github.com/pinmok/pinmok](https://github.com/pinmok/pinmok)
 - Gitee: [gitee.com/pinmok/pinmok](https://gitee.com/pinmok/pinmok)

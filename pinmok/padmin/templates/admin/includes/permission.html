@@ -1,0 +1,160 @@
+{% load pinmok_tags %}
+<div id="permission-tree" class="permission-tree">
+    <ul class="list-unstyled tree-root"></ul>
+</div>
+
+<script>
+    (function () {
+        const permissionsData = {{ permissions|safe }};
+
+        function isPermissionNode(node) {
+            return node && node.codename != null && String(node.codename).length > 0;
+        }
+
+        function createPermissionCheckbox(permNode) {
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('form-check', 'form-check-inline', 'me-2', 'mb-1'); // horizontal
+
+            const input = document.createElement('input');
+            input.type  = 'checkbox';
+            input.classList.add('form-check-input', 'permission-checkbox');
+
+            const model_type = '{{ model_type }}';
+            if (permNode.source === 'system') {
+                input.name = model_type === 'user' ? 'user_permissions' : 'permissions';
+            } else if (permNode.source === 'menu') input.name = 'menu_permissions[]';
+            else input.name = 'custom_permissions[]';
+
+            if (permNode.db_id != null) input.value = permNode.db_id;
+            else if (permNode.codename != null) input.value = permNode.codename;
+
+            if (permNode.checked) input.checked = true;
+
+            const label = document.createElement('label');
+            label.classList.add('form-check-label');
+            label.textContent = permNode.title || permNode.codename || '';
+
+            wrapper.appendChild(input);
+            wrapper.appendChild(label);
+            return wrapper;
+        }
+
+        function buildTree(nodes) {
+            const ul = document.createElement('ul');
+            ul.classList.add('list-unstyled', 'ms-3', 'mt-2');
+
+            nodes.forEach(node => {
+                const li = document.createElement('li');
+                li.classList.add('mb-2');
+
+                const row = document.createElement('div');
+                row.classList.add('d-flex', 'gap-2');
+
+                const iconsCol = document.createElement('div');
+                iconsCol.classList.add('d-flex', 'align-items-start', 'pe-1');
+                iconsCol.style.minWidth = '36px';
+                iconsCol.style.maxWidth = '36px';
+
+                const hasMenuChildren = Array.isArray(node.children) && node.children.some(c => !isPermissionNode(c));
+                const toggle          = document.createElement('span');
+                toggle.classList.add('me-1', 'cursor-pointer', 'toggle-icon');
+                toggle.innerHTML = hasMenuChildren ? '{% icon "tabler-chevron-right" "icon" %}' : '<span style="display:inline-block;width:18px"></span>';
+
+                const groupCheckbox = document.createElement('input');
+                groupCheckbox.type  = 'checkbox';
+                groupCheckbox.classList.add('form-check-input', 'group-checkbox');
+                groupCheckbox.style.margin = '0 6px 0 0';
+
+                iconsCol.appendChild(toggle);
+                iconsCol.appendChild(groupCheckbox);
+
+                const contentCol = document.createElement('div');
+                contentCol.classList.add('flex-grow-1', 'ms-2');
+
+                const titleSpan = document.createElement('div');
+                titleSpan.classList.add('fw-semibold');
+                titleSpan.textContent = node.title || '';
+                contentCol.appendChild(titleSpan);
+
+                const permsContainer = document.createElement('div');
+                permsContainer.classList.add('permission-list', 'd-flex', 'flex-wrap', 'align-items-center', 'gap-2', 'mt-1');
+
+                if (isPermissionNode(node)) permsContainer.appendChild(createPermissionCheckbox(node));
+                if (Array.isArray(node.children)) {
+                    node.children.forEach(c => {
+                        if (isPermissionNode(c)) permsContainer.appendChild(createPermissionCheckbox(c));
+                    });
+                }
+
+                if (permsContainer.children.length) contentCol.appendChild(permsContainer);
+
+                row.appendChild(iconsCol);
+                row.appendChild(contentCol);
+                li.appendChild(row);
+
+                const menuChildren = Array.isArray(node.children) ? node.children.filter(c => !isPermissionNode(c)) : [];
+                if (menuChildren.length) {
+                    const childUl         = buildTree(menuChildren);
+                    childUl.style.display = 'none';
+                    li.appendChild(childUl);
+
+                    toggle.addEventListener('click', () => {
+                        const hidden          = childUl.style.display === 'none';
+                        childUl.style.display = hidden ? 'block' : 'none';
+                        toggle.innerHTML      = hidden ? '{% icon "tabler-chevron-down" "icon" %}' : '{% icon "tabler-chevron-right" "icon" %}';
+                    });
+                }
+
+                ul.appendChild(li);
+            });
+
+            return ul;
+        }
+
+        const root = document.querySelector('#permission-tree .tree-root');
+        root.appendChild(buildTree(permissionsData || []));
+
+        // --- EVENT DELEGATION ---
+        const treeEl = document.getElementById('permission-tree');
+
+        // Handle permission checkbox changes
+        treeEl.addEventListener('change', e => {
+            const target = e.target;
+            if (target.classList.contains('permission-checkbox')) {
+                updateGroupState(target);
+            }
+            if (target.classList.contains('group-checkbox')) {
+                const li = target.closest('li');
+                if (!li) return;
+                li.querySelectorAll(':scope .permission-checkbox').forEach(cb => cb.checked = target.checked);
+                updateGroupState(target);
+            }
+        });
+
+        function updateGroupState(cb) {
+            const li = cb.closest('li');
+            if (!li) return;
+            const groupCb = li.querySelector(':scope > div .group-checkbox');
+            const desc    = li.querySelectorAll(':scope .permission-checkbox');
+            if (!groupCb || !desc.length) return;
+
+            const allChecked  = Array.from(desc).every(p => p.checked);
+            const noneChecked = Array.from(desc).every(p => !p.checked);
+
+            groupCb.checked       = allChecked;
+            groupCb.indeterminate = !allChecked && !noneChecked;
+        }
+
+        // Init group states
+        document.querySelectorAll('#permission-tree li').forEach(li => {
+            const groupCb = li.querySelector(':scope > div .group-checkbox');
+            const desc    = li.querySelectorAll(':scope .permission-checkbox');
+            if (!groupCb || !desc.length) return;
+            const allChecked      = Array.from(desc).every(p => p.checked);
+            const noneChecked     = Array.from(desc).every(p => !p.checked);
+            groupCb.checked       = allChecked;
+            groupCb.indeterminate = !allChecked && !noneChecked;
+        });
+
+    })();
+</script>

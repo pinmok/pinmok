@@ -1,0 +1,88 @@
+{% extends 'theme/theme_base.html' %}
+{% load i18n pinmok_admin_tags %}
+
+{% block content %}
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-vcenter card-table table-striped">
+                <thead>
+                <tr>
+                    <th>{% translate 'name' %}</th>
+                    <th>{% translate 'version' %}</th>
+                    <th>{% translate 'author' %}</th>
+                    <th>{% translate 'active' %}</th>
+                    <th>{% translate 'description' %}</th>
+                    <th>{% translate 'actions' %}</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for theme in themes %}
+                    <tr>
+                        <td>{{ theme.name }}</td>
+                        <td class="text-secondary">{{ theme.version|default:'' }}</td>
+                        <td class="text-secondary">{{ theme.author|default:'-' }}</td>
+                        <td class="text-secondary">
+                            <span class="{{ theme.is_active|yesno:'text-success,text-danger' }}">
+                                {% if theme.is_active %}{% translate 'Active' %}{% else %}{% translate 'Inactive' %} {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <a class="tmpl-detail text-decoration-none" href="javascript:void(0)"
+                               data-tpl="detail-{{ forloop.counter }}" data-title="{{ theme.name }}">
+                                {% translate 'Detail' %}
+                            </a>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                {% if theme.installed %}
+                                    {% if not theme.is_active %}
+                                        <a href="{% url 'admin:padmin:theme_activate' theme.theme_id %}" class="btn btn-sm btn-success">
+                                            {% translate 'Activate' %}
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'admin:padmin:theme_config' theme.theme_id %}" class="btn btn-sm btn-primary">
+                                        {% translate 'Config' %}
+                                    </a>
+                                    <a href="{% url 'admin:padmin:theme_reset' theme.theme_id %}" class="btn btn-sm btn-warning">
+                                        {% translate 'Reset' %}
+                                    </a>
+                                    <a href="{% url 'admin:padmin:theme_uninstall' theme.theme_id %}" class="btn btn-sm btn-danger">
+                                        {% translate 'Uninstall' %}
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'admin:padmin:theme_install' theme.directory %}" class="btn btn-sm btn-primary">
+                                        {% translate 'Install' %}
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    <template id="detail-{{ forloop.counter }}">
+                        <p class="text-secondary">
+                            v{{ theme.version }}{% if theme.author %} · {{ theme.author }}{% endif %}
+                        </p>
+                        <p class="text-start">{{ theme.description }}</p>
+                        {% if theme.preview_url %}
+                            <a href="{{ theme.preview_url }}" class="text-decoration-none" target="_blank">
+                                {% translate 'Preview' %}
+                            </a>
+                        {% endif %}
+                    </template>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        document.querySelectorAll('.tmpl-detail').forEach(el => {
+            el.addEventListener('click', () => {
+                const tpl = document.getElementById(el.dataset.tpl);
+                Dialog.info(tpl.innerHTML, el.dataset.title)
+            });
+        });
+    </script>
+{% endblock %}

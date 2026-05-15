@@ -1,0 +1,123 @@
+# Pinmok Simplified Chinese Translation
+# Copyright (C) 2026 惠达浪
+# This file is distributed under the same license as the Pinmok package.
+# 惠达浪 <crazys@126.com>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Pinmok 1.0.0\n"
+"Report-Msgid-Bugs-To: 惠达浪 <crazys@126.com>\n"
+"POT-Creation-Date: 2025-11-17 00:54+0800\n"
+"PO-Revision-Date: 2026-04-29 23:08+0800\n"
+"Last-Translator: 惠达浪 <crazys@126.com>\n"
+"Language-Team: 惠达浪 <crazys@126.com>\n"
+"Language: zh-cn\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: .\pinmok\padmin\static\admin\js\admin.js:160
+#: .\pinmok\padmin\static\admin\js\components\toast.js:51
+msgid "Success"
+msgstr "成功"
+
+#: .\pinmok\padmin\static\admin\js\admin.js:172
+msgid "Network error or server exception."
+msgstr "网络错误或服务器异常。"
+
+#: .\pinmok\padmin\static\admin\js\autocomplete.js:12
+msgid "Select"
+msgstr "选择"
+
+#: .\pinmok\padmin\static\admin\js\components\toast.js:52
+msgid "Error"
+msgstr "错误"
+
+#: .\pinmok\padmin\static\admin\js\components\toast.js:53
+msgid "Warning"
+msgstr "警告"
+
+#: .\pinmok\padmin\static\admin\js\components\toast.js:54
+msgid "Info"
+msgstr "提示"
+
+#: .\pinmok\padmin\static\admin\js\nav_admin.js:21
+msgid "Top Level"
+msgstr "顶级"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:34
+msgid "Crop Image"
+msgstr "裁切图片"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:35
+msgid "Close"
+msgstr "关闭"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:41
+msgid "Crop Preview"
+msgstr "裁切预览"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:45
+msgid "Crop Ratio"
+msgstr "裁切比例"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:56
+msgid "Free"
+msgstr "自由比例"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:59
+msgid "Custom"
+msgstr "自定义"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:60
+msgid "Width"
+msgstr "宽"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:62
+msgid "Height"
+msgstr "高"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:63
+msgid "OK"
+msgstr "确认"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:65
+msgid "Rotate Left"
+msgstr "向左旋转"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:66
+msgid "Rotate Right"
+msgstr "向右旋转"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:67
+msgid "Flip H"
+msgstr "水平翻转"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:68
+msgid "Flip V"
+msgstr "垂直翻转"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:69
+msgid "Zoom In"
+msgstr "放大"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:70
+msgid "Zoom Out"
+msgstr "缩小"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:73
+msgid "Use Original Dimensions"
+msgstr "使用原始尺寸"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:80
+msgid "Confirm"
+msgstr "确认"
+
+#: .\pinmok\padmin\static\admin\js\widgets\cropper.js:390
+msgid "Upload failed."
+msgstr "上传失败"
+
+#: .\pinmok\padmin\static\admin\js\widgets\resource_widget.js:24
+msgid "Save to update"
+msgstr "保存并更新"

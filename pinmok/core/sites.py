@@ -31,13 +31,11 @@ from pinmok.core.utils.helper import get_system_info, get_disk_info
 
 class PinmokAdminSite(AdminSite):
     """
-    Custom admin site class extending Django's AdminSite to provide
-    enhanced features tailored for the CMF (Content Management Framework) system.
+    Custom admin site for Pinmok.
 
-    This class manages the registration and display of models with
-    customized admin interfaces (CMFModelAdmin), supports dynamic menu
-    construction, permission checks, and integrates additional CMS-specific
-    functionalities.
+    Extends Django's AdminSite with dynamic menu construction,
+    permission integration, and support for PinmokModelAdmin-based
+    model registration.
     """
     site_header = 'Pinmok'
     site_title = 'Pinmok Admin'
@@ -49,8 +47,8 @@ class PinmokAdminSite(AdminSite):
         AppRegistryNotReady error caused by early import of AdminChangePasswordForm,
         which transitively imports models before Django's app registry is ready.
         """
-        from pinmok.cmfadmin.forms.forms import CMFAdminPasswordChangeForm
-        return CMFAdminPasswordChangeForm
+        from pinmok.padmin.forms.forms import PinmokAdminPasswordChangeForm
+        return PinmokAdminPasswordChangeForm
 
     def admin_view(self, view, cacheable=False):
         """
@@ -157,7 +155,7 @@ class PinmokAdminSite(AdminSite):
 
     def each_context(self, request):
         """
-        Extend the default admin context with CMF-specific data,
+        Extend the default admin context with Pinmok-specific data,
         including menu tree, breadcrumbs, and global settings.
         """
         context = super().each_context(request)
@@ -166,7 +164,7 @@ class PinmokAdminSite(AdminSite):
             'USE_I18N': settings.USE_I18N,
         })
 
-        # Fire the extend_admin_context signal so that other apps (e.g. cmfadmin)
+        # Fire the extend_admin_context signal so that other apps (e.g. padmin)
         # can inject their own data into the shared admin context.
         # Receivers modify `context` in-place via dict.update(); no return value needed.
         # This signal is fired on every request that calls each_context.
@@ -190,9 +188,9 @@ class PinmokAdminSite(AdminSite):
         extra_context.update({
             'index_title': self.index_title,
             # System info: cached for 24 hours (CPU, memory, OS version)
-            'sys_info': cache.get_or_set('cmf_sys_info', get_system_info, timeout=3600 * 24),
+            'sys_info': cache.get_or_set('pinmok_sys_info', get_system_info, timeout=3600 * 24),
             # Disk info: cached for 1 hour (disk usage can change frequently)
-            'disk_info': cache.get_or_set('cmf_disk_info', get_disk_info, timeout=3600)
+            'disk_info': cache.get_or_set('pinmok_disk_info', get_disk_info, timeout=3600)
         })
 
         # Render the index page with enhanced context

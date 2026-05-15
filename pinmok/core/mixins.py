@@ -17,7 +17,7 @@ from pinmok.core.api import ErrorCode, error
 from pinmok.core.permission import permission_checker
 
 
-class CMFPermissionMixin:
+class PinmokPermissionMixin:
     """
     Permission mixin for class-based views.
 
@@ -26,7 +26,7 @@ class CMFPermissionMixin:
     - Regular requests are redirected to the login page.
 
     Usage:
-      class MyView(CMFPermissionMixin, View):
+      class MyView(PinmokPermissionMixin, View):
           permission = 'myapp.can_do_something'  # optional
 
     Set permission = None to use the default checker without a specific permission.

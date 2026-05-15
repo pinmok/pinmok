@@ -1,0 +1,69 @@
+{% extends 'admin/base_site.html' %}
+{% load i18n pinmok_admin_tags %}
+
+{% block need_page_header %}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">{% translate "URL Alias Feature Setup" %}</h2>
+        </div>
+        <div class="card-body">
+            <p>{% translate "To enable the URL alias feature, you need to add one line to your project's root urls.py file. Without this, aliases will be saved but will not work." %}</p>
+
+            <h3>{% translate "Step 1: Import the view" %}</h3>
+            <p>{% translate "Add the following import at the top of your root urls.py:" %}</p>
+            <pre><code>
+                <span class="text-yellow">from</span> pinmok.padmin.views <span class="text-yellow">import</span> alias_resolver
+            </code></pre>
+
+            <h3>{% translate "Step 2: Add the URL pattern" %}</h3>
+            <p>{% translate "Add the following line inside your urlpatterns list. It must be the last item, after all other patterns:" %}</p>
+            <pre><code>
+                path('&lt;path:alias&gt;', alias_resolver,
+                <span class="text-red">name</span>=<span class="text-green">'alias_resolver'</span>),
+            </code></pre>
+
+            <h3>{% translate "Complete example" %}</h3>
+            <p>{% translate "Your urls.py should look like this:" %}</p>
+            <pre><code><span class="text-yellow">from</span> django.conf <span class="text-yellow">import</span> settings
+<span class="text-yellow">from</span> django.conf.urls.static <span class="text-yellow">import</span> static
+<span class="text-yellow">from</span> django.urls <span class="text-yellow">import</span> path, include
+
+<span class="text-yellow">from</span> pinmok.padmin.views <span class="text-yellow">import</span> alias_resolver
+<span class="text-yellow">from</span> pinmok.core.sites <span class="text-yellow">import</span> site
+
+urlpatterns = [
+    path('admin/', site.urls),
+    path('content/', include(<span class="text-green">'pinmok.content.urls'</span>)),
+    path('&lt;path:alias&gt;', alias_resolver, <span class="text-red">name</span>=<span class="text-green">'alias_resolver'</span>), <span
+                        class="text-muted"># must be last</span>
+]
+urlpatterns += static(settings.MEDIA_URL, <span class="text-red">document_root</span>=settings.MEDIA_ROOT)</code></pre>
+
+            <h3>{% translate "Why must it be last?" %}</h3>
+            <p>
+                {% blocktranslate trimmed %}
+                    Django matches URL patterns in order, from top to bottom. The alias pattern matches any URL, so if it is placed before
+                    other patterns, it will intercept all requests and your site will stop working correctly. Always keep it as the last
+                    item in urlpatterns.
+                {% endblocktranslate %}
+            </p>
+
+            <h3>{% translate "How does it work?" %}</h3>
+            <p>
+                {% blocktranslate trimmed %}
+                    When a visitor accesses an alias URL (e.g. /news/), Django first tries to match all regular URL patterns. If none match,
+                    the alias resolver checks the alias table. If a matching alias is found and is active, the request is forwarded
+                    internally to the real URL. The visitor's browser address bar keeps showing the alias URL.
+                {% endblocktranslate %}
+            </p>
+
+            {% translate "After adding the line to urls.py, restart your development server. The warning on this page will disappear automatically once the configuration is detected." as tip_note %}
+            {% alert tip_note 'info' %}
+
+            {% translate "Make sure there are no duplicate aliases. If two aliases are identical, only the first one saved will be used. The second one will cause a validation error when you try to save it." as tip_warning %}
+            {% alert tip_warning 'warning' %}
+        </div>
+    </div>
+{% endblock %}

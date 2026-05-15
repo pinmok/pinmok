@@ -1,0 +1,90 @@
+{% load i18n static pinmok_tags %}
+{% if result_hidden_fields %}
+    <div class="d-none">{# DIV for HTML validation #}
+        {% for item in result_hidden_fields %}{{ item }}{% endfor %}
+    </div>
+{% endif %}
+{% if results %}
+    <style>
+        a.sort-remove {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        thead th:hover a.sort-remove {
+            opacity: 1;
+        }
+    </style>
+    <div class="table-responsive">
+        <table id="result_list" class="table table-vcenter table-selectable">
+            <thead>
+            <tr>
+                {# Render table headers with sorting controls (toggle direction, remove sorting, multi-sort priority badge) #}
+                {% for header in result_headers %}
+                    <th scope="col"{{ header.class_attrib }}>
+                        {% if header.sortable %}
+                            <div class="d-flex align-items-center">
+                                {# Sortable: clicking the title sets this column as primary sort #}
+                                <a href="{{ header.url_primary }}"
+                                   class="text-decoration-none{% if header.sort_priority == 0 %} table-sort{% endif %}">
+                                    {# Show priority badge only when multiple columns are being sorted #}
+                                    {% if header.sort_priority > 0 and num_sorted_fields > 1 %}
+                                        <span class="badge bg-default"
+                                              title="{% blocktranslate with priority_number=header.sort_priority %}Sorting priority: {{ priority_number }}{% endblocktranslate %}">{{ header.sort_priority }}</span>
+                                    {% endif %}
+                                    {{ header.text|capfirst }}
+                                </a>
+                                {# Show toggle and remove controls only when this column is actively sorting #}
+                                {% if header.sort_priority > 0 %}
+                                    <div class="d-flex align-items-center gap-1">
+                                        {# Toggle between ascending and descending order #}
+                                        <a href="{{ header.url_toggle }}" title="{% translate "Toggle sorting" %}"
+                                           class=" table-sort{% if header.sort_priority > 0 %} {{ header.ascending|yesno:'asc,desc' }}{% endif %}"></a>
+                                        {# Remove this column from sorting #}
+                                        <a class="sort-remove text-danger" href="{{ header.url_remove }}"
+                                           title="{% translate "Remove from sorting" %}">
+                                            {% icon 'tabler-filter-x' '' 14 %}
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            {# Not sortable: plain text only #}
+                            {{ header.text|capfirst }}
+                        {% endif %}
+                    </th>
+                {% endfor %}
+            </tr>
+            </thead>
+            <tbody class="table-tbody">
+            {% for result in results %}
+                {% if result.form and result.form.non_field_errors %}
+                    <tr>
+                        <td colspan="{{ result|length }}">{{ result.form.non_field_errors }}</td>
+                    </tr>
+                {% endif %}
+                <tr>{% for item in result %} {{ item }} {% endfor %}</tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+
+<script>
+    /**
+     * action-toggle and action-select checkboxes are rendered by Django's result_headers,
+     * so Tabler's form-check classes must be added via JS instead.
+     */
+    document.addEventListener('DOMContentLoaded', function () {
+        // Checkbox for toggling selection of all rows (action-toggle).
+        const toggle = document.getElementById('action-toggle');
+        if (toggle) {
+            toggle.classList.add('form-check-input', 'm-0', 'align-middle', 'table-selectable-check');
+        }
+
+        // The checkbox for selecting a single row.
+        document.querySelectorAll('input.action-select').forEach(function (el) {
+            el.classList.add('form-check-input', 'm-0', 'align-middle', 'table-selectable-check');
+        });
+    });
+</script>

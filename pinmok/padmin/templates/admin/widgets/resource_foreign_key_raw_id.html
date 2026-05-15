@@ -1,0 +1,14 @@
+{% load pinmok_tags %}
+{% if related_url %}
+    <div class="d-flex align-items-center gap-2">
+{% endif %}
+<div class="flex-grow-1">
+    <div class="d-none">{% include 'django/forms/widgets/input.html' %}</div>
+</div>
+<span class="resource-label">{% if link_label %}{{ link_label|truncate_filename }}{% endif %}</span>
+{% if related_url %}
+    <a href="{{ related_url }}" class="related-lookup btn btn-icon" id="lookup_id_{{ widget.name }}" title="{{ link_title }}">
+        {% icon 'tabler-search' 'icon' %}
+    </a>
+    </div>
+{% endif %}

@@ -1,0 +1,162 @@
+{% extends "admin/base.html" %}
+{% load i18n static pinmok_tags %}
+
+{% block title %}
+    {% if subtitle %}{{ subtitle }} | {% endif %} {{ title }} | {{ site_title }}
+{% endblock %}
+
+{% block body %}
+    <div class="page {% block body_class %}{% endblock %}">
+        {% if not is_popup %}
+            <!--  BEGIN SIDEBAR  -->
+            {% include "admin/includes/sidebar.html" %}
+            <!--  END SIDEBAR  -->
+            {% block header %}
+                <header class="navbar navbar-expand-md d-none d-lg-flex d-print-none">
+                    <div class="container-xl">
+                        <!-- BEGIN NAVBAR TOGGLER -->
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu"
+                                aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                        <!-- END NAVBAR TOGGLER -->
+                        <div class="navbar-nav flex-row order-md-last">
+                            <div class="d-none d-md-flex">
+                                <!-- BEGIN THEME MODE -->
+                                <div class="nav-item">
+                                    <a href="javascript:void(0);" class="nav-link px-0 hide-theme-dark" onclick="toggleTheme()"
+                                       title="{% translate 'Toggle theme (current theme: light)' %}"
+                                       data-bs-toggle="tooltip" data-bs-placement="bottom">
+                                        {% icon 'tabler-moon' 'icon' %}
+                                    </a>
+                                    <a href="javascript:void(0);" class="nav-link px-0 hide-theme-light" onclick="toggleTheme()"
+                                       title="{% translate 'Toggle theme (current theme: dark)' %}"
+                                       data-bs-toggle="tooltip" data-bs-placement="bottom">
+                                        {% icon 'tabler-sun' 'icon' %}
+                                    </a>
+                                </div>
+                                <!-- END THEME MODE -->
+
+                                <!-- BEGIN LANGUAGE -->
+                                {% url 'set_language' as set_language_url %}
+                                {% if USE_I18N and set_language_url %}
+                                    {% get_current_language as LANGUAGE_CODE %}
+                                    {% get_available_languages as LANGUAGES %}
+                                    {% get_language_info for LANGUAGE_CODE as language_info %}
+                                    {% get_language_info_list for LANGUAGES as languages %}
+                                    <div class="nav-item dropdown d-none d-md-flex me-3">
+                                        <a href="javascript:void(0);" class="nav-link px-0 show" data-bs-toggle="dropdown"
+                                           aria-label="Show app menu" data-bs-auto-close="outside" aria-expanded="true">
+                                            {% icon 'tabler-world' 'icon' %}
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-arrow dropdown-menu-end dropdown-menu-card">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <div class="card-title">
+                                                        {% translate 'Language' %}: {{ language_info.name_local }}
+                                                    </div>
+                                                    <div class="card-actions">
+                                                        {% icon 'tabler-language' 'icon' %}
+                                                    </div>
+                                                </div>
+                                                <div class="card-body scroll-y p-2" style="max-height: 50vh">
+                                                    <form action="{{ set_language_url }}" method="post">{% csrf_token %}
+                                                        <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                                                        <div class="row g-0">
+                                                            {% for language in languages %}
+                                                                <div class="col-sm-12 col-md-6">
+                                                                    <button type="submit" name="language" value="{{ language.code }}"
+                                                                            class="btn btn-link{% if language.code == LANGUAGE_CODE %} active{% endif %}">
+                                                                        {{ language.name_local }}
+                                                                    </button>
+                                                                </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                <!-- END LANGUAGE -->
+                            </div>
+                            <!-- BEGIN USER INFORMATION -->
+                            <div class="nav-item dropdown">
+                                <a href="#" class="nav-link d-flex lh-1 p-0 px-2" data-bs-toggle="dropdown" aria-label="Open user menu">
+                                    {% if user.avatar %}
+                                        <span class="avatar avatar-sm" style="background-image:url({{ user.avatar }})"></span>
+                                    {% else %}
+                                        <span class="avatar avatar-sm"
+                                              style="background-image:url({% static "admin/svg/crazy_logo.svg" %})"></span>
+                                    {% endif %}
+                                    <div class="d-xl-block ps-2">
+                                        <div>{% firstof user.get_short_name user.get_username %}</div>
+                                        <div class="mt-1 small text-secondary">
+                                            {% if user.is_superuser %}
+                                                {% trans "Superuser" %}
+                                            {% elif user.is_staff %}
+                                                {% trans "Staff" %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </a>
+                                <!-- BEGIN DROPDOWN MENU -->
+                                <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                                    {% block userlinks %}
+                                        {% if user.has_usable_password %}
+                                            <a href="{% url 'admin:password_change' %}"
+                                               class="dropdown-item">{% translate 'Change password' %}</a>
+                                        {% endif %}
+                                        {% if user.is_active and user.is_staff %}
+                                            {% url 'django-admindocs-docroot' as docsroot %}
+                                            {% if docsroot %}
+                                                <div class="dropdown-divider"></div>
+                                                <a href="{{ docsroot }}">{% translate 'Documentation' %}</a> /
+                                            {% endif %}
+                                        {% endif %}
+                                        <div class="dropdown-divider"></div>
+                                        <form id="logout-form" method="post" action="{% url 'admin:logout' %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item">{% translate "Log out" %}</button>
+                                        </form>
+                                    {% endblock %}
+                                </div>
+                                <!-- END DROPDOWN MENU -->
+                            </div>
+                            <!-- END USER INFORMATION -->
+                        </div>
+                        <ol class="breadcrumb breadcrumb-arrows mb-0" id="crazy-breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate 'Home' %}</a></li>
+                            {% block breadcrumbs %}
+                                {% for bread in admin_breadcrumbs %}
+                                    <li class="breadcrumb-item{% if bread.is_current %} active{% endif %}">
+                                        <a href="{{ bread.url }}">{{ bread.title }}</a>
+                                    </li>
+                                {% endfor %}
+                            {% endblock %}
+                        </ol>
+                    </div>
+                </header>
+            {% endblock %}
+        {% endif %}
+
+        <div class="page-wrapper">
+            {% block need_page_header %}
+                <div class="page-header d-print-none" aria-label="Page header">
+                    <div class="container-xl">
+                        {% block page_header %}{% endblock %}
+                    </div>
+                </div>
+            {% endblock %}
+            <div class="page-body">
+                <div class="container-xl">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+
+            <!-- BEGIN FOOTER -->
+            {% include 'admin/includes/footer.html' %}
+            <!-- END FOOTER -->
+        </div>
+    </div>
+{% endblock %}
