@@ -441,6 +441,7 @@ class UrlAlias(models.Model):
 class Theme(models.Model):
     """Installed theme, corresponds to theme.json"""
     name = models.CharField(max_length=100)
+    app_label = models.CharField(max_length=50)
     version = models.CharField(max_length=20)
     author = models.CharField(max_length=100, blank=True)
     description = models.TextField(blank=True)
@@ -454,6 +455,13 @@ class Theme(models.Model):
         verbose_name = _('theme')
         verbose_name_plural = _('themes')
         ordering = ['-installed_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['app_label'],
+                condition=models.Q(is_active=True),
+                name='unique_active_theme_per_app'
+            )
+        ]
 
     def __str__(self):
         return f'{self.name} {self.version}'
@@ -472,7 +480,12 @@ class ThemeTemplate(models.Model):
         verbose_name = _('theme template')
         verbose_name_plural = _('theme templates')
         ordering = ['sort_order']
-        unique_together = ('theme', 'filename')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['theme', 'filename'],
+                name='unique_theme_filename',
+            )
+        ]
 
     def __str__(self):
         return f'{self.theme.name} / {self.name}'

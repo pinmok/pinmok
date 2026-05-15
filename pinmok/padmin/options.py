@@ -29,7 +29,6 @@ from pinmok.padmin import widgets
 from pinmok.padmin.enums import ImageWidgetMode
 from pinmok.padmin.fields import PinmokImagePathField
 from pinmok.padmin.service.config import ConfigService
-from pinmok.padmin.service.theme import ThemeService
 
 
 class PinmokModelAdminMixin(BaseModelAdmin):
@@ -238,15 +237,6 @@ class PinmokModelAdminMixin(BaseModelAdmin):
 
 class PinmokModelAdmin(PinmokModelAdminMixin, ModelAdmin):
     back_url = None
-
-    @staticmethod
-    def _get_template_choices(action: str) -> list:
-        """Return template choices for the given action, with default option first."""
-        return [(action, _('Default'))] + [
-            (t.filename, t.name)
-            for t in ThemeService.get_templates_by_action(action)
-            if t.filename != action
-        ]
 
     def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
         extra_context = extra_context or {}

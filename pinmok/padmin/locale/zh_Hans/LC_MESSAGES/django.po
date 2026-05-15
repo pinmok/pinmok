@@ -739,10 +739,20 @@ msgstr "主题目录未找到：%(dir)s"
 msgid "Theme \"%(dir)s\" already installed."
 msgstr "主题 “%(dir)s” 已安装。"
 
-#: .\pinmok\padmin\service\theme.py:226
+#: .\pinmok\padmin\service\theme.py:240
 #, python-format
 msgid "Theme configuration file %(file)s is missing required field \"name\"."
 msgstr "主题配置文件 %(file)s 缺少必需字段 “name”。"
+
+#: .\pinmok\padmin\service\theme.py:248
+#, python-format
+msgid "Theme configuration file %(file)s is missing required field \"app_label\"."
+msgstr "主题配置文件 %(file)s 缺少必需字段 “app_label”。"
+
+#: .\pinmok\padmin\service\theme.py:254
+#, python-format
+msgid "Theme configuration file %(file)s has unknown app_label \"%(label)s\"."
+msgstr "主题配置文件 %(file)s 包含未知的 app_label %(label)s。"
 
 #: .\pinmok\padmin\service\theme.py:235
 #, python-format

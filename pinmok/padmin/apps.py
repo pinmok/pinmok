@@ -20,7 +20,6 @@ from pinmok.core.sites import site
 
 
 class PadminConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
     name = 'pinmok.padmin'
     verbose_name = 'Pinmok Admin'
 

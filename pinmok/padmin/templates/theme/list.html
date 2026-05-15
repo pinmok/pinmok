@@ -9,6 +9,7 @@
                 <tr>
                     <th>{% translate 'name' %}</th>
                     <th>{% translate 'version' %}</th>
+                    <th>{% translate 'App label' %}</th>
                     <th>{% translate 'author' %}</th>
                     <th>{% translate 'active' %}</th>
                     <th>{% translate 'description' %}</th>
@@ -20,6 +21,7 @@
                     <tr>
                         <td>{{ theme.name }}</td>
                         <td class="text-secondary">{{ theme.version|default:'' }}</td>
+                        <td>{{ theme.app_label }}</td>
                         <td class="text-secondary">{{ theme.author|default:'-' }}</td>
                         <td class="text-secondary">
                             <span class="{{ theme.is_active|yesno:'text-success,text-danger' }}">

@@ -24,6 +24,7 @@ from django.utils.datastructures import MultiValueDict
 from django.utils.translation import gettext_lazy as _, get_language
 
 from pinmok.core.constants import DEFAULT_SORT_ORDER
+from pinmok.core.utils.helper import get_valid_app_labels
 from pinmok.padmin import widgets
 from pinmok.padmin.datasource import datasource
 from pinmok.padmin.enums import ThemeVarType
@@ -31,6 +32,7 @@ from pinmok.padmin.models import Theme, ThemeTemplate
 
 THEME_CACHE_KEY = 'pinmok_active_theme'
 THEME_CACHE_TIMEOUT = 3600
+THEME_CACHE_APP_LABELS_KEY = 'pinmok_theme_app_labels'
 THEMES_DIR_NAME = 'themes'
 
 # Map ThemeVarType to Django form widget class.
@@ -123,8 +125,14 @@ class ThemeService:
             raise ThemeServiceError(_('Invalid JSON in %(path)s: %(error)s') % {'path': path, 'error': e})
 
     @classmethod
-    def _invalidate_cache(cls):
-        cache.delete(THEME_CACHE_KEY)
+    def _invalidate_cache(cls, app_label: str | None = None):
+        if app_label:
+            cache.delete(f'{THEME_CACHE_KEY}:{app_label}')
+        else:
+            app_labels = cache.get(THEME_CACHE_APP_LABELS_KEY) or []
+            for label in app_labels:
+                cache.delete(f'{THEME_CACHE_KEY}:{label}')
+            cache.delete(THEME_CACHE_APP_LABELS_KEY)
 
     @classmethod
     def _default_value(cls, var: ThemeVar) -> Any:
@@ -215,7 +223,9 @@ class ThemeService:
     @classmethod
     def _validate_config_file(cls, theme_dir: Path):
         """ Validate that all configuration files contain required attributes. """
+        valid_apps = get_valid_app_labels()
         template_attrs = ['name', 'action']
+
         for json_file in theme_dir.glob('*.json'):
             try:
                 data = cls._read_json(json_file)
@@ -224,10 +234,26 @@ class ThemeService:
 
             # Validate theme config file
             if json_file.name.startswith('theme'):
+                # Required: name
                 if not data.get('name', ''):
                     raise ThemeServiceError(
                         _('Theme configuration file %(file)s is missing required field "name".') % {
                             'file': json_file.name,
+                        }
+                    )
+                # Required: app_label
+                app_label = data.get('app_label', '')
+                if not app_label:
+                    raise ThemeServiceError(
+                        _('Theme configuration file %(file)s is missing required field "app_label".') % {
+                            'file': json_file.name,
+                        }
+                    )
+                if app_label not in valid_apps:
+                    raise ThemeServiceError(
+                        _('Theme configuration file %(file)s has unknown app_label "%(label)s".') % {
+                            'file': json_file.name,
+                            'label': app_label,
                         }
                     )
                 continue
@@ -310,6 +336,7 @@ class ThemeService:
                 'directory': entry.name,
                 'name': data.get('name', entry.name),
                 'version': data.get('version', ''),
+                'app_label': data.get('app_label', ''),
                 'author': data.get('author', ''),
                 'description': data.get('description', ''),
                 'preview_url': data.get('preview_url', ''),
@@ -344,6 +371,7 @@ class ThemeService:
         data = cls._read_json(theme_dir / 'theme.json')
         theme = Theme.objects.create(
             name=data.get('name', directory),
+            app_label=data['app_label'],  # Required, has passed verification, fetch directly
             version=data.get('version', ''),
             author=data.get('author', ''),
             description=data.get('description', ''),
@@ -405,9 +433,9 @@ class ThemeService:
     @classmethod
     @transaction.atomic
     def activate(cls, theme_id: int):
-        """Activate the given theme. Deactivates all others."""
-        cls._get_theme(theme_id)
-        Theme.objects.all().update(is_active=False)
+        """Activate the given theme. Deactivates other themes in the same app."""
+        theme = cls._get_theme(theme_id)
+        Theme.objects.filter(app_label=theme.app_label).update(is_active=False)
         Theme.objects.filter(pk=theme_id).update(is_active=True)
         cls._invalidate_cache()
 
@@ -416,9 +444,10 @@ class ThemeService:
     # ------------------------------------------------------------------
 
     @classmethod
-    def get_active_theme(cls) -> Optional[Theme]:
+    def get_active_theme(cls, app_label: str) -> Optional[Theme]:
         """Return the currently active Theme, or None. Result is cached."""
-        cached_pk = cache.get(THEME_CACHE_KEY)
+        cache_key = f'{THEME_CACHE_KEY}:{app_label}'
+        cached_pk = cache.get(cache_key)
         if cached_pk is not None:
             try:
                 return Theme.objects.prefetch_related('templates').get(pk=cached_pk)
@@ -426,16 +455,16 @@ class ThemeService:
                 pass
 
         try:
-            theme = Theme.objects.prefetch_related('templates').get(is_active=True)
-            cache.set(THEME_CACHE_KEY, theme.pk, THEME_CACHE_TIMEOUT)
+            theme = Theme.objects.prefetch_related('templates').get(app_label=app_label, is_active=True)
+            cache.set(cache_key, theme.pk, THEME_CACHE_TIMEOUT)
             return theme
         except Theme.DoesNotExist:
             return None
 
     @classmethod
-    def get_templates_by_action(cls, action: str) -> list[ThemeTemplate]:
+    def get_templates_by_action(cls, app_label: str, action: str) -> list[ThemeTemplate]:
         """Return all ThemeTemplates of the active theme matching the given action."""
-        theme = cls.get_active_theme()
+        theme = cls.get_active_theme(app_label)
         if theme is None:
             return []
         return [t for t in theme.templates.all() if t.action == action]
@@ -457,6 +486,15 @@ class ThemeService:
         """
         template = cls._get_template(template_id)
         return template.config
+
+    @classmethod
+    def get_template_choices(cls, app_label: str, action: str):
+        """Return template choices for the given action, with default option first."""
+        return [(action, _('Default'))] + [
+            (t.filename, t.name)
+            for t in cls.get_templates_by_action(app_label, action)
+            if t.filename != action
+        ]
 
     # ------------------------------------------------------------------
     # Save config
@@ -591,15 +629,15 @@ class ThemeService:
     # ------------------------------------------------------------------
 
     @classmethod
-    def get_template_path(cls, filename: str) -> Optional[str]:
+    def get_template_path(cls, app_label: str, filename: str) -> Optional[str]:
         """Return the full template path for the given filename, or None if no active theme."""
-        theme = cls.get_active_theme()
+        theme = cls.get_active_theme(app_label)
         if theme is None:
             return None
         return f'themes/{theme.directory}/{filename}.html'
 
     @classmethod
-    def get_vars_context(cls, action: str) -> dict:
+    def get_vars_context(cls, app_label: str, action: str) -> dict:
         """
         Return a dict of variable values for the given action,
         merging global (theme-level) vars and page-level vars.
@@ -610,7 +648,7 @@ class ThemeService:
 
         Used by views to inject theme variables into the template context.
         """
-        theme = cls.get_active_theme()
+        theme = cls.get_active_theme(app_label)
         if theme is None:
             return {}
 
