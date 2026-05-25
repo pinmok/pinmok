@@ -78,7 +78,7 @@ class PinmokGroupAdmin(PinmokModelAdminMixin, GroupAdmin):
 
 @padmin.register(SiteConfig)
 class SiteConfigAdmin(ConfigModelAdmin):
-    menu_order = 1000
+    menu_sort_order = 1000
     category = ConfigCategory.SITE
     fieldsets = [
         (_("Site Information"), {
@@ -106,7 +106,7 @@ class SiteConfigAdmin(ConfigModelAdmin):
 
 @padmin.register(EmailConfig)
 class EmailConfigAdmin(ConfigModelAdmin):
-    menu_order = 2000
+    menu_sort_order = 2000
     category = ConfigCategory.EMAIL
     form = EmailConfigForm
     extra_panels = [ExtraPanel(label=_("Test Email Sending"), template="config/test_email.html", icon='tabler-mail-check')]
@@ -132,7 +132,7 @@ class EmailConfigAdmin(ConfigModelAdmin):
 
 @padmin.register(UploadConfig)
 class UploadConfigAdmin(ConfigModelAdmin):
-    menu_order = 3000
+    menu_sort_order = 3000
     category = ConfigCategory.UPLOAD
     form = UploadConfigForm
     fieldsets = [
@@ -150,7 +150,7 @@ class UploadConfigAdmin(ConfigModelAdmin):
 @padmin.register(ExternalLink)
 class ExternalLinksAdmin(PinmokModelAdmin):
     """Admin for external links management."""
-    menu_order = 5000
+    menu_sort_order = 5000
     list_display = ('sort_order', 'image_thumb', 'title', 'url_link', 'status')
     list_display_links = ('title',)
     list_editable = ('sort_order',)
@@ -205,7 +205,6 @@ class ResourceAdmin(PinmokModelAdmin):
     """
     # --- Upload form template for add view ---
     add_form_template = 'admin/widgets/resource_add_form.html'
-    menu_order = 10000
     # --- List display ---
     list_display = [
         'thumbnail_preview',
@@ -340,7 +339,7 @@ class NavTranslationInline(PinmokStackedInline):
 class NavAdmin(PinmokModelAdmin):
     """Admin for navigation item management."""
     back_url = reverse_lazy('admin:padmin_nav_changelist')
-    menu_order = 6000
+    menu_sort_order = 6000
     list_display = ('get_name', 'group', 'parent', 'url', 'sort_order', 'is_visible')
     list_display_links = ('get_name',)
     list_filter = ('group',)
@@ -425,7 +424,7 @@ class NavAdmin(PinmokModelAdmin):
 
 @padmin.register(UrlAlias)
 class UrlAliasAdmin(PinmokModelAdmin):
-    menu_order = 9000
+    menu_sort_order = 9000
     list_display = ('alias', 'target', 'is_active', 'updated_at')
     list_filter = ('is_active',)
     search_fields = ('alias', 'target')
@@ -463,7 +462,7 @@ class UrlAliasAdmin(PinmokModelAdmin):
 @padmin.register(Slider)
 class SliderAdmin(PinmokModelAdmin):
     """Admin for slider management."""
-    menu_order = 7000
+    menu_sort_order = 7000
     list_display = ('title', 'group', 'sort_order', 'is_active')
     list_filter = ('group',)
     list_editable = ('sort_order', 'is_active')

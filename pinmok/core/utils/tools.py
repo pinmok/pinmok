@@ -13,12 +13,12 @@ Created:
 import re
 
 
-def int_to_bytes(num: float) -> str:
+def int_to_bytes(num: int) -> str:
     """
     Convert a size in bytes to a human-readable string with an appropriate unit.
 
     Args:
-        num (int or float): Size in bytes. Must be non-negative.
+        num (int): Size in bytes. Must be non-negative.
 
     Returns:
         str: Human-readable string with size and unit, e.g., "1.46 KB", "500 B".

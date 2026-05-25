@@ -31,7 +31,6 @@ class MenuNode(TreeNode["MenuNode"]):
         remark (str | None): Optional remark or note for the menu item.
         source (str | None): Data source identifier for the menu item.
         app_label (str | None): App label this menu item belongs to.
-        extra (dict): Extra custom attributes for the menu item.
     """
     title: str
     url: str | None = None
@@ -43,7 +42,6 @@ class MenuNode(TreeNode["MenuNode"]):
     db_id: int | None = None  # The auto-incrementing ID in the database.
     menu_key: str | None = None
     permissions: list = field(default_factory=list)
-    extra: dict = field(default_factory=dict)
 
     def __repr__(self):
         return f"<MenuItem id={self.id} name={self.title} source={self.source} app_label={self.app_label}>"
@@ -81,7 +79,6 @@ def menu(
         icon: str | None = None,
         permissions: list[str] | None = None,
         remark: str | None = None,
-        extra: dict[str, Any] | None = None,
 ) -> MenuNode:
     """
     Declare a raw admin menu item.
@@ -112,11 +109,7 @@ def menu(
     if url is not None and not isinstance(url, str):
         raise ValueError("menu(): 'url' must be a string, or None")
 
-    if extra is not None and not isinstance(extra, dict):
-        raise ValueError("menu(): 'extra' must be a dict or None")
-
     # ---- normalize ----
-
     return MenuNode(
         id=key,
         title=title,  # noqa
@@ -126,5 +119,4 @@ def menu(
         icon=icon,
         permissions=permissions or [],
         remark=remark,
-        extra=extra or {},
     )

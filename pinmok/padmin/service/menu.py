@@ -19,6 +19,7 @@ from django.contrib.auth.models import AbstractUser, AnonymousUser
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import Field
 from django.http import HttpRequest
 from django.urls import reverse, NoReverseMatch
 from django.utils.translation import gettext as _
@@ -149,7 +150,7 @@ class MenuSynchronizer:
     _MENU_ASSIGNABLE_FIELDS: frozenset[str] = frozenset(
         f.name
         for f in Menu._meta.get_fields()
-        if f.concrete
+        if isinstance(f, Field)
         and not f.auto_created
         and not f.primary_key
         and not f.is_relation
@@ -311,7 +312,7 @@ class AdminMenuService:
             for model in app.get('models', []):
                 object_name = model.get('object_name')
                 model_admin = site.get_model_admin(model['model'])
-                sort_order = getattr(model_admin, 'menu_order', DEFAULT_SORT_ORDER)
+                sort_order = getattr(model_admin, 'menu_sort_order', DEFAULT_SORT_ORDER)
 
                 model_item = MenuNode(
                     id=object_name,

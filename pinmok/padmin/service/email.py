@@ -43,10 +43,10 @@ class EmailService:
         """
         if backend is None:
             self.backend = EmailBackend() if EmailConfig.get() else get_connection()
-        elif isinstance(backend, BaseEmailBackend):
-            self.backend = backend
-        else:
+        elif isinstance(backend, str):
             self.backend = get_connection(backend)
+        else:
+            self.backend = backend
 
     @staticmethod
     def _render(template: str, context: dict[str, str]) -> str:
@@ -54,7 +54,7 @@ class EmailService:
         Replace ${var} placeholders in the template string.
         Unmatched placeholders are left as-is.
         """
-        return re.sub(r"\${(\w+)}", lambda m: context.get(m.group(1), m.group(0)), template)
+        return re.sub(r"\${(\w+)}", lambda m: context.get(m.group(1), m.group(0)) or m.group(0), template)
 
     @staticmethod
     def _load_config() -> dict:

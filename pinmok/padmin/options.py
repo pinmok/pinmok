@@ -63,7 +63,7 @@ class PinmokModelAdminMixin(BaseModelAdmin):
 
     # Controls the sort position of this model in the admin menu.
     # Lower values appear first. Defaults to DEFAULT_SORT_ORDER (10000).
-    menu_order: int = DEFAULT_SORT_ORDER
+    menu_sort_order: int = DEFAULT_SORT_ORDER
     image_crop_fields: list = []
     rich_text_fields: list = []
 

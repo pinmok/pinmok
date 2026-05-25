@@ -4,7 +4,8 @@
 decorators module
 
 Description:
-
+  Provides a decorator for registering models with Pinmok's AdminSite.
+  Usage is identical to Django's native @admin.register().
 Author:
   惠达浪 <crazys@126.com>
 Created:

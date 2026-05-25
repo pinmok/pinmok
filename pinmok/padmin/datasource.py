@@ -25,7 +25,7 @@ class DataSourceRegistry:
     def __init__(self):
         self._registry: dict[str, type[Widget]] = {}
 
-    def register(self, key: str, widget_class: type[Widget] = None):
+    def register(self, key: str, widget_class: type[Widget] | None = None):
         """
         Register a Widget class under the given key.
         Can be used as a decorator or called directly.

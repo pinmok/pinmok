@@ -13,6 +13,8 @@ Created:
 """
 from django import get_version
 
+from pinmok.core.menu import menu
+
 VERSION = (1, 0, 0, 'alpha', 1)
 __version__ = get_version(VERSION)
 __author__ = "惠达浪"

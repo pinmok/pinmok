@@ -11,10 +11,10 @@ Created:
   2025-06-11
 """
 
-from pinmok.core.menu import menu
+from pinmok.core import menu
 from pinmok.padmin.enums import ConfigCategory
 
-# Define PinmokAdmin menu
+# Define Pinmok Admin menu
 admin_menu = [
     menu('config', title='Site Settings', icon='tabler-settings', sort_order=0),
     menu(
