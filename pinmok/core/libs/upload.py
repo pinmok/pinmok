@@ -118,10 +118,11 @@ class Upload:
 
         if file_obj.size is None:
             raise ValueError('Uploaded file size is unknown.')
+
         return UploadResult(
             path=saved_path,
             filename=filename,
-            size=file_obj.size,
+            size=file_obj.size or 0,
             mime_type=mime_type,
             original_name=file_obj.name,
             hash=file_hash,

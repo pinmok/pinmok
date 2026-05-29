@@ -28,6 +28,7 @@ from pinmok.core.constants import DEFAULT_SORT_ORDER
 from pinmok.padmin import widgets
 from pinmok.padmin.enums import ImageWidgetMode
 from pinmok.padmin.fields import PinmokImagePathField
+from pinmok.padmin.forms.config_forms import ConfigForm
 from pinmok.padmin.service.config import ConfigService
 
 
@@ -378,8 +379,6 @@ class ConfigModelAdmin(PinmokModelAdminMixin, ModelAdmin):
     category: str | None = None
 
     def get_form_class(self):
-        from pinmok.padmin.forms.config_forms import ConfigForm
-
         if self.form is not None:
             return self.form
         if self.category is None:

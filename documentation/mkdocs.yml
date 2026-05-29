@@ -15,7 +15,6 @@ theme:
 plugins:
   - search
   - i18n:
-      default_language: en
       languages:
         - locale: en
           name: English
@@ -43,7 +42,7 @@ nav:
   - Getting Started: getting-started.md
   - Core Concepts: concepts.md
   - Menu System: menus.md
-  - Model Registration: models.md
+  - Model Registration: model-admin.md
   - Utilities: utils.md
   - Theming: theme.md
   - Internationalization: i18n.md
