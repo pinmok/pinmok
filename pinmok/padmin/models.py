@@ -430,6 +430,10 @@ class UrlAlias(models.Model):
         except Resolver404:
             raise ValidationError({'target': _('Target URL does not resolve to a known view.')})
 
+    def save(self, *args, **kwargs):
+        self.alias = self.alias.rstrip('/') + '/'
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = _('URL Alias')
         verbose_name_plural = _('URL Aliases')

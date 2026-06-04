@@ -184,30 +184,11 @@ CONFIG_SCHEMA = {
             ],
             "help_text": _("Maximum seconds to wait for the mail server to respond, leave empty for no limit."),
         },
-
-        # Email template
-        "template_from_name": {
+        "from_name": {
             "type": ConfigType.STR,
             "default": "",
             "label": _("From name"),
             "help_text": _("The name displayed as the sender in the recipient's inbox."),
-        },
-        "template_subject": {
-            "type": ConfigType.STR,
-            "default": "",
-            "label": _("Subject"),
-        },
-        "template_content": {
-            "type": ConfigType.TEXT,
-            "default": "",
-            "label": _("Content"),
-            "help_text": _("Email body, supports HTML formatting."),
-        },
-        "template_variables": {
-            "type": ConfigType.STR,
-            "default": "",
-            "label": _("Available variables"),
-            "help_text": _("List of variables you can use within this template."),
         },
     },
 

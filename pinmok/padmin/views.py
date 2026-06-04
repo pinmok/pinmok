@@ -76,46 +76,28 @@ class TestEmailView(View):
             return api.error(ErrorCode.BAD_REQUEST, _('Invalid email address.'))
         return None
 
-    @staticmethod
-    def _handle_test(data: dict):
-        """Send a plain text test email."""
+    @classmethod
+    def _handle_send(cls, data: dict, use_template: bool = False):
         to = data.get('test_receiver', '').strip()
         subject = data.get('test_subject', '').strip()
         content = data.get('test_content', '')
 
-        error = TestEmailView._validate_receiver(to)
+        error = cls._validate_receiver(to)
         if error:
             return error
 
         try:
             email = EmailService()
-            res = email.send(to, subject, content)
-            if res > 0:
-                return api.success(_('Successfully sent email.'), {'has_send': res})
-            return api.error(ErrorCode.BAD_REQUEST, _('Failed to send email.'))
-        except EmailValueError as e:
-            return api.error(ErrorCode.BAD_REQUEST, str(e))
-        except Exception as e:
-            return api.error(ErrorCode.SERVER_ERROR, _('Error while sending email: ') + str(e))
+            if use_template:
+                raw_vars = data.get('test_variables', '').strip()
+                try:
+                    variables = json.loads(raw_vars) if raw_vars else {}
+                except JSONDecodeError:
+                    return api.error(ErrorCode.BAD_REQUEST, _('Invalid JSON format for variables.'))
+                res = email.send_with_template(to, subject, content, variables)
+            else:
+                res = email.send(to, subject, content)
 
-    @staticmethod
-    def _handle_test_template(data: dict):
-        """Send a templated test email with optional JSON variables."""
-        to = data.get('test_receiver', '').strip()
-        raw_vars = data.get('test_variables', '').strip()
-
-        error = TestEmailView._validate_receiver(to)
-        if error:
-            return error
-
-        try:
-            variables = json.loads(raw_vars) if raw_vars else {}
-        except JSONDecodeError:
-            return api.error(ErrorCode.BAD_REQUEST, _('Invalid JSON format for variables.'))
-
-        try:
-            email = EmailService()
-            res = email.send_with_template(to, variables)
             if res > 0:
                 return api.success(_('Successfully sent email.'), {'has_send': res})
             return api.error(ErrorCode.BAD_REQUEST, _('Failed to send email.'))
@@ -125,14 +107,12 @@ class TestEmailView(View):
             return api.error(ErrorCode.SERVER_ERROR, _('Error while sending email: ') + str(e))
 
     def post(self, request, *args, **kwargs):
-        """Dispatch to the appropriate handler based on the 'action' field."""
         action = request.POST.get('action', '').strip()
-
         match action:
             case 'test':
-                return self._handle_test(request.POST)
+                return self._handle_send(request.POST)
             case 'test_template':
-                return self._handle_test_template(request.POST)
+                return self._handle_send(request.POST, use_template=True)
             case _:
                 return api.error(ErrorCode.BAD_REQUEST, _('Invalid action.'))
 
@@ -358,9 +338,11 @@ def alias_resolver(request, alias):
     Raises Http404 if the alias does not exist, is inactive, or the target URL does not
     resolve to a known view.
     """
+    alias_slash = alias.rstrip('/') + '/'
+
     # Look up the alias in the database
     try:
-        url_alias = UrlAlias.objects.get(alias=alias, is_active=True)
+        url_alias = UrlAlias.objects.get(alias=alias_slash, is_active=True)
     except UrlAlias.DoesNotExist:
         raise Http404
 

@@ -15,9 +15,9 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
+from django.conf import settings
 from django.core.mail import get_connection, EmailMessage
 from django.core.mail.backends.base import BaseEmailBackend
-from django.utils.translation import gettext_lazy as _
 
 from pinmok.padmin.backends import EmailBackend, logger
 from pinmok.padmin.enums import ConfigCategory
@@ -150,9 +150,12 @@ class EmailService:
     @property
     def from_email(self) -> str:
         """Return the configured default sender address."""
-        return ConfigService.get(ConfigCategory.EMAIL, 'default_from_email') or ''
+        config = self._load_config()
+        from_email = config.get('default_from_email', settings.DEFAULT_FROM_EMAIL)
+        from_name = config.get('from_name', '').strip()
+        return f"{from_name} <{from_email}>" if from_name and from_email else from_email
 
-    def send(self, to: str | list[str], subject: str, content: str, from_email: str | None = None) -> int:
+    def send(self, to: str | list[str], subject: str, content: str) -> int:
         """
         Send a plain HTML email to one or more recipients.
 
@@ -160,7 +163,6 @@ class EmailService:
             to: Recipient address or list of addresses.
             subject: Email subject line.
             content: Email body (HTML supported).
-            from_email: Sender address. Falls back to default_from_email if not provided.
 
         Returns:
             Number of messages successfully sent.
@@ -172,54 +174,37 @@ class EmailService:
             subject=subject,
             body=content,
             to=to,
-            from_email=from_email or self.from_email,
+            from_email=self.from_email,
             connection=self.backend,
         )
         email.content_subtype = 'html'
         return email.send()
 
-    def send_with_template(self, to: str | list[str], template_params: dict[str, str] | None = None) -> int:
+    def send_with_template(
+            self,
+            to: str | list[str],
+            subject: str,
+            content: str,
+            template_params: dict[str, str] | None = None
+    ) -> int:
         """
-        Send an HTML email using the configured template.
+        Send an email using a template with variable substitution.
 
-        Subject, content, and sender are taken from the email config.
-        If the template defines expected variables, template_params must
-        supply all of them. Variable format in templates: ${var_name}.
+        The caller is responsible for providing the template subject and content,
+        as well as the variable values. This service only handles rendering and sending.
+
+        Variable format in templates: ${var_name}
 
         Args:
             to: Recipient address or list of addresses.
+            subject: Email subject line.
+            content: Email template content.
             template_params: Values for template variables, if any.
 
         Returns:
             Number of messages successfully sent.
-
-        Raises:
-            ValueError: If required template variables are missing.
         """
-        config = self._load_config()
-
-        # Assemble sender address with optional display name
-        from_name = config.get('template_from_name', '').strip()
-        from_email = self.from_email
-        from_email_addr = f"{from_name} <{from_email}>" if from_name and from_email else from_email
-
-        subject_template = config.get('template_subject', '')
-        content_template = config.get('template_content', '')
-        expected_vars = config.get('template_variables', '')
-
-        # No variables defined — send template as-is
-        if not expected_vars:
-            return self.send(to, subject_template, content_template, from_email_addr)
-
-        # Validate that all required variables are provided
-        allowed_vars = [v.strip() for v in expected_vars.split(',') if v.strip()]
-        if not template_params:
-            raise EmailValueError(_("This email template requires variables, but none were provided."))
-
-        missing = [var for var in allowed_vars if var not in template_params]
-        if missing:
-            raise EmailValueError(_('Missing required template variables: %s') % ', '.join(missing))
-        subject = self._render(subject_template, template_params)
-        content = self._render(content_template, template_params)
-
-        return self.send(to, subject, content, from_email_addr)
+        if template_params:
+            subject = self._render(subject, template_params)
+            content = self._render(content, template_params)
+        return self.send(to, subject, content)

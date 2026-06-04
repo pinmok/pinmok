@@ -113,20 +113,12 @@ class EmailConfigAdmin(ConfigModelAdmin):
     fieldsets = [
         (_("Base Settings"), {
             "fields": [
-                "default_from_email",
+                ("default_from_email", "from_name"),
                 ("smtp_username", "smtp_password"),
                 ("smtp_host", "smtp_port"),
                 ("timeout", "smtp_use_ssl", "smtp_use_tls")
             ]
-        }),
-        (_("Email Template"), {
-            "fields": [
-                "template_from_name",
-                "template_subject",
-                "template_content",
-                "template_variables"
-            ], 'classes': ('collapse',),
-        }),
+        })
     ]
 
 
