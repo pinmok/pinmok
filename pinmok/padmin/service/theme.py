@@ -457,6 +457,12 @@ class ThemeService:
         try:
             theme = Theme.objects.prefetch_related('templates').get(app_label=app_label, is_active=True)
             cache.set(cache_key, theme.pk, THEME_CACHE_TIMEOUT)
+
+            # Track app_labels for bulk cache invalidation.
+            app_labels = cache.get(THEME_CACHE_APP_LABELS_KEY) or []
+            if app_label not in app_labels:
+                app_labels.append(app_label)
+                cache.set(THEME_CACHE_APP_LABELS_KEY, app_labels)
             return theme
         except Theme.DoesNotExist:
             return None
