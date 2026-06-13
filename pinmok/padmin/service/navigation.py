@@ -14,6 +14,7 @@ from dataclasses import dataclass
 
 from django.conf import settings
 from django.core.cache import cache
+from django.utils.translation import get_language
 
 from pinmok.core.constants import DEFAULT_SORT_ORDER
 from pinmok.core.libs.tree import TreeNode
@@ -44,9 +45,9 @@ class NavNode(TreeNode['NavNode']):
 
 class NavService:
     @classmethod
-    def _load_nodes(cls, group: str) -> list[NavNode]:
+    def _load_nodes(cls, group: str, lang: str) -> list[NavNode]:
         """Fetch nav items from database and convert to NavNode instances."""
-        items = (
+        items = Nav.with_translations(
             Nav.objects.filter(group=group, is_visible=True)
         )
         return [
@@ -58,7 +59,7 @@ class NavService:
                 target=TargetChoices(item.target) if item.target in TargetChoices.values else TargetChoices.SELF,
                 sort_order=item.sort_order,
                 is_visible=item.is_visible,
-                name=item.translation.name if item.translation else '',
+                name=(t.name if (t := item.get_translation(lang)) else ''),
             )
             for item in items
         ]
@@ -77,7 +78,8 @@ class NavService:
         Returns:
             List of ``(NavNode, indented_label)`` pairs in DFS pre-order.
         """
-        nodes = cls._load_nodes(group)
+        lang = language or get_language() or settings.LANGUAGE_CODE
+        nodes = cls._load_nodes(group, lang)
 
         return NavNode.flatten_with_indent(
             nodes,
@@ -107,12 +109,12 @@ class NavService:
         Returns:
             Root nodes of the constructed tree.
         """
-        lang = language or settings.LANGUAGE_CODE
+        lang = language or get_language() or settings.LANGUAGE_CODE
         key = _cache_key(group, lang)
         tree = cache.get(key)
 
         if tree is None:
-            tree = NavNode.build_tree(cls._load_nodes(group), sort_key="sort_order")
+            tree = NavNode.build_tree(cls._load_nodes(group, lang), sort_key="sort_order")
             cache.set(key, tree, CACHE_TIMEOUT)
 
         return tree

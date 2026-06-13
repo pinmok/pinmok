@@ -134,6 +134,11 @@ class EmailService:
         else:
             self.backend = backend
 
+        config = ConfigService.get_category(ConfigCategory.EMAIL)
+        from_email = config.get('default_from_email', settings.DEFAULT_FROM_EMAIL)
+        from_name = config.get('from_name', '').strip()
+        self.from_email = f"{from_name} <{from_email}>" if from_name and from_email else from_email
+
     @staticmethod
     def _render(template: str, context: dict[str, str]) -> str:
         """
@@ -141,19 +146,6 @@ class EmailService:
         Unmatched placeholders are left as-is.
         """
         return re.sub(r"\${(\w+)}", lambda m: context.get(m.group(1), m.group(0)) or m.group(0), template)
-
-    @staticmethod
-    def _load_config() -> dict:
-        """Load typed email configuration from ConfigService."""
-        return ConfigService.get_category(ConfigCategory.EMAIL)
-
-    @property
-    def from_email(self) -> str:
-        """Return the configured default sender address."""
-        config = self._load_config()
-        from_email = config.get('default_from_email', settings.DEFAULT_FROM_EMAIL)
-        from_name = config.get('from_name', '').strip()
-        return f"{from_name} <{from_email}>" if from_name and from_email else from_email
 
     def send(self, to: str | list[str], subject: str, content: str) -> int:
         """
