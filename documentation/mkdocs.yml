@@ -1,50 +1,77 @@
+# Site information
 site_name: Pinmok Documentation
 site_url: https://docs.pinmok.com/
+site_author: 惠达浪
 docs_dir: docs
+
+# Repository
 repo_url: https://github.com/pinmok/pinmok
 repo_name: pinmok/pinmok
 
+# Copyright
+copyright: Copyright &copy; 2025 - 2026 <a href="https://www.qdcrazy.cn" target="_blank">惠达浪</a> All right reserved.
+
+# Configuration
 theme:
   name: material
-  language: en
+  custom_dir: overrides
+  language: zh
   features:
+    - navigation.tracking
     - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
     - navigation.top
     - content.code.copy
+    - toc.follow
+    - toc.integrate
+    - search.highlight
+  palette:
+    primary: indigo
 
-plugins:
-  - search
-  - i18n:
-      languages:
-        - locale: en
-          name: English
-          default: true
-          build: true
-          site_name: Pinmok Documentation
-        - locale: zh
-          name: 简体中文
-          build: true
-          site_name: Pinmok 文档
-          nav_translations:
-            Preface: 前言
-            Getting Started: 快速开始
-            Core Concepts: 核心概念
-            Menu System: 菜单系统
-            Model Registration: 模型注册
-            Utilities: 工具集
-            Theming: 主题
-            Internationalization: 国际化
-            Template Tags: 标签
-            Appendix: 附录
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - attr_list
+
+extra:
+  generator: false
 
 nav:
   - Preface: index.md
   - Getting Started: getting-started.md
-  - Core Concepts: concepts.md
-  - Menu System: menus.md
-  - Model Registration: model-admin.md
-  - Utilities: utils.md
-  - Theming: theme.md
-  - Internationalization: i18n.md
+  - Concepts: concepts.md
+  - Menus: menus.md
+  - Model Management: model-admin.md
+  - Theme: theme.md
   - Template Tags: tags.md
+  - Internationalization: i18n.md
+  - Utilities: utils.md
   - Appendix: appendix.md
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: folder
+      languages:
+        - locale: en
+          name: English
+          theme:
+            palette:
+              primary: blue
+        - locale: zh
+          name: 简体中文
+          default: true
+          site_name: Pinmok 开发文档
+          nav_translations:
+            Preface: 前言
+            Getting Started: 入门指南
+            Concepts: 核心概念
+            Menus: 菜单
+            Model Management: 模型管理
+            Theme: 主题
+            Template Tags: 模板标签
+            Internationalization: 国际化
+            Utilities: 实用工具
+            Appendix: 附录

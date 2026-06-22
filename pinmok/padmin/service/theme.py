@@ -643,7 +643,7 @@ class ThemeService:
         return f'themes/{theme.directory}/{filename}.html'
 
     @classmethod
-    def get_vars_context(cls, app_label: str, action: str) -> dict:
+    def get_vars_context(cls, app_label: str, filename: str) -> dict:
         """
         Return a dict of variable values for the given action,
         merging global (theme-level) vars and page-level vars.
@@ -654,9 +654,6 @@ class ThemeService:
 
         Used by views to inject theme variables into the template context.
         """
-        theme = cls.get_active_theme(app_label)
-        if theme is None:
-            return {}
 
         def extract(config: dict) -> dict:
             result = {}
@@ -668,10 +665,14 @@ class ThemeService:
                 result[fs_key] = dict(fs_vars)
             return result
 
+        theme = cls.get_active_theme(app_label)
+        if theme is None:
+            return {}
+
         context = extract(theme.config)
 
         try:
-            template = theme.templates.get(action=action)
+            template = theme.templates.get(filename=filename)
             context.update(extract(template.config))
         except ThemeTemplate.DoesNotExist:
             pass

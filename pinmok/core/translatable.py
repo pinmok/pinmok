@@ -198,6 +198,19 @@ class TranslationModel(models.Model):
         abstract = True
 
     def get_display_text(self):
+        """
+        Return the primary display text for this translation.
+
+        Used in two places:
+        - ``TranslationModel.__str__`` renders as ``[{language}] {get_display_text()}``,
+          used when the translation record itself appears in admin or logs.
+        - ``TranslatableModel.__str__`` calls this method directly (bypassing
+          ``TranslationModel.__str__`` to avoid the language prefix), so the main
+          model displays clean text in admin lists, dropdowns, and logs.
+
+        Subclasses must override this and return the field that best identifies
+        the object, typically ``name`` or ``title``.
+        """
         raise NotImplementedError
 
     def __str__(self):

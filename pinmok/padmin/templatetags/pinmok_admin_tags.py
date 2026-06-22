@@ -113,19 +113,28 @@ def paginator_next(cl):
 
 
 @register.inclusion_tag('admin/includes/alert.html')
-def alert(title, level='danger', description=None, variant='', dismiss=False, extra_class='', link_url=None, link_text=None):
+def alert(
+        title,
+        level='danger',
+        description=None,
+        variant='',
+        dismiss=False,
+        extra_class='',
+        link_text=None,
+        link_url=None,
+):
     """
     Render an alert component.
 
     Args:
         title: Alert heading text. If empty, nothing is rendered.
-        description: Optional body content displayed below the heading.
         level: Alert type, one of 'danger', 'warning', 'success', 'info'. Defaults to 'danger'.
+        description: Optional body content displayed below the heading.
         variant: Visual variant, one of 'important', 'minor'. Leave empty for default appearance.
         dismiss: If True, renders a close button to dismiss the alert.
-        link_url: Optional URL for an action link. Requires link_text to take effect.
-        link_text: Optional label for the action link. Requires link_url to take effect.
         extra_class: Additional CSS classes appended to the alert element.
+        link_text: Optional label for the action link. Requires link_url to take effect.
+        link_url: Optional URL for an action link. Requires link_text to take effect.
     """
     categories = {
         'danger': 'tabler-alert-circle',
