@@ -15,9 +15,7 @@
                 {% if site_config.site_logo %}
                     <img src="{% media_url site_config.site_logo %}" alt="Logo" width="28" height="28">
                 {% else %}
-                    <svg width="28" height="28">
-                        <use href="{% static 'admin/svg/crazy_logo.svg' %}"></use>
-                    </svg>
+                    <img src="{% static 'admin/svg/pinmok.svg' %}" alt="Pinmok" width="28" height="28">
                 {% endif %}
                 <span class="ms-2 text-body">{{ site_config.site_name }}</span>
             </a>
