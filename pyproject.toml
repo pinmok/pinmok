@@ -1,21 +1,23 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "Pinmok"
-version = "1.0.0"
-description = "A lightweight and flexible content management framework designed for fast and effortless backend development."
+name = "pinmok"
+version = "1.0.0.post1"
+description = "An extensible Django admin framework. Feels like Django. Barely any learning."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "惠达浪", email = "crazys@126.com" }]
-requires-python = ">=3.11"
-dependencies = ["Django>=5.0", "Pillow>=10.1.0", "filetype>=1.2.0"]
+requires-python = ">=3.12"
+dependencies = ["Django>=5.2", "Pillow>=10.1.0", "filetype>=1.2.0"]
 keywords = ['django', 'Pinmok', 'admin']
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Framework :: Django",
     "Framework :: Django :: 5",
     "Framework :: Django :: 6",
@@ -24,7 +26,25 @@ classifiers = [
 ]
 
 [project.urls]
+Homepage = "https://www.pinmok.com"
+Documentation = "https://docs.pinmok.com"
 Source = "https://github.com/pinmok/pinmok"
 
-[tool.setuptools]
-packages = ["pinmok", "pinmok.core", "pinmok.padmin"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pinmok*"]
+exclude = ["*.__pycache__*"]
+
+[tool.setuptools.package-data]
+"pinmok.core" = ["locale/**/*"]
+"pinmok.padmin" = [
+    "locale/**/*",
+    "static/**/*",
+    "templates/**/*",
+]
+
+[tool.setuptools.exclude-package-data]
+"*" = [
+    "**/__pycache__/*",
+    "**/*.pyc",
+]

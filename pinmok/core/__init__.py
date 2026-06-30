@@ -15,7 +15,7 @@ from django import get_version
 
 from pinmok.core.menu import menu
 
-VERSION = (1, 0, 0, 'final', 1)
+VERSION = (1, 0, 0, 'final', 0)
 __version__ = get_version(VERSION)
 __author__ = "惠达浪"
 __author_email = "crazys@126.com"

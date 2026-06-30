@@ -21,7 +21,7 @@ from django.core.exceptions import SuspiciousFileOperation, ValidationError
 from django.core.files.storage import default_storage
 from django.core.validators import validate_email
 from django.http import Http404, JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse, resolve, Resolver404
 from django.utils.translation import gettext as _
@@ -53,7 +53,7 @@ def sync_menu(request):
     Sync all admin menus (superuser only).
     """
     result = AdminMenuManager.synchronize_menu(MenuSyncMode.SYNC_ALL, request.user)
-    return render(request, 'config/sync_menu.html', {'result': result})
+    return TemplateResponse(request, 'config/sync_menu.html', {'result': result})
 
 
 class TestEmailView(View):

@@ -403,14 +403,8 @@ class AdminMenuService:
     # AdminMenuService 里加
     @classmethod
     def get_db_menus(cls) -> list[MenuNode]:
-        """Return database menus, using cache if available."""
-        version = cache.get(constants.ADMIN_MENU_CACHE_VERSION, 1)
-        cache_key = f"{constants.ADMIN_ALL_MENU}_v{version}"
-        db_menus = cache.get(cache_key)
-        if db_menus is None:
-            db_menus = cls._load_from_database()
-            cache.set(cache_key, db_menus, timeout=60 * 60)
-        return db_menus
+        """Return database menus."""
+        return cls._load_from_database()
 
     @classmethod
     def get_menu(cls, app_list: list[dict], user: AbstractUser | AnonymousUser, db_menus=None) -> list[MenuNode]:

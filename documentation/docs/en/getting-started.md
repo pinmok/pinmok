@@ -242,7 +242,16 @@ python manage.py runserver
 
 Visit `http://127.0.0.1:8000/admin/` in your browser and log in with the account you just created.
 
-If everything is set up correctly, you'll see the Pinmok admin interface — a navigation menu on the left and a content area on the right.
-The menu may be incomplete at this point, which is expected. Menu definitions and synchronization are covered in a later chapter.
+## Synchronize Menus
 
-<!-- TODO: add screenshot of the admin interface -->
+If everything is set up correctly, you will see the Pinmok admin interface — the navigation menu on the left, and the content area on the
+right. The menu items may be incomplete at this point, so you'll need to perform an initial sync.
+
+Click the **Synchronize Menus** button (☰) at the top of the left sidebar. Pinmok will automatically scan the menus.py file in each
+installed app, write the menu items to the database, and refresh the cache. Once the sync is complete, the full menu structure will appear
+immediately.
+
+![Pinmok后台界面](/assets/images/admin.en.png)
+
+---
+Installation complete — you're ready to start working!
