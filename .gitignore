@@ -11,3 +11,5 @@ __pycache__/
 /media/
 manage.py
 project_settings/
+documentation/site/
+pinmok.egg-info/
