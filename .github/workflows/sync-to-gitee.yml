@@ -17,7 +17,6 @@ jobs:
         uses: wearerequired/git-mirror-action@v1
         env:
           SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
-          SOURCE_SSH_PRIVATE_KEY: ${{ secrets.GITHUB_PRIVATE_KEY }}
         with:
           source-repo: git@github.com:pinmok/pinmok.git
           destination-repo: git@gitee.com:pinmok/pinmok.git
