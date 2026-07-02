@@ -18,5 +18,5 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
         with:
-          source-repo: git@github.com:pinmok/pinmok.git
+          source-repo: "https://github.com/pinmok/pinmok.git"
           destination-repo: git@gitee.com:pinmok/pinmok.git
