@@ -10,13 +10,11 @@ Author:
 Created:
   2025-06-09
 """
-import hashlib
 import importlib
 from enum import StrEnum
 
 from django.apps import apps
 from django.contrib.auth.models import AbstractUser, AnonymousUser
-from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Field
@@ -28,7 +26,6 @@ from pinmok.core.constants import DEFAULT_SORT_ORDER
 from pinmok.core.menu import MenuNode
 from pinmok.core.sites import site
 from pinmok.core.utils.helper import get_valid_app_labels
-from pinmok.core.utils.tools import to_compact_case
 from pinmok.padmin import constants
 from pinmok.padmin.models import Menu
 
@@ -158,73 +155,140 @@ class MenuSynchronizer:
         and not getattr(f, 'auto_now_add', False)
     )
 
+    @staticmethod
+    def _logical_path(node: "MenuNode", by_logical_id: dict) -> str:
+        """
+        Compute the dot-joined logical path from the root down to `node`,
+        based purely on declared logical ids (menu()'s `key`/`parent_key`).
+
+        Standalone by design: this has no dependency on database state or
+        the synchronization process, so it can be reused later for
+        permission strings, breadcrumbs, or logging.
+
+        Raises:
+            AdminMenuImportError: if `parent_key` references a node that
+                doesn't exist in this app's declarations, or if a cycle is
+                detected. Both indicate a mistake in menus.py and must fail
+                loudly rather than silently producing a truncated path.
+        """
+        chain = [str(node.id)]
+        seen = {node.id}
+        current = node
+        while current.parent_id is not None:
+            parent = by_logical_id.get(current.parent_id)
+            if parent is None:
+                raise AdminMenuImportError(
+                    f"menus.py declares parent_key={current.parent_id!r} for menu "
+                    f"item {current.id!r}, but no such item exists in this app."
+                )
+            if parent.id in seen:
+                raise AdminMenuImportError(
+                    f"Cycle detected in menu hierarchy involving {parent.id!r} "
+                    f"while resolving path for menu item {node.id!r}."
+                )
+            chain.append(str(parent.id))
+            seen.add(parent.id)
+            current = parent
+        return ".".join(reversed(chain))
+
     @classmethod
-    def _prepare_menu_obj(cls, item: MenuNode, parent_db_id: int | None) -> Menu:
-        """Prepare Menu instance from MenuNode"""
+    def _build_menu_key_map(cls, app_label: str, menu_nodes: list["MenuNode"]) -> dict[int | str, str]:
+        """
+        Compute a stable, human-readable menu_key for every node in this app.
+
+        PROTOCOL WARNING: menu_key is a permanent identifier — future
+        permission bindings reference it directly. Once shipped, the
+        generation rule (separator, whether app_label is included, ordering)
+        must NEVER change. Only the inputs (new menus, new keys) may change
+        — the algorithm must not.
+
+        Keyed by MenuNode.id (the logical id declared via menu()), which is
+        required to be unique within a single app's declarations — the same
+        assumption `by_logical_id` below already depends on.
+        """
+        by_logical_id: dict[int | str, "MenuNode"] = {}
+
+        for node in menu_nodes:
+            if node.id in by_logical_id:
+                raise AdminMenuImportError(
+                    f"Duplicate menu id {node.id!r} found in app {app_label!r}. "
+                    "Each menu id must be unique within an app."
+                )
+            by_logical_id[node.id] = node
+
+        return {
+            node.id: f"{app_label}.{cls._logical_path(node, by_logical_id)}"
+            for node in menu_nodes
+        }
+
+    @classmethod
+    def _prepare_menu_obj(cls, item: "MenuNode", parent_db_id: int | None, menu_key: str) -> Menu:
+        """Prepare a Menu instance from a MenuNode, using a precomputed stable menu_key."""
         data = {
             field: value  # noqa
             for field in cls._MENU_ASSIGNABLE_FIELDS
             if hasattr(item, field) and (value := getattr(item, field)) is not None
         }
         data["parent_id"] = parent_db_id
-
-        # build menu_key from app_label + normalized title [+ parent]
-        app = getattr(item, "app_label", "").strip()
-        safe_title = to_compact_case(getattr(item, "title", ""))
-        # include parent_db_id only if same-title-under-different-parent to differ
-        base_str = f"{app}:{safe_title}_{parent_db_id or 'root'}"
-        data["menu_key"] = hashlib.md5(base_str.encode("utf-8")).hexdigest()
+        data["menu_key"] = menu_key
         return Menu(**data)
 
     @classmethod
-    def _insert_items(cls, menu_nodes: list[MenuNode], parent_db_id: int | None) -> int:
+    def _insert_items(cls, menu_nodes: list["MenuNode"], parent_db_id: int | None) -> int:
         """
         Insert menu items into the database recursively.
 
-        Processes one level at a time: all nodes whose parent_id matches
-        parent_db_id are inserted together via bulk_create, then their
-        children are inserted recursively using the newly assigned DB IDs.
-
-        Args:
-            menu_nodes: Flat list of all MenuNode instances for the current app.
-            parent_db_id: The database PK of the parent menu row, or None for root level.
-
-        Returns:
-            int: Total number of menu rows created.
+        MenuNode instances are treated strictly as read-only declarations:
+        this method never writes back to `parent_id`, `db_id`, or `menu_key`
+        on any MenuNode. All runtime state — the logical id -> database id
+        mapping used to resolve parent/child relationships — is kept in a
+        local dict, so the exact same MenuNode objects (which Python's
+        import cache reuses across multiple synchronization runs within the
+        same process) can safely be re-processed any number of times without
+        being polluted by a previous run.
         """
-        created_count = 0
-        current_level = [item for item in menu_nodes if item.parent_id == parent_db_id]
-        if not current_level:
+        if not menu_nodes:
             return 0
 
-        # Step 1: Prepare Menu objects and sync menu_key back to each node.
-        to_create = []
-        for item in current_level:
-            menu_obj = cls._prepare_menu_obj(item, parent_db_id)
-            item.menu_key = menu_obj.menu_key  # sync back so created_map lookup works
-            to_create.append(menu_obj)
+        app_label = menu_nodes[0].app_label or ""
+        menu_key_map = cls._build_menu_key_map(app_label, menu_nodes)
+        logical_to_dbid: dict[int | str, int] = {}
 
-        # Step 2: Insert Menu objects
-        Menu.objects.bulk_create(to_create, batch_size=100)
-        created_items = list(Menu.objects.filter(menu_key__in=[m.menu_key for m in to_create]))
-        created_count += len(created_items)
+        def insert_level(parent_logical_id, current_parent_db_id: int | None) -> int:
+            current_level = [item for item in menu_nodes if item.parent_id == parent_logical_id]
+            if not current_level:
+                return 0
 
-        # Step 3: Build mapping from menu_key to inserted DB row.
-        created_map = {m.menu_key: m for m in created_items}
-        for src in current_level:
-            if src.menu_key is not None:
-                db = created_map[src.menu_key]
-                src.db_id = db.id
-                # Remap children's parent_id from the node's logical id to the DB PK.
-                for child in menu_nodes:
-                    if child.parent_id == src.id:
-                        child.parent_id = db.id
+            to_create = []
+            key_to_item: dict[str, "MenuNode"] = {}
+            for item in current_level:
+                key = menu_key_map[item.id]
+                to_create.append(cls._prepare_menu_obj(item, current_parent_db_id, key))
+                key_to_item[key] = item
 
-        # Step 4: Recursively insert child nodes.
-        for item in current_level:
-            created_count += cls._insert_items(menu_nodes=menu_nodes, parent_db_id=item.db_id)
+            Menu.objects.bulk_create(to_create, batch_size=100)
+            created_by_key = {
+                m.menu_key: m
+                for m in Menu.objects.filter(menu_key__in=list(key_to_item.keys()))
+            }
 
-        return created_count
+            created_count = 0
+            for key, item in key_to_item.items():
+                db_row = created_by_key.get(key)
+                if db_row is None:
+                    continue  # shouldn't happen; menu_key is collision-free by logical path
+                logical_to_dbid[item.id] = db_row.id
+                created_count += 1
+
+            for item in current_level:
+                child_parent_db_id = logical_to_dbid.get(item.id)
+                if child_parent_db_id is None:
+                    continue
+                created_count += insert_level(item.id, child_parent_db_id)
+
+            return created_count
+
+        return insert_level(None, parent_db_id)
 
     @staticmethod
     def _clear_app_menus(app_label: str):
@@ -434,33 +498,12 @@ class AdminMenuManager:
     Request-level facade for the admin menu system.
 
     Responsibilities:
-      - Per-user menu caching with version-based invalidation.
       - Breadcrumb generation from the menu tree.
       - Menu synchronization with superuser permission gating.
 
     Callers (views, context processors) should only use this class.
     AdminMenuService and MenuSynchronizer are implementation details.
     """
-
-    # -----------------------------------------------------------------------
-    # Cache helpers
-    # -----------------------------------------------------------------------
-
-    @staticmethod
-    def _get_cache_version() -> int:
-        return cache.get(constants.ADMIN_MENU_CACHE_VERSION, 1)
-
-    @staticmethod
-    def clear_admin_menu_cache() -> None:
-        """
-        Invalidate all per-user menu caches by incrementing the global version.
-
-        All existing per-user cache entries become stale immediately without
-        requiring pattern-based deletion, which is not supported by all cache
-        backends.
-        """
-        version = cache.get(constants.ADMIN_MENU_CACHE_VERSION, 1)
-        cache.set(constants.ADMIN_MENU_CACHE_VERSION, version + 1)
 
     # -----------------------------------------------------------------------
     # Public API
@@ -470,9 +513,6 @@ class AdminMenuManager:
     def get_admin_menu(cls, request: HttpRequest, app_list: list | None = None) -> list[MenuNode]:
         """
         Retrieve the final backend admin menu for the current user.
-
-        The result is cached per user per cache version. Invalidate by calling
-        _clear_admin_menu_cache() (e.g., after menu sync or permission change).
 
         Args:
             request: The current HTTP request.
@@ -490,8 +530,7 @@ class AdminMenuManager:
         """
         Synchronize backend menu data with the database.
 
-        Only superusers are allowed to perform this action. The per-user menu
-        cache is invalidated after a successful sync.
+        Only superusers are allowed to perform this action.
 
         Args:
             app_label: The app label to sync, or MenuSyncMode.SYNC_ALL for all apps.
@@ -503,9 +542,7 @@ class AdminMenuManager:
         if not user.is_superuser:
             raise PermissionDenied('Only superusers are allowed to perform this action.')
 
-        result = MenuSynchronizer.synchronize_menu(app_label=app_label)
-        cls.clear_admin_menu_cache()
-        return result
+        return MenuSynchronizer.synchronize_menu(app_label=app_label)
 
     @staticmethod
     def get_admin_breadcrumb(request: HttpRequest, menu_tree: list[MenuNode]) -> list[dict]:

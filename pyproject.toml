@@ -33,7 +33,6 @@ Source = "https://github.com/pinmok/pinmok"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["pinmok*"]
-exclude = ["*.__pycache__*"]
 
 [tool.setuptools.package-data]
 "pinmok.core" = ["locale/**/*"]

@@ -28,7 +28,7 @@ class Menu(models.Model):
     Backend admin menu item supporting multi-level hierarchy and permission control.
     """
     menu_key = models.CharField(
-        max_length=32,
+        max_length=128,
         unique=True,
         db_index=True,
         help_text="Stable hash used to uniquely identify this menu item, based on URL and parent id."

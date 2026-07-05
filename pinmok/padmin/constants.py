@@ -13,7 +13,6 @@ Created:
 
 # Cache keys
 ADMIN_ALL_MENU = 'admin_all_menu'
-ADMIN_MENU_CACHE_VERSION = 'pinmok_admin_menu_version'
 
 DEFAULT_APP_ICON = 'tabler-layout-dashboard'
 # Auth menu icon constant
