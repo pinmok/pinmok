@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pinmok"
-version = "1.0.0"
+version = "1.0.1"
 description = "An extensible Django admin framework. Feels like Django. Barely any learning."
 readme = "README.md"
 license = "MIT"
