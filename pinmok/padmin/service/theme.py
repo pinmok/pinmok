@@ -12,6 +12,7 @@ Created:
 """
 import inspect
 import json
+import logging
 from dataclasses import dataclass, asdict, field
 from pathlib import Path
 from typing import Optional, Any
@@ -20,6 +21,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
 from django.http import QueryDict
+from django.template.utils import get_app_template_dirs
 from django.utils.datastructures import MultiValueDict
 from django.utils.translation import gettext_lazy as _, get_language
 
@@ -29,6 +31,8 @@ from pinmok.padmin import widgets
 from pinmok.padmin.datasource import datasource
 from pinmok.padmin.enums import ThemeVarType
 from pinmok.padmin.models import Theme, ThemeTemplate
+
+logger = logging.getLogger(__name__)
 
 THEME_CACHE_KEY = 'pinmok_active_theme'
 THEME_CACHE_TIMEOUT = 3600
@@ -104,14 +108,25 @@ class ThemeService:
     """
 
     @staticmethod
-    def _themes_root() -> Path:
-        """Return the themes/ directory found under any configured template DIRS entry."""
+    def _themes_roots() -> list[Path]:
+        """Return all themes/ directories found under any configured template DIRS or app templates."""
+        roots = []
+
+        # 1. Check TEMPLATES['DIRS'] for themes/ directories
         for conf in settings.TEMPLATES:
             for d in conf.get('DIRS', []):
                 candidate = Path(d) / THEMES_DIR_NAME
                 if candidate.is_dir():
-                    return candidate
-        raise ThemeServiceError(_('No themes directory found in any configured template directory.'))
+                    roots.append(candidate)
+
+        # 2. Check all app templates/ directories for themes/
+        for app_dir in get_app_template_dirs("templates"):  # Directly use get_app_template_dirs
+            candidate = Path(app_dir) / THEMES_DIR_NAME
+            if candidate.is_dir():
+                roots.append(candidate)
+
+        # Return all found themes/ directories, or an empty list if none exist
+        return roots
 
     @classmethod
     def _read_json(cls, path: Path) -> dict:
@@ -229,7 +244,8 @@ class ThemeService:
         for json_file in theme_dir.glob('*.json'):
             try:
                 data = cls._read_json(json_file)
-            except ThemeServiceError:
+            except ThemeServiceError as e:
+                logger.warning('Skipping unreadable theme config file %s: %s', json_file, e)
                 continue
 
             # Validate theme config file
@@ -306,44 +322,48 @@ class ThemeService:
         theme package found. Each dict includes an 'installed' flag and,
         if installed, the corresponding Theme pk.
         """
-        root = cls._themes_root()
-        if not root.exists():
+        roots = cls._themes_roots()
+        if not roots:
             return []
 
         installed = {t.directory: t for t in Theme.objects.all()}
         result = []
 
-        for entry in sorted(root.iterdir()):
-            if not entry.is_dir():
-                continue
-            manifest_path = entry / 'theme.json'
-            if not manifest_path.exists():
-                continue
-            try:
-                data = cls._read_json(manifest_path)
-            except ThemeServiceError as e:
+        # Iterate over all themes/ directories
+        for root in roots:
+            for entry in sorted(root.iterdir()):
+                if not entry.is_dir():
+                    continue
+                manifest_path = entry / 'theme.json'
+                if not manifest_path.exists():
+                    continue
+                try:
+                    # Use language fallback so the theme name/description in
+                    # the admin list follows the current language.
+                    data = cls._read_config(manifest_path)
+                except ThemeServiceError as e:
+                    result.append({
+                        'directory': entry.name,
+                        'error': str(e),
+                        'installed': False,
+                        'is_active': False,
+                        'theme_id': None,
+                    })
+                    continue
+
+                theme_obj = installed.get(entry.name)
                 result.append({
                     'directory': entry.name,
-                    'error': str(e),
-                    'installed': False,
-                    'is_active': False,
-                    'theme_id': None,
+                    'name': data.get('name', entry.name),
+                    'version': data.get('version', ''),
+                    'app_label': data.get('app_label', ''),
+                    'author': data.get('author', ''),
+                    'description': data.get('description', ''),
+                    'preview_url': data.get('preview_url', ''),
+                    'installed': theme_obj is not None,
+                    'is_active': theme_obj.is_active if theme_obj else False,
+                    'theme_id': theme_obj.pk if theme_obj else None,
                 })
-                continue
-
-            theme_obj = installed.get(entry.name)
-            result.append({
-                'directory': entry.name,
-                'name': data.get('name', entry.name),
-                'version': data.get('version', ''),
-                'app_label': data.get('app_label', ''),
-                'author': data.get('author', ''),
-                'description': data.get('description', ''),
-                'preview_url': data.get('preview_url', ''),
-                'installed': theme_obj is not None,
-                'is_active': theme_obj.is_active if theme_obj else False,
-                'theme_id': theme_obj.pk if theme_obj else None,
-            })
 
         return result
 
@@ -360,18 +380,29 @@ class ThemeService:
         Raises ThemeServiceError if the directory, theme.json, or any
         page-level JSON fails validation.
         """
-        theme_dir = cls._themes_root() / directory
-        if not theme_dir.is_dir():
+        # Search for the theme directory across all themes/ roots
+        theme_dir = None
+        for root in cls._themes_roots():  # _themes_roots() returns list[Path]
+            candidate = root / directory
+            if candidate.is_dir():
+                theme_dir = candidate
+                break
+
+        if not theme_dir:
             raise ThemeServiceError(_('Theme directory not found: %(dir)s') % {'dir': directory})
+
         if Theme.objects.filter(directory=directory).exists():
             raise ThemeServiceError(_('Theme "%(dir)s" already installed.') % {'dir': directory})
 
         cls._validate_config_file(theme_dir)
-
         data = cls._read_json(theme_dir / 'theme.json')
+
+        # Only the default file (theme.json) is read into the database; language
+        # variant files are not involved in installation. Multilingual display is
+        # handled at read time by _resolve_template_name.
         theme = Theme.objects.create(
             name=data.get('name', directory),
-            app_label=data['app_label'],  # Required, has passed verification, fetch directly
+            app_label=data['app_label'],  # Required, validated, fetch directly
             version=data.get('version', ''),
             author=data.get('author', ''),
             description=data.get('description', ''),
@@ -387,12 +418,17 @@ class ThemeService:
     @classmethod
     def _install_templates(cls, theme: Theme, theme_dir: Path):
         """Scan the theme directory for page-level JSON files and create ThemeTemplate records."""
+        seen = set()
         for json_file in sorted(theme_dir.glob('*.json')):
             if json_file.name.startswith('theme'):
                 continue
 
-            data = cls._read_json(json_file)
             filename = json_file.name.split('.')[0]  # e.g. 'index' from 'index.json'
+            if filename in seen:
+                continue
+            seen.add(filename)
+
+            data = cls._read_json(json_file)
             ThemeTemplate.objects.create(
                 theme=theme,
                 filename=filename,
@@ -459,6 +495,9 @@ class ThemeService:
             cache.set(cache_key, theme.pk, THEME_CACHE_TIMEOUT)
 
             # Track app_labels for bulk cache invalidation.
+            # Track every cached app_label so _invalidate_cache() can clear them all
+            # when called without arguments; otherwise stale theme entries would
+            # survive because their keys cannot be enumerated.
             app_labels = cache.get(THEME_CACHE_APP_LABELS_KEY) or []
             if app_label not in app_labels:
                 app_labels.append(app_label)
@@ -473,7 +512,7 @@ class ThemeService:
         theme = cls.get_active_theme(app_label)
         if theme is None:
             return []
-        return [t for t in theme.templates.all() if t.action == action]
+        return list(theme.templates.filter(action=action))
 
     @classmethod
     def get_theme_config(cls, theme_id: int) -> dict:
@@ -497,10 +536,47 @@ class ThemeService:
     def get_template_choices(cls, app_label: str, action: str):
         """Return template choices for the given action, with default option first."""
         return [(action, _('Default'))] + [
-            (t.filename, t.name)
+            (t.filename, cls._resolve_template_name(t))
             for t in cls.get_templates_by_action(app_label, action)
             if t.filename != action
         ]
+
+    # ------------------------------------------------------------------
+    # Display name resolution (admin only, never touches the database)
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def _resolve_template_name(cls, template: ThemeTemplate, theme_dir: Path | None = None) -> str:
+        """
+        Return the display name of a template in the current language.
+        Reads the language-specific config file ({filename}.{lang}.json) when it
+        exists and carries a non-empty 'name'; otherwise falls back to the name
+        stored in the database. Display-time only; the stored name is never modified.
+        ``theme_dir`` may be passed in to skip the directory lookup when the caller
+        already has it.
+        """
+        # Multilingual names are deliberately NOT stored at install time: a language
+        # file may be added later, and reading at display time means new language
+        # files work without reinstalling the theme.
+
+        if theme_dir is None:
+            theme_dir = cls._find_theme_dir(template.theme.directory)
+        if not theme_dir:
+            logger.warning('Theme directory "%s" not found on disk; falling back to stored template name.',
+                           template.theme.directory)
+            return template.name
+
+        lang_file = theme_dir / f'{template.filename}.{get_language()}.json'
+        if not lang_file.exists():
+            return template.name
+
+        try:
+            name = cls._read_json(lang_file).get('name')
+        except ThemeServiceError as e:
+            logger.warning('Failed to read %s, falling back to stored name: %s', lang_file, e)
+            return template.name
+
+        return name or template.name
 
     # ------------------------------------------------------------------
     # Save config
@@ -525,6 +601,66 @@ class ThemeService:
         return config
 
     @classmethod
+    def _save_config(cls, obj: Theme | ThemeTemplate, submitted: dict):
+        """Shared persistence logic for theme-level and template-level configs."""
+        obj.config = cls._apply_submitted_values(obj.config, submitted)
+        obj.save(update_fields=['config'])
+        cls._invalidate_cache()
+
+    @classmethod
+    def save_config(cls, theme_id: int, submitted: dict):
+        """
+        Persist user-submitted values for a theme's global config.
+        Only the 'value' field of each stored var is updated.
+        Definition fields (title, type, tip, source, default) are never touched.
+        """
+        cls._save_config(cls._get_theme(theme_id), submitted)
+
+    @classmethod
+    def save_template_config(cls, template_id: int, submitted: dict):
+        """
+        Persist user-submitted values for a page template config.
+        Same submitted shape as save_config.
+        """
+        cls._save_config(cls._get_template(template_id), submitted)
+
+    @classmethod
+    def _find_theme_dir(cls, directory: str) -> Path | None:
+        """
+        Find the directory for a theme across all themes/ roots.
+        Returns the Path to the theme directory if found, or None.
+        """
+        for root in cls._themes_roots():
+            candidate = root / directory
+            if candidate.is_dir():
+                return candidate
+        return None
+
+    @classmethod
+    def _load_theme_file_config(cls, theme_id: int, template_id: int | None) -> tuple[
+        Theme, Path, dict, ThemeTemplate | None]:
+        """
+        Shared by GET rendering (get_config_context) and POST saving (get_var_definitions),
+        so both paths always see the same variable definitions — otherwise the rendered form
+        and the value collection would disagree.
+        Returns (theme, theme_dir, file_data, template_or_None).
+        """
+
+        theme = cls._get_theme(theme_id)
+        theme_dir = cls._find_theme_dir(theme.directory)
+        if not theme_dir:
+            raise ThemeServiceError(_('Theme directory not found: %(dir)s') % {'dir': theme.directory})
+
+        template = None
+        if template_id:
+            template = cls._get_template(template_id)
+            file_data = cls._read_config(theme_dir / f'{template.filename}.json')
+        else:
+            file_data = cls._read_config(theme_dir / 'theme.json')
+
+        return theme, theme_dir, file_data, template
+
+    @classmethod
     def get_var_definitions(
             cls,
             theme_id: int,
@@ -539,16 +675,11 @@ class ThemeService:
           fieldset var  -> 'fieldset__<fs_key>__<var_key>'
 
         Used by collect_submitted to look up each field's type during POST
-        processing, without re-reading the file a second time.
+        processing. Definitions are read through _load_theme_file_config, so
+        language-specific config files are honored the same way as on the
+        editing page.
         """
-        theme = cls._get_theme(theme_id)
-        theme_dir = cls._themes_root() / theme.directory
-
-        if template_id:
-            current_template = cls._get_template(template_id)
-            file_data = cls._read_config(theme_dir / f'{current_template.filename}.json')
-        else:
-            file_data = cls._read_config(theme_dir / 'theme.json')
+        _, _, file_data, _ = cls._load_theme_file_config(theme_id, template_id)
 
         result: dict[str, ThemeVar] = {}
 
@@ -576,7 +707,7 @@ class ThemeService:
         and value_from_datadict() correctly returns False in that case.
 
         Unknown POST keys are ignored. If no widget is found for a var (e.g.
-        unregistered datasource), falls back to raw string from POST.
+        unregistered datasource), the field is skipped and a warning is logged.
 
         Returns a dict shaped for _apply_submitted_values:
           {'vars': {key: value, ...}, 'fieldsets': {fs_key: {key: value, ...}}}
@@ -588,7 +719,12 @@ class ThemeService:
             widget = cls.get_widget_for_var(var)
 
             if widget is None:
-                # datasource not registered; no widget available, skip this field.
+                # Datasource not registered; no widget available. Log it so a
+                # silently dropped field is at least traceable.
+                logger.warning(
+                    'No widget for var "%s" (type=%s, source=%s); submitted value dropped.',
+                    field_name, var.type, var.options.get('source'),
+                )
                 continue
 
             # Delegate extraction to the widget. value_from_datadict receives
@@ -606,29 +742,6 @@ class ThemeService:
                 submitted_fieldsets.setdefault(parts[1], {})[parts[2]] = value
 
         return {'vars': submitted_vars, 'fieldsets': submitted_fieldsets}
-
-    @classmethod
-    def save_config(cls, theme_id: int, submitted: dict):
-        """
-        Persist user-submitted values for a theme's global config.
-        Only the 'value' field of each stored var is updated.
-        Definition fields (title, type, tip, source, default) are never touched.
-        """
-        theme = cls._get_theme(theme_id)
-        theme.config = cls._apply_submitted_values(theme.config, submitted)
-        theme.save(update_fields=['config'])
-        cls._invalidate_cache()
-
-    @classmethod
-    def save_template_config(cls, template_id: int, submitted: dict):
-        """
-        Persist user-submitted values for a page template config.
-        Same submitted shape as save_config.
-        """
-        template = cls._get_template(template_id)
-        template.config = cls._apply_submitted_values(template.config, submitted)
-        template.save(update_fields=['config'])
-        cls._invalidate_cache()
 
     # ------------------------------------------------------------------
     # Runtime resolution (used by views and template tags)
@@ -755,27 +868,34 @@ class ThemeService:
         """
         Return all data needed for the config editing page.
 
-        Reads variable definitions from the config file (with language fallback),
-        merges with saved values from the database config field, and resolves
-        widget instances for each var.
-
-        config_data contains two lists ready for template iteration:
-        - vars: list of field dicts (key, title, tip, HTML, value)
-        - fieldsets: list of group dicts (key, title, fields), where each
-          fields entry has the same shape as a vars field dict.
+        Definitions come from the on-disk config file (language fallback applied);
+        saved values come from the database config field. Templates entries carry
+        a non-persistent 'display_name' for the current language — render tabs
+        with {{ t.display_name }} instead of {{ t.name }}.
         """
-        theme = cls._get_theme(theme_id)
-        templates = ThemeTemplate.objects.filter(theme=theme).order_by('sort_order', 'name')
-        theme_dir = cls._themes_root() / theme.directory
+        theme, theme_dir, file_data, current_template = cls._load_theme_file_config(theme_id, template_id)
 
-        if template_id:
-            current_template = cls._get_template(template_id)
-            file_data = cls._read_config(theme_dir / f'{current_template.filename}.json')
-            db_config = cls.get_template_config(template_id)
+        # Three template collections and why they differ:
+        # all_templates    — every template of this theme, fetched in one query;
+        # templates        — only those with custom config, used for the tab nav
+        #                    (templates without config get no tab);
+        # current_template — the one being edited, taken from the URL. It may not
+        #                    be in the tab list, so its existence is validated
+        #                    separately; do NOT look it up inside `templates`.
+        all_templates = list(
+            ThemeTemplate.objects.filter(theme=theme).select_related('theme')
+            .order_by('sort_order', 'name')
+        )
+
+        templates = [t for t in all_templates if t.config.get('vars') or t.config.get('fieldsets')]
+        for t in templates:
+            t.display_name = cls._resolve_template_name(t, theme_dir)
+
+        if current_template is not None:
+            current_template.display_name = cls._resolve_template_name(current_template, theme_dir)
+            db_config = current_template.config
         else:
-            current_template = None
-            file_data = cls._read_config(theme_dir / 'theme.json')
-            db_config = cls.get_theme_config(theme_id)
+            db_config = theme.config
 
         config_data = cls._build_config_context(file_data, db_config)
 
@@ -791,14 +911,23 @@ class ThemeService:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _get_theme(theme_id: int) -> Theme:
+    def _get_or_raise(model, pk: int, message: str):
+        """
+        Fetch a single row by pk or raise ThemeServiceError with the given message.
+        All private getters route through here: callers get ThemeServiceError instead of DoesNotExist,
+        so the views layer only has to catch one business exception type.
+        """
         try:
-            return Theme.objects.get(pk=theme_id)
-        except Theme.DoesNotExist:
-            raise ThemeServiceError(_('Theme not found.'))
+            return model.objects.get(pk=pk)
+        except model.DoesNotExist:
+            raise ThemeServiceError(message)
 
-    @staticmethod
-    def _get_template(template_id: int) -> ThemeTemplate:
+    @classmethod
+    def _get_theme(cls, theme_id: int) -> Theme:
+        return cls._get_or_raise(Theme, theme_id, _('Theme not found.'))
+
+    @classmethod
+    def _get_template(cls, template_id: int) -> ThemeTemplate:
         try:
             return ThemeTemplate.objects.select_related('theme').get(pk=template_id)
         except ThemeTemplate.DoesNotExist:

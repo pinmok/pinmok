@@ -473,6 +473,8 @@ class Theme(models.Model):
 
 class ThemeTemplate(models.Model):
     """Page template within a theme, corresponds to each page JSON"""
+    display_name: str = ''
+
     theme = models.ForeignKey(Theme, on_delete=models.CASCADE, related_name='templates')
     filename = models.CharField(max_length=100)
     name = models.CharField(max_length=100)

@@ -10,8 +10,10 @@ Author:
 Created:
   2026/4/25
 """
+import logging
 import os
-from typing import Any
+from functools import wraps
+from typing import Any, Callable
 
 from django import template
 from django.conf import settings
@@ -20,6 +22,7 @@ from django.core.files.storage import default_storage
 from django.templatetags.static import static
 from django.utils.safestring import mark_safe
 
+from pinmok.core.utils.tools import int_to_bytes, bytes_to_int, to_snake_case, to_compact_case, to_camel_case
 from pinmok.padmin.constants import (
     PINMOK_ICON_PREFIX, PINMOK_SPRITE_FILE, CUSTOM_SPRITE_FILE, PINMOK_CONFIG_CACHE_TTL, EXTERNAL_LINK_CACHE_KEY
 )
@@ -28,7 +31,44 @@ from pinmok.padmin.models import ExternalLink, Slider
 from pinmok.padmin.service.config import ConfigService
 from pinmok.padmin.service.navigation import NavService
 
+# Initialize a logger instance named after the current module.
+# This enables hierarchical logging configuration in Django settings later.
+logger = logging.getLogger(__name__)
+
 register = template.Library()
+
+
+def safe_template_filter(func: Callable) -> Callable:
+    """
+    Decorator to wrap template filters and suppress rendering errors.
+
+    If the underlying filter raises an exception (e.g., due to invalid input types),
+    this wrapper catches it, logs a warning, and returns an empty string to prevent
+    the entire template from crashing.
+    """
+
+    @wraps(func)
+    def wrapper(value: Any, *args: Any, **kwargs: Any) -> str:
+        try:
+            return func(value, *args, **kwargs)
+        except Exception as e:
+            # Use % formatting instead of f-strings for logging.
+            # This ensures string interpolation only happens if the log is actually emitted.
+            logger.warning(
+                "Template filter '%s' failed with value '%s': %s",
+                func.__name__, value, e
+            )
+            return ''
+
+    return wrapper
+
+
+# List of utility functions to be registered as Django template filters.
+_TOOLS = [int_to_bytes, bytes_to_int, to_snake_case, to_compact_case, to_camel_case]
+
+# Register each tool as a template filter, applying the safety wrapper.
+for tool in _TOOLS:
+    register.filter(tool.__name__, safe_template_filter(tool))
 
 
 @register.filter
@@ -103,7 +143,7 @@ def media_url(path: str) -> str:
             return path.url
         path_str = str(path)
         # External URL: return as-is
-        if path_str.startswith(('http://', 'https://')):
+        if path_str.startswith(('http://', 'https://', '//')):
             return path_str
         # Relative path: resolve via storage backend
         return default_storage.url(path_str)

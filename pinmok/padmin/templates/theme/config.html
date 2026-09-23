@@ -12,7 +12,7 @@
                 <div class="card-header">
                     {% if current_template %}
                         <h3 class="card-title">
-                            {{ current_template.name }}
+                            {{ current_template.display_name }}
                             <span class="card-subtitle">({{ current_template.filename }}.html)</span>
                         </h3>
                     {% else %}
@@ -59,13 +59,14 @@
                     <h3 class="card-title">{% translate 'Templates Files' %}</h3>
                 </div>
                 <div class="list-group list-group-flush">
-                    <a href="?" class="list-group-item list-group-item-action {% if not current_template %}active{% endif %}">
+                    <a href="?"
+                       class="list-group-item list-group-item-action {% if not current_template %}active{% endif %}">
                         {% translate 'Global' %}
                     </a>
                     {% for tpl in templates %}
                         <a href="?template={{ tpl.pk }}"
                            class="list-group-item list-group-item-action {% if current_template.pk == tpl.pk %}active{% endif %}">
-                            {{ tpl.name }} <small class="text-muted">({{ tpl.filename }}.html)</small>
+                            {{ tpl.display_name }} <small class="text-muted">({{ tpl.filename }}.html)</small>
                         </a>
                     {% endfor %}
                 </div>
