@@ -1,15 +1,4 @@
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.venv/
-.env
-.idea/
-.git/
-*.sqlite3
+*.py[cod]
 .DS_Store
-/media/
-manage.py
-project_settings/
 documentation/site/
-pinmok.egg-info/
